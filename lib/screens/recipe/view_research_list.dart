@@ -736,7 +736,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
                                   children: [
                                     Container(
                                       width:
-                                          MediaQuery.of(context).size.width * 0.3,
+                                          MediaQuery.of(context).size.width * 0.2,
                                       child: Text(
                                         recipeName,
                                         style: TextStyle(

@@ -186,8 +186,14 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           .collection('fridges')
           .where('userId', isEqualTo: userId)
           .get();
+
       List<String> fridgeList =
           snapshot.docs.map((doc) => doc['FridgeName'] as String).toList();
+
+      if (fridgeList.isEmpty) {
+        await _createDefaultFridge(); // 기본 냉장고 추가
+      }
+      if (!mounted) return;
 
       setState(() {
         fridgeName = fridgeList; // 불러온 냉장고 목록을 상태에 저장
@@ -196,6 +202,31 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       print('Error loading fridge categories: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('냉장고 목록을 불러오는 데 실패했습니다.')),
+      );
+    }
+  }
+
+  Future<void> _createDefaultFridge() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('FridgeName', isEqualTo: '기본 냉장고')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        // Firestore에 기본 냉장고 추가
+        await FirebaseFirestore.instance.collection('fridges').add({
+          'FridgeName': '기본 냉장고',
+          'userId': userId,
+        });
+      } else {
+        print('기본 냉장고가 이미 존재합니다.');
+      }
+    } catch (e) {
+      print('Error creating default fridge: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('기본 냉장고를 생성하는 데 실패했습니다.')),
       );
     }
   }
@@ -209,7 +240,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     // _loadFridgeCategoriesFromFirestore(selectedFridge); // 냉장고 데이터 로드
   }
 
-  // 취소선이 있는 아이템들은 자동으로 체크박스가 true
   void _selectStrikeThroughItems() async {
     for (var category in itemLists.keys) {
       int itemCount = itemLists[category]?.length ?? 0;

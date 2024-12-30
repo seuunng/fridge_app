@@ -216,7 +216,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
   Future<DateTime?> getRegistrationDate(String itemId) async {
     try {
-      // fridge_items 컬렉션에서 특정 문서(itemId)를 가져옴
       DocumentSnapshot document = await FirebaseFirestore.instance
           .collection('fridge_items')
           .doc(itemId)

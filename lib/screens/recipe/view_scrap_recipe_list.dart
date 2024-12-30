@@ -540,7 +540,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                                       Container(
                                         width:
                                             MediaQuery.of(context).size.width *
-                                                0.3,
+                                                0.1,
                                         child: Text(
                                           recipeName,
                                           style: TextStyle(

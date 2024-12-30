@@ -64,6 +64,12 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
           .collection('preferred_foods_categories')
           .where('userId', isEqualTo: userId)
           .get();
+
+      if (snapshot.docs.isEmpty) {
+        // 데이터가 없는 경우 기본 데이터 추가
+        await _addDefaultPreferredCategories();
+      } else {
+
       final categories = snapshot.docs.map((doc) {
         return PreferredFoodModel.fromFirestore(doc.data());
       }).toList();
@@ -81,6 +87,7 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
           });
         }
       });
+      }
       // print(itemsByPreferredCategory);
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
@@ -89,7 +96,42 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
       );
     }
   }
+  Future<void> _addDefaultPreferredCategories() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    try {
+      final defaultCategories = {
+        '알러지': ['우유', '계란', '땅콩',],
+        '유제품': ['우유', '치즈', '요거트'],
+        '비건': ['육류', '해산물', '유제품', '계란', '꿀'],
+        '무오신채': ['마늘', '양파', '부추', '파', '달래'],
+        '설밀나튀': ['설탕', '밀가루', '튀김'],
+      };
 
+      for (var entry in defaultCategories.entries) {
+        final category = entry.key;
+        final items = entry.value;
+
+        // Firestore에 기본 데이터 추가
+        await FirebaseFirestore.instance
+            .collection('preferred_foods_categories')
+            .add({
+          'userId': userId,
+          'category': {category: items},
+        });
+      }
+
+      // 데이터 로드 다시 실행
+      _loadPreferredFoodsCategoriesFromFirestore();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('기본 선호 카테고리가 추가되었습니다.')),
+      );
+    } catch (e) {
+      print('Error adding default preferred categories: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('기본 선호 카테고리를 추가하는 중 오류가 발생했습니다.')),
+      );
+    }
+  }
   Future<void> _loadSearchSettingsFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {

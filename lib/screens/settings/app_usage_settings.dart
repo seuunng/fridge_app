@@ -70,11 +70,21 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
 
   Future<void> _createDefaultFridge() async {
     try {
-      // Firestore에 기본 냉장고 추가
-      await FirebaseFirestore.instance.collection('fridges').add({
-        'FridgeName': '기본 냉장고',
-        'userId': userId,
-      });
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('FridgeName', isEqualTo: '기본 냉장고')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        // Firestore에 기본 냉장고 추가
+        await FirebaseFirestore.instance.collection('fridges').add({
+          'FridgeName': '기본 냉장고',
+          'userId': userId,
+        });
+      } else {
+        print('기본 냉장고가 이미 존재합니다.');
+      }
       // UI 업데이트
       setState(() {
         _categories_fridge.add('기본 냉장고');
