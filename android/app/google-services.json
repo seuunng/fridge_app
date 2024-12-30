@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "897589496124",
+    "project_id": "food-for-later",
+    "storage_bucket": "food-for-later.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897589496124:android:ce3073c291afd5258eb639",
+        "android_client_info": {
+          "package_name": "com.example.food_for_later"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "897589496124-mqudmevsl1fnujtg5av3nfa5qkmmlvir.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.food_for_later",
+            "certificate_hash": "9980104fb5263cfe5822be86bed1b7c862fb161f"
+          }
+        },
+        {
+          "client_id": "897589496124-04ve5ntnen7lu6fqrevvt3tb9hrhq0qo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl_i5hCKgo-HPZqbi-Sf-Ey5BjzlDQx0E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "897589496124-04ve5ntnen7lu6fqrevvt3tb9hrhq0qo.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "897589496124-0lvf9jpu1u8567657fb2bj0cm97f7d1c.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.foodForLater"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897589496124:android:5bc34ade1467f4048eb639",
+        "android_client_info": {
+          "package_name": "com.seuunng.food_for_later"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "897589496124-04ve5ntnen7lu6fqrevvt3tb9hrhq0qo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl_i5hCKgo-HPZqbi-Sf-Ey5BjzlDQx0E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "897589496124-04ve5ntnen7lu6fqrevvt3tb9hrhq0qo.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "897589496124-0lvf9jpu1u8567657fb2bj0cm97f7d1c.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.foodForLater"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
