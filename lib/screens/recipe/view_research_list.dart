@@ -597,7 +597,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       return Chip(
         label: Text(
           "냉장고 재료",
-          style: TextStyle(
+          style: theme.textTheme.bodyMedium?.copyWith(
             fontSize: 12.0,
             color: theme.chipTheme.labelStyle!.color,
           ),

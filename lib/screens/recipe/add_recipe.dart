@@ -582,7 +582,7 @@ class _AddRecipeState extends State<AddRecipe> {
                     child: Chip(
                       label: Text(
                         item,
-                        style: TextStyle(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: isSelected
                               ? theme.chipTheme.labelStyle!.color
                               : theme.chipTheme
@@ -615,7 +615,8 @@ class _AddRecipeState extends State<AddRecipe> {
       children: selectedItems.map((item) {
         return Chip(
           label: Text(item,
-              style: TextStyle(color: theme.chipTheme.labelStyle!.color)),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.chipTheme.labelStyle!.color)),
           padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
           labelPadding: EdgeInsets.symmetric(horizontal: 1.0),
           deleteIcon: Icon(Icons.close),
@@ -712,7 +713,7 @@ class _AddRecipeState extends State<AddRecipe> {
                   child: Chip(
                     label: Text(
                       item,
-                      style: TextStyle(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: isSelected
                             ? theme.chipTheme.secondaryLabelStyle!.color
                             : theme.chipTheme.labelStyle!

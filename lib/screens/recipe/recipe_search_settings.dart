@@ -181,7 +181,7 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
                             SizedBox(width: 6),
                             Text(
                               keyword,
-                              style: TextStyle(
+                              style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.chipTheme.selectedColor,
                                 fontWeight: FontWeight.bold, // 강조를 위해 굵게 설정
                               ),
@@ -297,7 +297,7 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
         return ChoiceChip(
           label: Text(
             categoryName,
-            style: TextStyle(
+            style: theme.textTheme.bodyMedium?.copyWith(
               color: isSelected
                   ? theme.chipTheme.secondaryLabelStyle?.color
                   : theme.chipTheme.labelStyle?.color,

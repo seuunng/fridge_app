@@ -188,7 +188,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                       return Chip(
                         label: Text(
                           unit,
-                          style: TextStyle(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.chipTheme.selectedColor,
                             fontSize: 12, // 강조를 위해 굵게 설정
                           ),
