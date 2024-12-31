@@ -11,6 +11,7 @@ import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:food_for_later_new/firebase_options.dart';
 import 'package:food_for_later_new/providers/theme_provider.dart';
 import 'package:food_for_later_new/screens/auth/login_main_page.dart';
+import 'package:food_for_later_new/screens/auth/splash_screen.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_main_page.dart';
 import 'package:food_for_later_new/screens/home_screen.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
@@ -79,7 +80,7 @@ class MyApp extends StatelessWidget {
       return MaterialApp(
         title: '이따뭐먹지',
         theme: themeProvider.themeData,
-        home: AuthStateWidget(),
+        home: SplashScreen(), // 스플래시 화면 시작
         onGenerateRoute: (settings) {
           final Uri uri = Uri.parse(settings.name ?? '');
 

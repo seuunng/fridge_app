@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:food_for_later_new/screens/recipe/view_research_list.dart'; // ViewResearchList 경로 맞게 수정
 
 class BasicElevatedButton extends StatelessWidget {
   final String buttonTitle;

@@ -61,6 +61,7 @@ dependencies:
   auto_size_text: ^3.0.0 # 텍스트 자동 크기 조정 위젯
   table_calendar: ^3.0.6 # 달력 위젯 제공 (스케줄 관리 등)
   fl_chart: ^0.69.0
+  flutter_native_splash: ^2.2.19
   #  font_awesome_flutter: ^10.5.0  # 아이콘
   #  google_fonts: ^4.0.4  # 다양한 폰트 적용
   #  cupertino_icons: ^1.0.8
@@ -97,6 +98,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+    - assets/splash_logo.png
     - assets/images/google_logo.png
     - assets/images/kakao_talk_logo.png
     - assets/images/naver_logo.png
@@ -215,6 +217,7 @@ flutter:
         - asset: assets/fonts/김콩해.ttf
 
 
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
@@ -245,3 +248,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_native_splash:
+  color: "#ffffff" # 배경 색상 (HEX 코드)
+  image: assets/splash_logo.png # Splash 화면에 사용할 로고 이미지 경로
+  android: true # Android에서 Splash 화면 활성화
+  ios: true # iOS에서 Splash 화면 활성화
+  web: true # 웹에서 Splash 화면 비활성화
+  fullscreen: true # 화면을 전체로 사용

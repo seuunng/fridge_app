@@ -456,10 +456,6 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       itemBuilder: (context, index) {
         RecipeModel recipe = recipeList[index];
         String recipeName = recipe.recipeName;
-        // bool hasImage = recipe.mainImages.isNotEmpty;
-        // List<String> ingredients = recipe.foods;
-        // List<String> methods = recipe.methods; // 조리 방법
-        // List<String> themes = recipe.themes;
         double recipeRating = recipe.rating;
         bool hasMainImage = recipe.mainImages.isNotEmpty;
         // 카테고리 그리드 렌더링
@@ -469,17 +465,22 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
               bool isScraped = snapshot.data ?? false;
               return Row(
                 children: [
-                  Checkbox(
-                    value: selectedRecipes.contains(recipe.id),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          selectedRecipes.add(recipe.id);
-                        } else {
-                          selectedRecipes.remove(recipe.id);
-                        }
-                      });
-                    },
+                  SizedBox(
+                    width: 20, // 원하는 너비로 조정
+                    height: 20, // 원하는 높이로 조정
+                    child: Checkbox(
+                      value: selectedRecipes.contains(recipe.id),
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            selectedRecipes.add(recipe.id);
+                          } else {
+                            selectedRecipes.remove(recipe.id);
+                          }
+                        });
+                      },
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, // 여백 줄이기
+                    ),
                   ),
                   Expanded(
                     child: GestureDetector(
@@ -537,10 +538,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                                   // 요리명
                                   Row(
                                     children: [
-                                      Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.1,
+                                      Expanded(
                                         child: Text(
                                           recipeName,
                                           style: TextStyle(
@@ -549,9 +547,10 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                                             color: Colors.black,
                                           ),
                                           overflow: TextOverflow.ellipsis,
+                                          maxLines: 1, // 제목이 한 줄로 표시되도록 설정
                                         ),
                                       ),
-                                      Spacer(),
+                                      SizedBox(width: 8),
                                       _buildRatingStars(recipeRating),
                                       IconButton(
                                         icon: Icon(
@@ -585,8 +584,9 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
 
   Widget _buildChips(RecipeModel recipe) {
     return Wrap(
-      spacing: 6.0,
-      runSpacing: 1.0,
+      alignment: WrapAlignment.start,
+      spacing: 2.0, // 아이템 간의 간격
+      runSpacing: 2.0,
       children: [
         _buildTagSection("재료", recipe.foods),
         _buildTagSection("조리 방법", recipe.methods),
@@ -600,8 +600,9 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Wrap(
-          spacing: 6.0,
-          runSpacing: 1.0,
+          alignment: WrapAlignment.start,
+          spacing: 2.0, // 아이템 간의 간격
+          runSpacing: 2.0,
           children: tags.map((tag) {
             bool inFridge = fridgeIngredients.contains(tag);
             return Container(
@@ -638,19 +639,19 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
           return Icon(
             Icons.star,
             color: Colors.amber,
-            size: 14,
+            size: 12,
           );
         } else if (index == fullStars && hasHalfStar) {
           return Icon(
             Icons.star_half,
             color: Colors.amber,
-            size: 14,
+            size: 12,
           );
         } else {
           return Icon(
             Icons.star_border,
             color: Colors.amber,
-            size: 14,
+            size: 12,
           );
         }
       }),

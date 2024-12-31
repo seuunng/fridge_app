@@ -517,7 +517,6 @@ class _ReadRecipeState extends State<ReadRecipe> {
         title: Row(
           children: [
             Container(
-              width: MediaQuery.of(context).size.width * 0.4,
               child: Text(
                 recipeName,
                 maxLines: 1, // 최대 1줄만 보여줌
@@ -531,12 +530,12 @@ class _ReadRecipeState extends State<ReadRecipe> {
                   isLiked
                       ? Icons.favorite
                       : Icons.favorite_border, // 상태에 따라 아이콘 변경
-                  size: 30), // 스크랩 아이콘 크기 조정
+                  size: 26), // 스크랩 아이콘 크기 조정
               onPressed: _toggleLike,
             ),
             IconButton(
               visualDensity: const VisualDensity(horizontal: -4),
-              icon: Icon(Icons.share, size: 30), // 스크랩 아이콘 크기 조정
+              icon: Icon(Icons.share, size: 26), // 스크랩 아이콘 크기 조정
               onPressed: () {
                 showShareOptions(context, fromEmail, toEmail, nickname, recipeName, recipeUrl);
               },
@@ -544,7 +543,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
             IconButton(
               visualDensity: const VisualDensity(horizontal: -4),
               icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
-                  size: 30), // 스크랩 아이콘 크기 조정
+                  size: 26), // 스크랩 아이콘 크기 조정
               onPressed: _toggleScraped,
             ),
           ],

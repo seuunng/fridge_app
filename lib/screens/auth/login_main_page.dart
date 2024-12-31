@@ -44,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> addUserToFirestore(firebase_auth.User user,
-      {String? nickname, String? email}) async {
+      {String? nickname, String? email, String? gender, String? birthYear}) async {
     final userDoc =
         FirebaseFirestore.instance.collection('users').doc(user.uid);
 
@@ -54,6 +54,8 @@ class _LoginPageState extends State<LoginPage> {
         'nickname': nickname ?? user.displayName ?? '닉네임 없음',
         'email': email ?? user.email ?? '이메일 없음',
         'signupdate': formattedDate,
+        'gender': gender ?? '알 수 없음',
+        'birthYear': birthYear ?? '알 수 없음',
         'role': 'user',
       });
     }
@@ -139,21 +141,18 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        return;
-      }
+      if (googleUser == null) return;
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final firebase_auth.OAuthCredential credential =
-          firebase_auth.GoogleAuthProvider.credential(
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      await fetchGoogleUserInfo(googleAuth.accessToken!);
+
+      final firebase_auth.OAuthCredential credential = firebase_auth.GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
       // Firebase에 사용자 인증
-      firebase_auth.UserCredential result =
-          await _auth.signInWithCredential(credential);
+      firebase_auth.UserCredential result = await _auth.signInWithCredential(credential);
       if (result.user != null) {
         await addUserToFirestore(result.user!); // Firestore에 사용자 추가
         await recordSessionStart();
@@ -183,6 +182,23 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> fetchGoogleUserInfo(String accessToken) async {
+    final response = await http.get(
+      Uri.parse('https://people.googleapis.com/v1/people/me?personFields=genders,birthdays'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final String? gender = data['genders']?[0]['value']; // 성별
+      final String? birthYear = data['birthdays']?[0]['date']['year'].toString(); // 출생연도
+
+      print('성별: $gender');
+      print('출생연도: $birthYear');
+    } else {
+      print('Google 사용자 정보 가져오기 실패: ${response.body}');
+    }
+  }
   // Future<void> signInWithKakao() async {
   //   try {
   //     bool isKakaoTalkInstalled = await kakao.isKakaoTalkInstalled();
@@ -239,6 +255,14 @@ class _LoginPageState extends State<LoginPage> {
       final NaverLoginResult res = await FlutterNaverLogin.logIn();
       if (res.status == NaverLoginStatus.loggedIn) {
         NaverAccessToken token = await FlutterNaverLogin.currentAccessToken;
+
+        // 사용자 정보 가져오기
+        final NaverAccountResult account = res.account;
+        final String? nickname = account.nickname;
+        final String? email = account.email;
+        final String? gender = account.gender; // 성별 (M: 남성, F: 여성)
+        final String? birthYear = account.birthyear; // 출생연도
+
         final response = await createNaverFirebaseToken(token.accessToken);
         if (response != null) {
           final firebaseUser = await _auth.signInWithCustomToken(response);
@@ -248,6 +272,8 @@ class _LoginPageState extends State<LoginPage> {
               firebaseUser.user!,
               nickname: res.account.nickname,
               email: res.account.email,
+              gender: res.account.gender ?? '알 수 없음',
+              birthYear: res.account.birthyear ?? '알 수 없음',
             );
             assignRandomAvatarToUser(firebaseUser.user!.uid);
             Navigator.pushReplacementNamed(context, '/home');
