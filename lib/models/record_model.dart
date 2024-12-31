@@ -18,7 +18,6 @@ class RecordModel {
     required this.userId, // 생성자에 추가
   });
 
-  // Firestore에서 데이터를 가져와서 Record 객체로 변환하는 메서드
   factory RecordModel.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map<String, dynamic>;
     return RecordModel(
@@ -32,20 +31,16 @@ class RecordModel {
       userId: data['userId'] ?? '', // userId 추가
     );
   }
-// fromJson 메서드 추가
-  factory RecordModel.fromJson(Map<String, dynamic> json, {required String id}) {
-    // print('RecordModel.fromJson 호출됨');
-    // print('json 데이터: $json');
 
+  factory RecordModel.fromJson(Map<String, dynamic> json,
+      {required String id}) {
     List<RecordDetail> recordDetails = [];
-
     if (json['records'] != null && json['records'] is List) {
       recordDetails = (json['records'] as List<dynamic>)
           .map((e) => RecordDetail.fromJson(e as Map<String, dynamic>))
           .toList();
     }
 
-    // print('recordDetails 변환 완료: $recordDetails');
     return RecordModel(
       id: id,
       date: (json['date'] != null && json['date'] is Timestamp)
@@ -58,7 +53,6 @@ class RecordModel {
     );
   }
 
-  // Record 객체를 Firestore에 저장 가능한 Map으로 변환하는 메서드
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -69,13 +63,13 @@ class RecordModel {
       'userId': userId,
     };
   }
+
   Color get colorAsColor => Color(int.parse(color.replaceFirst('#', '0xff')));
 
   @override
   String toString() {
     return 'RecordModel{id: $id, zone: $zone, date: $date, color: $color, records: $records}';
   }
-
 }
 
 class RecordDetail {
@@ -89,7 +83,6 @@ class RecordDetail {
     required this.images,
   });
 
-  // Firestore에서 데이터를 가져와서 RecordDetail 객체로 변환하는 메서드
   factory RecordDetail.fromMap(Map<String, dynamic> data) {
     return RecordDetail(
       unit: data['unit'] ?? '',
@@ -108,7 +101,6 @@ class RecordDetail {
     );
   }
 
-  // RecordDetail 객체를 Firestore에 저장 가능한 Map으로 변환하는 메서드
   Map<String, dynamic> toMap() {
     return {
       'unit': unit,

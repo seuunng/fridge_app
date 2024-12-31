@@ -37,7 +37,6 @@ class UserTimeState extends State<UserTime> {
         }
       }
     }
-
     return usageData;
   }
 
@@ -46,12 +45,10 @@ class UserTimeState extends State<UserTime> {
     final groupData = <BarChartGroupData>[];
 
     for (int i = 0; i < 24; i += 3) {
-      // 3시간 단위로 묶어서 데이터 집계
       double sum = 0;
       for (int j = i; j < i + 3 && j < 24; j++) {
         sum += usageData[j]!.toDouble();
       }
-
       groupData.add(
         makeGroupData(i ~/ 3, sum), // 3시간 단위의 평균 사용량
       );
@@ -63,9 +60,7 @@ class UserTimeState extends State<UserTime> {
   Future<BarChartData> mainBarData() async {
     final groups = await buildChartGroups();
     return BarChartData(
-      barTouchData: BarTouchData(
-          // 터치 데이터 처리 유지
-          ),
+      barTouchData: BarTouchData(),
       titlesData: FlTitlesData(
         show: true,
         topTitles: const AxisTitles(
@@ -112,7 +107,6 @@ class UserTimeState extends State<UserTime> {
   Widget build(BuildContext context) {
     return FutureBuilder<BarChartData>(
       future: mainBarData(),
-
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());

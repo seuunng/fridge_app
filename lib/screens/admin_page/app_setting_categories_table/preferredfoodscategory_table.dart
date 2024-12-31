@@ -14,7 +14,6 @@ class PreferredfoodscategoryTable extends StatefulWidget {
 
 class _PreferredfoodscategoryTableState
     extends State<PreferredfoodscategoryTable> {
-  // 각 열에 대한 정렬 상태를 관리하는 리스트
   List<Map<String, dynamic>> columns = [
     {'name': '선택', 'state': SortState.none},
     {'name': '연번', 'state': SortState.none},
@@ -33,14 +32,12 @@ class _PreferredfoodscategoryTableState
 
   String? _selectedCategory;
 
-// 추가할 때 사용할 입력 필드 컨트롤러들
   final TextEditingController _foodNameController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadFoodsData();
-    // addSampleDataToFirestore();
   }
 
   Future<void> _loadFoodsData() async {
@@ -64,7 +61,6 @@ class _PreferredfoodscategoryTableState
       snapshot.docs.forEach((doc) {
         final data = PreferredFoodModel.fromFirestore(doc.data());
 
-        // 카테고리 내 모든 itemsByCategory의 아이템을 순회하면서 각 아이템을 추가
         data.categoryName.forEach((category, foodList) {
           tempCategories.add(category); // 카테고리 추가
           tempItemsByCategory[category] = foodList;
@@ -79,7 +75,6 @@ class _PreferredfoodscategoryTableState
         });
       });
 
-      // 상태 업데이트
       setState(() {
         categoryOptions.addAll(tempCategories.toSet().toList()); // 카테고리 목록 설정
         itemsByCategory.addAll(tempItemsByCategory); // 카테고리별 식품 목록 설정
@@ -90,10 +85,8 @@ class _PreferredfoodscategoryTableState
     }
   }
 
-  // 사용자 데이터를 추가하는 함수
   Future<void> _addFood(String foodName) async {
     try {
-      // Firestore에서 카테고리가 포함된 문서 참조
       final docRef = FirebaseFirestore.instance
           .collection('preferred_foods_categories')
           .doc('9y0Rg5AnHEQHcCa3VO6J'); // 이 ID를 실제로 사용 중인 문서 ID로 변경
@@ -101,20 +94,16 @@ class _PreferredfoodscategoryTableState
       final docSnapshot = await docRef.get();
 
       if (docSnapshot.exists) {
-        // 문서가 존재하면 기존 카테고리 배열에 항목 추가
         Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
         List<String> existingFoods =
             List<String>.from(data['category'][_selectedCategory] ?? []);
 
-        // 새로운 항목 추가
         existingFoods.add(foodName);
 
-        // Firestore에 업데이트된 배열을 저장
         await docRef.update({
           'category.${_selectedCategory}': existingFoods, // 선택된 카테고리 배열 업데이트
         });
       } else {
-        // 문서가 존재하지 않을 경우 새로 생성
         await docRef.set({
           'category': {
             _selectedCategory: [foodName], // 새로운 카테고리 생성 후 배열 추가
@@ -132,10 +121,8 @@ class _PreferredfoodscategoryTableState
     }
   }
 
-// 데이터 수정 버튼 클릭 시 호출할 함수
   void _editFood(int index) {
     setState(() {
-      // 수정할 데이터 필드로 값 가져오기
       Map<String, dynamic> selectedFood = userData[index];
       _foodNameController.text = selectedFood['식품명'];
       _selectedCategory = selectedFood['선호식품 카테고리'];
@@ -148,7 +135,6 @@ class _PreferredfoodscategoryTableState
   Future<void> _updateFoodInCategory(
       String category, String oldFoodName, String updatedFoodName) async {
     try {
-      // Firestore에서 선택된 카테고리 문서를 불러옵니다.
       final docRef = FirebaseFirestore.instance
           .collection('preferred_foods_categories')
           .doc('9y0Rg5AnHEQHcCa3VO6J'); // 실제 문서 ID로 변경
@@ -156,23 +142,17 @@ class _PreferredfoodscategoryTableState
       final docSnapshot = await docRef.get();
 
       if (docSnapshot.exists) {
-        // 문서가 존재하면, 해당 카테고리 배열을 불러옵니다.
         Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
         List<String> existingFoods =
             List<String>.from(data['category'][category] ?? []);
 
-        // 카테고리 내에서 기존 식품명을 찾아 수정
         int foodIndex = existingFoods.indexOf(oldFoodName);
         if (foodIndex != -1) {
-          // 기존 식품명을 수정된 이름으로 업데이트
           existingFoods[foodIndex] = updatedFoodName;
 
-          // Firestore에 업데이트된 배열을 저장
           await docRef.update({
             'category.$category': existingFoods, // 선택된 카테고리 배열 업데이트
           });
-
-          print('Firestore에서 항목이 성공적으로 업데이트되었습니다.');
         } else {
           print('해당 카테고리에서 식품명을 찾을 수 없습니다.');
         }
@@ -184,7 +164,6 @@ class _PreferredfoodscategoryTableState
     }
   }
 
-  // 체크박스를 사용해 선택한 행 삭제
   Future<void> _deleteFoodFromCategory(String category, String foodName) async {
     print('_deleteFoodFromCategory 실행');
     bool shouldDelete = await showDialog(
@@ -212,7 +191,6 @@ class _PreferredfoodscategoryTableState
     );
     if (shouldDelete == true) {
       try {
-        // Firestore에서 선택된 카테고리 문서를 불러옵니다.
         final docRef = FirebaseFirestore.instance
             .collection('preferred_foods_categories')
             .doc('9y0Rg5AnHEQHcCa3VO6J'); // 실제 문서 ID로 변경
@@ -220,16 +198,13 @@ class _PreferredfoodscategoryTableState
         final docSnapshot = await docRef.get();
 
         if (docSnapshot.exists) {
-          // 문서가 존재하면, 해당 카테고리 배열을 불러옵니다.
           Map<String, dynamic> data =
               docSnapshot.data() as Map<String, dynamic>;
           List<String> existingFoods =
               List<String>.from(data['category'][category] ?? []);
 
-          // 선택한 식품명을 배열에서 제거
           existingFoods.remove(foodName);
 
-          // Firestore에 업데이트된 배열을 저장
           await docRef.update({
             'category.$category': existingFoods, // 선택된 카테고리 배열 업데이트
           });
@@ -243,7 +218,6 @@ class _PreferredfoodscategoryTableState
   }
 
   void _sortBy(String columnName, SortState currentState) {
-    // 정렬 상태 변경 로직
     SortState newSortState;
     if (currentState == SortState.none) {
       newSortState = SortState.ascending;
@@ -254,7 +228,6 @@ class _PreferredfoodscategoryTableState
     }
 
     setState(() {
-      // 선택한 열에 대한 상태만 업데이트
       for (var column in columns) {
         if (column['name'] == columnName) {
           column['state'] = newSortState;
@@ -263,9 +236,8 @@ class _PreferredfoodscategoryTableState
         }
       }
 
-      // 정렬 동작
       if (newSortState == SortState.none) {
-        userData = List.from(originalData); // 원본 데이터로 복원
+        userData = List.from(originalData);
       } else {
         userData.sort((a, b) {
           int result = a[columnName].compareTo(b[columnName]);
@@ -285,7 +257,6 @@ class _PreferredfoodscategoryTableState
           scrollDirection: Axis.horizontal,
           child: Column(
             children: [
-              // 제목이 있는 행
               Table(
                 border: TableBorder(
                   horizontalInside: BorderSide(width: 1, color: Colors.black),
@@ -342,8 +313,6 @@ class _PreferredfoodscategoryTableState
                   ),
                 ],
               ),
-
-              // 입력 필드들이 들어간 행
               Table(
                 border: TableBorder(
                   horizontalInside: BorderSide(width: 1, color: Colors.black),

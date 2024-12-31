@@ -75,13 +75,8 @@ Future<void> fetchKakaoUserInfo() async {
     final kakao.User kakaoUser = await kakao.UserApi.instance.me();
     final String? nickname = kakaoUser.kakaoAccount?.profile?.nickname;
     final String? email = kakaoUser.kakaoAccount?.email;
-    final String? gender = kakaoUser.kakaoAccount?.gender?.toString(); // 성별
-    final String? birthYear = kakaoUser.kakaoAccount?.birthyear; // 출생연도
-
-    print('카카오 사용자 닉네임: $nickname');
-    print('카카오 사용자 이메일: $email');
-    print('카카오 사용자 성별: $gender');
-    print('카카오 사용자 출생연도: $birthYear');
+    final String? gender = kakaoUser.kakaoAccount?.gender?.toString();
+    final String? birthYear = kakaoUser.kakaoAccount?.birthyear;
   } catch (e) {
     print('카카오 사용자 정보 가져오기 오류: $e');
   }

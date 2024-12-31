@@ -13,29 +13,10 @@ class _AdminDashboardUsageMetricsState
   final bool isShowingMainData = true;
   String selectedPeriod = '전체';
 
-  // Future<Map<String, int>> fetchTotalData() async {
-  //   final recipesCollection = FirebaseFirestore.instance.collection('recipe');
-  //   final recordsCollection = FirebaseFirestore.instance.collection('record');
-  //
-  //   // 레시피 갯수 가져오기
-  //   final recipeCount =
-  //       await recipesCollection.get().then((snapshot) => snapshot.size);
-  //
-  //   // 기록 갯수 가져오기
-  //   final recordCount =
-  //       await recordsCollection.get().then((snapshot) => snapshot.size);
-  //
-  //   return {
-  //     'recipes': recipeCount,
-  //     'records': recordCount,
-  //   };
-  // }
-
   Future<Map<String, int>> fetchMonthlyData(String collectionName) async {
     final collection = FirebaseFirestore.instance.collection(collectionName);
     final querySnapshot = await collection.get();
 
-    // 월별 게시글 수 계산
     final Map<String, int> monthlyCounts = {};
 
     for (var doc in querySnapshot.docs) {
@@ -53,22 +34,18 @@ class _AdminDashboardUsageMetricsState
   List<FlSpot> calculateCumulativeData(Map<String, int> monthlyData) {
     int cumulativeCount = 0;
 
-    // 1월부터 12월까지 반복하며 데이터 생성
     return List.generate(12, (monthIndex) {
       final monthKey = '2024-${(monthIndex + 1).toString().padLeft(2, '0')}';
       cumulativeCount += monthlyData[monthKey] ?? 0;
 
-      // X축 값을 월 인덱스로 고유하게 설정
       return FlSpot((monthIndex + 1).toDouble(), cumulativeCount.toDouble());
     });
   }
 
   Future<List<LineChartBarData>> buildCumulativeChartData() async {
-    // 레시피 및 기록 데이터를 가져오기
     final recipeData = await fetchMonthlyData('recipe');
     final recordData = await fetchMonthlyData('record');
 
-    // 누적 데이터를 계산
     final recipeSpots = calculateCumulativeData(recipeData);
     final recordSpots = calculateCumulativeData(recordData);
 
@@ -194,10 +171,13 @@ class _AdminDashboardUsageMetricsState
                                   reservedSize: 30,
                                   getTitlesWidget: (value, meta) {
                                     // value는 X축의 플롯 위치, 정수값만 처리
-                                    if (value % 1 == 0 && value >= 1 && value <= 12) {
+                                    if (value % 1 == 0 &&
+                                        value >= 1 &&
+                                        value <= 12) {
                                       return SideTitleWidget(
                                         axisSide: meta.axisSide,
-                                        child: Text('${value.toInt()}월', style: TextStyle(fontSize: 12)),
+                                        child: Text('${value.toInt()}월',
+                                            style: TextStyle(fontSize: 12)),
                                       );
                                     }
                                     return SideTitleWidget(
@@ -208,7 +188,8 @@ class _AdminDashboardUsageMetricsState
                                 ),
                               ),
                               topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false), // 상단 숫자 제거
+                                sideTitles:
+                                    SideTitles(showTitles: false), // 상단 숫자 제거
                               ),
                               leftTitles: AxisTitles(
                                 sideTitles: SideTitles(showTitles: false),

@@ -11,7 +11,6 @@ class FridgeName {
     required this.userId,
   });
 
-  // Firestore 데이터를 가져올 때 사용하는 팩토리 메서드
   factory FridgeName.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
     return FridgeName(
@@ -21,7 +20,6 @@ class FridgeName {
     );
   }
 
-  // Firestore에 데이터를 저장할 때 사용하는 메서드
   Map<String, dynamic> toFirestore() {
     return {
       'FridgeName': fridgeName, // Firestore에 저장할 필드

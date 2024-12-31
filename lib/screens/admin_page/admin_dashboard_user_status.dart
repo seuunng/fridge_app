@@ -14,7 +14,6 @@ class AdminDashboardUserStatus extends StatefulWidget {
 class _AdminDashboardUserStatusState extends State<AdminDashboardUserStatus> {
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: Text('사용자 수 현황'),

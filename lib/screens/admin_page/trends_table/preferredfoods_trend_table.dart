@@ -9,14 +9,12 @@ class PreferredfoodsTrendTable extends StatefulWidget {
 }
 
 class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
-  // 각 열에 대한 정렬 상태를 관리하는 리스트
   List<Map<String, dynamic>> columns = [
     {'name': '순위', 'state': SortState.none},
     {'name': '선호식품 카테고리', 'state': SortState.none},
     {'name': '생성횟수', 'state': SortState.none},
   ];
 
-  // 사용자 데이터
   List<Map<String, dynamic>> userData = [
     {
       '순위': 1,
@@ -43,16 +41,14 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
           column['state'] = currentState == SortState.none
               ? SortState.ascending
               : (currentState == SortState.ascending
-              ? SortState.descending
-              : SortState.none);
+                  ? SortState.descending
+                  : SortState.none);
         } else {
           column['state'] = SortState.none;
         }
       }
 
-      // 정렬 수행
       if (currentState == SortState.none) {
-        // 정렬 없으면 원래 데이터 순서 유지
         userData.sort((a, b) => a['순위'].compareTo(b['순위']));
       } else {
         userData.sort((a, b) {
@@ -69,7 +65,7 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: EdgeInsets.only(top:1),
+        padding: EdgeInsets.only(top: 1),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
@@ -84,8 +80,8 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
                         column['state'] == SortState.ascending
                             ? Icons.arrow_upward
                             : column['state'] == SortState.descending
-                            ? Icons.arrow_downward
-                            : Icons.sort,
+                                ? Icons.arrow_downward
+                                : Icons.sort,
                         size: 16,
                       ),
                     ],

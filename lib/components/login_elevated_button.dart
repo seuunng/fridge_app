@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:food_for_later_new/screens/recipe/view_research_list.dart'; // ViewResearchList 경로 맞게 수정
 
 class LoginElevatedButton extends StatelessWidget {
   final String buttonTitle;
@@ -15,7 +14,6 @@ class LoginElevatedButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -36,7 +34,7 @@ class LoginElevatedButton extends StatelessWidget {
             Image.asset(
               image,
               height: 20, // 이미지 높이 조절
-              width: 20,  // 이미지 너비 조절
+              width: 20, // 이미지 너비 조절
             ),
             SizedBox(width: 8),
             Flexible(

@@ -9,7 +9,7 @@ class RecipeTrendTable extends StatefulWidget {
 }
 
 class _RecipeTrendTableState extends State<RecipeTrendTable> {
-  List<Map<String, dynamic>> userData  = [];
+  List<Map<String, dynamic>> userData = [];
 
   @override
   void initState() {
@@ -20,7 +20,7 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
   void _loadSearchRecipeTrends() async {
     final trends = await _fetchSearchTrends();
     setState(() {
-      userData  = trends;
+      userData = trends;
     });
   }
 
@@ -43,8 +43,9 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
           '순위': rank++,
           '제목': data['recipeName'] ?? 'N/A',
           '닉네임': data['userID'] ?? 'N/A',
-          '작성일': (data['date'] as Timestamp?)?.toDate().toString().split(
-              ' ')[0] ?? '알 수 없음',
+          '작성일':
+              (data['date'] as Timestamp?)?.toDate().toString().split(' ')[0] ??
+                  '알 수 없음',
           '조회수': data['views'] ?? 0,
           '스크랩': stats['scrapedCount'],
           '좋아요': stats['likedCount'],
@@ -145,10 +146,10 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
 
   @override
   Widget build(BuildContext context) {
-    return  Align(
+    return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: EdgeInsets.only(top:1),
+        padding: EdgeInsets.only(top: 1),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(

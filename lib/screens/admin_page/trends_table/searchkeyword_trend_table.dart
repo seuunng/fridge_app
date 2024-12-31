@@ -10,7 +10,7 @@ class SearchkeywordTrendTable extends StatefulWidget {
 }
 
 class _SearchkeywordTrendTableState extends State<SearchkeywordTrendTable> {
-  List<Map<String, dynamic>> userData  = [];
+  List<Map<String, dynamic>> userData = [];
 
   @override
   void initState() {
@@ -21,7 +21,7 @@ class _SearchkeywordTrendTableState extends State<SearchkeywordTrendTable> {
   void _loadSearchTrends() async {
     final trends = await _fetchSearchTrends();
     setState(() {
-      userData  = trends;
+      userData = trends;
     });
   }
 
@@ -47,31 +47,13 @@ class _SearchkeywordTrendTableState extends State<SearchkeywordTrendTable> {
       return [];
     }
   }
+
   // 각 열에 대한 정렬 상태를 관리하는 리스트
   List<Map<String, dynamic>> columns = [
     {'name': '순위', 'state': SortState.none},
     {'name': '키워드', 'state': SortState.none},
     {'name': '검색횟수', 'state': SortState.none},
   ];
-
-  // 사용자 데이터
-  // List<Map<String, dynamic>> userData = [
-  //   {
-  //     '순위': 1,
-  //     '키워드': '탄탄멘',
-  //     '검색횟수': 300,
-  //   },
-  //   {
-  //     '순위': 2,
-  //     '키워드': '마라',
-  //     '검색횟수': 300,
-  //   },
-  //   {
-  //     '순위': 3,
-  //     '키워드': '다이어트',
-  //     '검색횟수': 300,
-  //   },
-  // ];
 
   void _sortBy(String columnName, SortState currentState) {
     setState(() {
@@ -88,9 +70,7 @@ class _SearchkeywordTrendTableState extends State<SearchkeywordTrendTable> {
         }
       }
 
-      // 정렬 수행
       if (currentState == SortState.none) {
-        // 정렬 없으면 원래 데이터 순서 유지
         userData.sort((a, b) => a['순위'].compareTo(b['순위']));
       } else {
         userData.sort((a, b) {
@@ -107,7 +87,7 @@ class _SearchkeywordTrendTableState extends State<SearchkeywordTrendTable> {
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: EdgeInsets.only(top:1),
+        padding: EdgeInsets.only(top: 1),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(

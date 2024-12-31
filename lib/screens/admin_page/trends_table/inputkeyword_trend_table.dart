@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 enum SortState { none, ascending, descending }
 
 class InputkeywordTrendTable extends StatefulWidget {
-
   @override
-  _InputkeywordTrendTableState createState() =>
-      _InputkeywordTrendTableState();
+  _InputkeywordTrendTableState createState() => _InputkeywordTrendTableState();
 }
 
 class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
@@ -33,7 +31,6 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
           .orderBy('count', descending: true) // 검색 횟수 기준 내림차순 정렬
           .limit(10) // 상위 10개만 가져옴
           .get();
-
       return snapshot.docs.map((doc) {
         final data = doc.data();
         return {
@@ -55,25 +52,6 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
     {'name': '입력횟수', 'state': SortState.none},
   ];
 
-  // 사용자 데이터
-  // List<Map<String, dynamic>> userData = [
-  //   {
-  //     '순위': 1,
-  //     '키워드': '탄탄멘',
-  //     '입력횟수': 300,
-  //   },
-  //   {
-  //     '순위': 2,
-  //     '키워드': '마라',
-  //     '입력횟수': 300,
-  //   },
-  //   {
-  //     '순위': 3,
-  //     '키워드': '다이어트',
-  //     '입력횟수': 300,
-  //   },
-  // ];
-
   void _sortBy(String columnName, SortState currentState) {
     setState(() {
       // 열의 정렬 상태를 업데이트
@@ -82,16 +60,14 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
           column['state'] = currentState == SortState.none
               ? SortState.ascending
               : (currentState == SortState.ascending
-              ? SortState.descending
-              : SortState.none);
+                  ? SortState.descending
+                  : SortState.none);
         } else {
           column['state'] = SortState.none;
         }
       }
 
-      // 정렬 수행
       if (currentState == SortState.none) {
-        // 정렬 없으면 원래 데이터 순서 유지
         searchTrends.sort((a, b) => a['순위'].compareTo(b['순위']));
       } else {
         searchTrends.sort((a, b) {
@@ -108,7 +84,7 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: EdgeInsets.only(top:1),
+        padding: EdgeInsets.only(top: 1),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
@@ -123,8 +99,8 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
                         column['state'] == SortState.ascending
                             ? Icons.arrow_upward
                             : column['state'] == SortState.descending
-                            ? Icons.arrow_downward
-                            : Icons.sort,
+                                ? Icons.arrow_downward
+                                : Icons.sort,
                         size: 16,
                       ),
                     ],

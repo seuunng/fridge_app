@@ -21,7 +21,6 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
   SortState _dateSortState = SortState.none;
 
   List<Map<String, dynamic>> feedbackData = [];
-  // 원본 데이터 복사본 유지 (정렬 없음을 처리하기 위해)
   late List<Map<String, dynamic>> originalData;
 
   @override
@@ -79,25 +78,16 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
     final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm');
     return formatter.format(dateTime);
   }
-  // 검색 필터 적용
-  // List<Map<String, dynamic>> filteredData = feedbackData.where((row) {
-  //   final lowerSearchQuery = searchQuery.toLowerCase();
-  //   return row['title']!.toLowerCase().contains(lowerSearchQuery) ||
-  //       row['author']!.toLowerCase().contains(lowerSearchQuery);
-  // }).toList();
 
   void _sortByTitle() {
     setState(() {
       if (_titleSortState == SortState.none) {
-        // 가나다순 정렬
         feedbackData.sort((a, b) => a['title']!.compareTo(b['title']!));
         _titleSortState = SortState.ascending;
       } else if (_titleSortState == SortState.ascending) {
-        // 역가나다순 정렬
         feedbackData.sort((a, b) => b['title']!.compareTo(a['title']!));
         _titleSortState = SortState.descending;
       } else {
-        // 정렬 없음을 선택하면 원래 데이터로 복원
         feedbackData = List.from(originalData);
         _titleSortState = SortState.none;
       }
@@ -107,15 +97,12 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
   void _sortByNumber() {
     setState(() {
       if (_numberSortState == SortState.none) {
-        // 가나다순 정렬
         feedbackData.sort((a, b) => a['연번']!.compareTo(b['연번']!));
         _numberSortState = SortState.ascending;
       } else if (_numberSortState == SortState.ascending) {
-        // 역가나다순 정렬
         feedbackData.sort((a, b) => b['연번']!.compareTo(a['연번']!));
         _numberSortState = SortState.descending;
       } else {
-        // 정렬 없음을 선택하면 원래 데이터로 복원
         feedbackData = List.from(originalData);
         _numberSortState = SortState.none;
       }
@@ -125,15 +112,12 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
   void _sortByAuthor() {
     setState(() {
       if (_authorSortState == SortState.none) {
-        // 가나다순 정렬
         feedbackData.sort((a, b) => a['author']!.compareTo(b['author']!));
         _authorSortState = SortState.ascending;
       } else if (_authorSortState == SortState.ascending) {
-        // 역가나다순 정렬
         feedbackData.sort((a, b) => b['author']!.compareTo(a['author']!));
         _authorSortState = SortState.descending;
       } else {
-        // 정렬 없음을 선택하면 원래 데이터로 복원
         feedbackData = List.from(originalData);
         _authorSortState = SortState.none;
       }
@@ -143,15 +127,12 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
   void _sortByResult() {
     setState(() {
       if (_resultSortState == SortState.none) {
-        // 가나다순 정렬
         feedbackData.sort((a, b) => a['status']!.compareTo(b['status']!));
         _resultSortState = SortState.ascending;
       } else if (_resultSortState == SortState.ascending) {
-        // 역가나다순 정렬
         feedbackData.sort((a, b) => b['status']!.compareTo(a['status']!));
         _resultSortState = SortState.descending;
       } else {
-        // 정렬 없음을 선택하면 원래 데이터로 복원
         feedbackData = List.from(originalData);
         _resultSortState = SortState.none;
       }
@@ -183,7 +164,6 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
         });
         _dateSortState = SortState.descending;
       } else {
-        // 정렬 없음을 선택하면 원래 데이터로 복원
         feedbackData = List.from(originalData);
         _dateSortState = SortState.none;
       }
@@ -355,7 +335,6 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                             _loadFeedbackDataFromFirestore();
                           }
                         } else {
-                          // null인 경우에 대한 처리
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('제목 또는 내용이 없습니다.')),
                           );
@@ -378,20 +357,4 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
       ]),
     );
   }
-
-  // DateTime? _parseDate(String? dateString) {
-  //   if (dateString == null) {
-  //     return null; // 날짜가 없으면 null 반환
-  //   }
-  //   try {
-  //     List<String> parts = dateString.split('/'); // "2024.12.32"를 "." 기준으로 나누기
-  //     int year = int.parse(parts[0]);
-  //     int month = int.parse(parts[1]);
-  //     int day = int.parse(parts[2]);
-  //
-  //     return DateTime(year, month, day);
-  //   } catch (e) {
-  //     return DateTime.now(); // 파싱 실패 시 현재 날짜 반환
-  //   }
-  // }
 }

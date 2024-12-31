@@ -1,13 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
-import 'package:food_for_later_new/models/default_food_model.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/fridge_category_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
-import 'package:food_for_later_new/screens/admin_page/admin_main_page.dart';
 import 'package:intl/intl.dart';
 
 class AddItemToCategory extends StatefulWidget {
@@ -29,14 +25,11 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
   List<ShoppingCategory> shoppingListCategories = [];
   ShoppingCategory? selectedShoppingListCategory;
 
-  // int expirationDays = 1; // 유통기한 기본값
   int consumptionDays = 1; // 품질유지기한 기본값
 
-  // 입력 필드 컨트롤러
   TextEditingController foodNameController = TextEditingController();
   TextEditingController dateController = TextEditingController(); // 등록일 컨트롤러
 
-  // 현재 날짜
   DateTime currentDate = DateTime.now();
 
   @override
@@ -48,7 +41,6 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
     _loadShoppingListCategoriesFromFirestore();
   }
 
-  // 기본식품 카테고리
   void _loadFoodsCategoriesFromFirestore() async {
     try {
       final snapshot =
@@ -90,11 +82,9 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
     }
   }
 
-  // 냉장고 카테고리
   Future<void> _loadFridgeCategoriesFromFirestore() async {
     final snapshot =
-        await FirebaseFirestore.instance.collection('fridge_categories')
-            .get();
+        await FirebaseFirestore.instance.collection('fridge_categories').get();
 
     final categories = snapshot.docs.map((doc) {
       return FridgeCategory.fromFirestore(doc);
@@ -104,7 +94,6 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
     });
   }
 
-  // 쇼핑리스트 카테고리
   Future<void> _loadShoppingListCategoriesFromFirestore() async {
     final snapshot = await FirebaseFirestore.instance
         .collection('shopping_categories')
@@ -118,7 +107,6 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
     });
   }
 
-  // 날짜 선택 함수
   Future<void> _selectDate(BuildContext context) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -219,18 +207,24 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
             SizedBox(height: 20),
             Row(
               children: [
-                Text('냉장고 카테고리', style: TextStyle(fontSize: 18,
-                  color: theme.colorScheme.onSurface)),
+                Text('냉장고 카테고리',
+                    style: TextStyle(
+                        fontSize: 18, color: theme.colorScheme.onSurface)),
                 Spacer(),
                 DropdownButton<FridgeCategory>(
                   value: selectedFridgeCategory,
-                  hint: Text('카테고리 선택',
-                    style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),),
+                  hint: Text(
+                    '카테고리 선택',
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                  ),
                   items: fridgeCategories.map((FridgeCategory value) {
                     return DropdownMenuItem<FridgeCategory>(
                       value: value,
-                      child: Text(value.categoryName,
-                        style: TextStyle(color: theme.colorScheme.onSurface),),
+                      child: Text(
+                        value.categoryName,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
                     );
                   }).toList(),
                   onChanged: (FridgeCategory? newValue) {
@@ -244,20 +238,23 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
             SizedBox(height: 20),
             Row(
               children: [
-                Text('장보기 카테고리', style: TextStyle(
-                    fontSize: 18,
-                    color: theme.colorScheme.onSurface)),
+                Text('장보기 카테고리',
+                    style: TextStyle(
+                        fontSize: 18, color: theme.colorScheme.onSurface)),
                 Spacer(),
                 DropdownButton<ShoppingCategory>(
                   value: selectedShoppingListCategory,
-                  hint: Text('카테고리 선택', style: TextStyle(
-                      fontSize: 18,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                  hint: Text('카테고리 선택',
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6))),
                   items: shoppingListCategories.map((ShoppingCategory value) {
                     return DropdownMenuItem<ShoppingCategory>(
                       value: value,
-                      child: Text(value.categoryName,
-                        style: TextStyle(color: theme.colorScheme.onSurface),),
+                      child: Text(
+                        value.categoryName,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
                     );
                   }).toList(),
                   onChanged: (ShoppingCategory? newValue) {
@@ -269,39 +266,11 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
               ],
             ),
             SizedBox(height: 20),
-            // Row(
-            //   children: [
-            //     Text('유통기한', style: TextStyle(fontSize: 18)),
-            //     Spacer(),
-            //     Row(
-            //       children: [
-            //         IconButton(
-            //           icon: Icon(Icons.remove),
-            //           onPressed: () {
-            //             setState(() {
-            //               if (expirationDays > 1) expirationDays--;
-            //             });
-            //           },
-            //         ),
-            //         Text('$expirationDays 일', style: TextStyle(fontSize: 18)),
-            //         IconButton(
-            //           icon: Icon(Icons.add),
-            //           onPressed: () {
-            //             setState(() {
-            //               expirationDays++;
-            //             });
-            //           },
-            //         ),
-            //       ],
-            //     ),
-            //   ],
-            // ),
-            // SizedBox(height: 20),
-            // 소비기한 선택 드롭다운
             Row(
               children: [
-                Text('품질유지기한', style: TextStyle(fontSize: 18,
-                    color: theme.colorScheme.onSurface)),
+                Text('품질유지기한',
+                    style: TextStyle(
+                        fontSize: 18, color: theme.colorScheme.onSurface)),
                 Spacer(),
                 Row(
                   children: [
@@ -313,8 +282,9 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                         });
                       },
                     ),
-                    Text('$consumptionDays 일', style: TextStyle(fontSize: 18,
-                        color: theme.colorScheme.onSurface)),
+                    Text('$consumptionDays 일',
+                        style: TextStyle(
+                            fontSize: 18, color: theme.colorScheme.onSurface)),
                     IconButton(
                       icon: Icon(Icons.add),
                       onPressed: () {

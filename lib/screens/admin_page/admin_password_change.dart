@@ -7,11 +7,12 @@ class AdminPasswordChange extends StatefulWidget {
 }
 
 class _AdminPasswordChangeState extends State<AdminPasswordChange> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
-  // 비밀번호 확인 함수
   void _handleSubmit() {
     String currentPassword = _currentPasswordController.text;
     String newPassword = _newPasswordController.text;
@@ -25,7 +26,7 @@ class _AdminPasswordChangeState extends State<AdminPasswordChange> {
       _showSuccessDialog("비밀번호가 성공적으로 변경되었습니다.");
     }
   }
-// 경고 메시지 다이얼로그 함수
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -44,7 +45,6 @@ class _AdminPasswordChangeState extends State<AdminPasswordChange> {
     );
   }
 
-  // 성공 메시지 다이얼로그 함수
   void _showSuccessDialog(String message) {
     showDialog(
       context: context,
@@ -64,12 +64,12 @@ class _AdminPasswordChangeState extends State<AdminPasswordChange> {
     );
   }
 
-  // 입력 필드 초기화 함수
   void _clearFields() {
     _currentPasswordController.clear();
     _newPasswordController.clear();
     _confirmPasswordController.clear();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,7 +118,7 @@ class _AdminPasswordChangeState extends State<AdminPasswordChange> {
                   _handleSubmit(); // 엔터키를 누르면 호출되는 함수
                 },
               ),
-              SizedBox(height: 15),// 버튼 위에 30픽셀 간격 추가
+              SizedBox(height: 15), // 버튼 위에 30픽셀 간격 추가
             ],
           ),
         ),
@@ -130,8 +130,7 @@ class _AdminPasswordChangeState extends State<AdminPasswordChange> {
           width: double.infinity,
           child: NavbarButton(
             buttonTitle: '비밀번호 변경',
-            onPressed: () {
-            },
+            onPressed: () {},
           ),
         ),
       ),

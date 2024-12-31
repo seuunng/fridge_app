@@ -9,7 +9,8 @@ class ShoppingCategory {
     required this.categoryName,
   });
 
-  factory ShoppingCategory.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory ShoppingCategory.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
     return ShoppingCategory(
       id: doc.id, // Firestore 문서 ID
@@ -17,7 +18,6 @@ class ShoppingCategory {
     );
   }
 
-  // Firestore에 데이터를 저장할 때 사용하는 메서드
   Map<String, dynamic> toFirestore() {
     return {
       'CategoryName': categoryName, // Firestore에 저장될 필드
@@ -38,9 +38,9 @@ List<ShoppingCategory> generateDefaultCategories() {
     '기타'
   ];
 
-  // 고유 ID를 생성하기 위해 Firestore의 doc ID 사용
   return defaultCategories.map((categoryName) {
-    String categoryId = FirebaseFirestore.instance.collection('shopping_categories').doc().id;
+    String categoryId =
+        FirebaseFirestore.instance.collection('shopping_categories').doc().id;
     return ShoppingCategory(
       id: categoryId,
       categoryName: categoryName,

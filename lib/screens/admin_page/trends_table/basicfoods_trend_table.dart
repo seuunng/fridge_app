@@ -4,19 +4,16 @@ enum SortState { none, ascending, descending }
 
 class BasicfoodsTrendTable extends StatefulWidget {
   @override
-  _BasicfoodsTrendTableState createState() =>
-      _BasicfoodsTrendTableState();
+  _BasicfoodsTrendTableState createState() => _BasicfoodsTrendTableState();
 }
 
 class _BasicfoodsTrendTableState extends State<BasicfoodsTrendTable> {
-  // 각 열에 대한 정렬 상태를 관리하는 리스트
   List<Map<String, dynamic>> columns = [
     {'name': '순위', 'state': SortState.none},
     {'name': '식품명', 'state': SortState.none},
     {'name': '생성횟수', 'state': SortState.none},
   ];
 
-  // 사용자 데이터
   List<Map<String, dynamic>> userData = [
     {
       '순위': 1,
@@ -37,22 +34,19 @@ class _BasicfoodsTrendTableState extends State<BasicfoodsTrendTable> {
 
   void _sortBy(String columnName, SortState currentState) {
     setState(() {
-      // 열의 정렬 상태를 업데이트
       for (var column in columns) {
         if (column['name'] == columnName) {
           column['state'] = currentState == SortState.none
               ? SortState.ascending
               : (currentState == SortState.ascending
-              ? SortState.descending
-              : SortState.none);
+                  ? SortState.descending
+                  : SortState.none);
         } else {
           column['state'] = SortState.none;
         }
       }
 
-      // 정렬 수행
       if (currentState == SortState.none) {
-        // 정렬 없으면 원래 데이터 순서 유지
         userData.sort((a, b) => a['순위'].compareTo(b['순위']));
       } else {
         userData.sort((a, b) {
@@ -69,7 +63,7 @@ class _BasicfoodsTrendTableState extends State<BasicfoodsTrendTable> {
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: EdgeInsets.only(top:1),
+        padding: EdgeInsets.only(top: 1),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
@@ -84,8 +78,8 @@ class _BasicfoodsTrendTableState extends State<BasicfoodsTrendTable> {
                         column['state'] == SortState.ascending
                             ? Icons.arrow_upward
                             : column['state'] == SortState.descending
-                            ? Icons.arrow_downward
-                            : Icons.sort,
+                                ? Icons.arrow_downward
+                                : Icons.sort,
                         size: 16,
                       ),
                     ],

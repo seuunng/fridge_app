@@ -19,12 +19,11 @@ class BasicElevatedButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        // backgroundColor: theme.colorScheme.primaryContainer, // 배경 색상
-        // foregroundColor: theme.colorScheme.onPrimaryContainer, // 텍스트 색상
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10), // 둥근 모서리
         ),
-        padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 18.0), // 버튼 패딩
+        padding:
+            EdgeInsets.symmetric(vertical: 12.0, horizontal: 18.0), // 버튼 패딩
         elevation: 5, // 그림자 높이
       ),
       child: Row(

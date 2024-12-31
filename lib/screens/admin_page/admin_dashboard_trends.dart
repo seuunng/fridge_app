@@ -50,7 +50,6 @@ class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
   }
 
   String _getPageTitle() {
-    // 페이지 번호에 따라 제목을 반환
     switch (_currentPage) {
       case 0:
         return '인기 키워드';

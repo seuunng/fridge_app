@@ -34,7 +34,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
   void initState() {
     super.initState();
     _loadMethodsData();
-    // _addSampleData();
   }
 
   Future<void> _loadMethodsData() async {
@@ -62,7 +61,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
     });
   }
 
-  // 사용자 데이터를 추가하는 함수
   void _addMethod(String newMethod) async {
     try {
       final documentId = '0scwOYhAXemUyvkwqpQ1';
@@ -76,7 +74,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
           'method': FieldValue.arrayUnion([newMethod]), // 배열에 새로운 항목 추가
         });
       } else {
-        // 문서가 없으면 새로 생성
         await snapshot.set({
           'method': [newMethod], // 새로 문서를 만들고 첫 번째 항목으로 추가
         });
@@ -176,7 +173,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
     }
   }
 
-  // 체크박스를 사용해 선택한 행 삭제
   void _deleteSelectedRows(String methodToDelete, String documentId) async {
     bool shouldDelete = await showDialog(
         context: context,
@@ -202,19 +198,12 @@ class _HowtocookTableState extends State<HowtocookTable> {
         });
     if (shouldDelete == true) {
       try {
-        // Firestore의 해당 문서 참조
         final docRef = FirebaseFirestore.instance
             .collection('recipe_method_categories')
             .doc(documentId);
-
-        // Firestore에서 배열의 특정 항목 삭제
         await docRef.update({
           'method': FieldValue.arrayRemove([methodToDelete]) // 배열에서 특정 항목 삭제
         });
-
-        print('$methodToDelete 항목이 삭제되었습니다.');
-
-        // 로컬 데이터에서도 삭제할 수 있도록 필요 시 여기에 추가로 처리
         setState(() {
           userData.removeWhere((item) => item['조리방법명'] == methodToDelete);
         });
@@ -225,7 +214,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
   }
 
   void _sortBy(String columnName, SortState currentState) {
-    // 정렬 상태 변경 로직
     SortState newSortState;
     if (currentState == SortState.none) {
       newSortState = SortState.ascending;
@@ -236,7 +224,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
     }
 
     setState(() {
-      // 선택한 열에 대한 상태만 업데이트
       for (var column in columns) {
         if (column['name'] == columnName) {
           column['state'] = newSortState;
@@ -245,9 +232,8 @@ class _HowtocookTableState extends State<HowtocookTable> {
         }
       }
 
-      // 정렬 동작
       if (newSortState == SortState.none) {
-        userData = List.from(originalData); // 원본 데이터로 복원
+        userData = List.from(originalData);
       } else {
         userData.sort((a, b) {
           int result = a[columnName].compareTo(b[columnName]);
@@ -259,7 +245,7 @@ class _HowtocookTableState extends State<HowtocookTable> {
 
   void _refreshTable() async {
     await _loadMethodsData();
-    setState(() {}); // 화면을 새로고침
+    setState(() {});
   }
 
   void _clearFields() {
@@ -276,7 +262,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
           scrollDirection: Axis.horizontal,
           child: Column(
             children: [
-              // 제목이 있는 행
               Table(
                 border: TableBorder(
                   horizontalInside: BorderSide(width: 1, color: Colors.black),
@@ -332,8 +317,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
                   ),
                 ],
               ),
-
-              // 입력 필드들이 들어간 행
               Table(
                 border: TableBorder(
                   horizontalInside: BorderSide(width: 1, color: Colors.black),
@@ -392,8 +375,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
                           height: 30, // 버튼의 높이를 설정
                           child: BasicElevatedButton(
                               onPressed: () {
-                                // final TextEditingController themesNameController = TextEditingController();
-
                                 if (isEditing) {
                                   if (selectedThemesIndex != null) {
                                     _updateMethod(selectedThemesIndex!,
@@ -417,8 +398,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
                   ),
                 ],
               ),
-
-              // 데이터가 추가되는 테이블
               Table(
                 border: TableBorder(
                   horizontalInside: BorderSide(width: 1, color: Colors.black),
@@ -485,8 +464,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
                           // 삭제할 조리방법명과 documentId를 가져옵니다.
                           final methodToDelete = userData[index]['조리방법명'];
                           final documentId = userData[index]['documentId'];
-
-                          // 각 행의 method와 documentId를 사용해 삭제
                           _deleteSelectedRows(methodToDelete, documentId);
                         }
                       }

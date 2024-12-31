@@ -1,9 +1,8 @@
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class UserAge extends StatefulWidget {
-UserAge({super.key});
+  UserAge({super.key});
   final Color leftBarColor = Colors.blue;
   final Color rightBarColor = Colors.red;
   final Color avgColor = Colors.orange;
@@ -50,141 +49,116 @@ class UserAgeState extends State<UserAge> {
     return Padding(
       padding: const EdgeInsets.only(left: 12.0, right: 12.0),
       child: Container(
-          constraints: BoxConstraints(
-            maxWidth: double.infinity, // 부모 컨테이너의 가로를 채움
-            maxHeight: 300, // 최대 세로 크기
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white, // 배경색 설정
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.5),
-                spreadRadius: 5,
-                blurRadius: 7,
-                offset: Offset(0, 3), // 그림자 위치
-              ),
-            ],
-          ),
+        constraints: BoxConstraints(
+          maxWidth: double.infinity, // 부모 컨테이너의 가로를 채움
+          maxHeight: 300, // 최대 세로 크기
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white, // 배경색 설정
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 5,
+              blurRadius: 7,
+              offset: Offset(0, 3), // 그림자 위치
+            ),
+          ],
+        ),
         padding: const EdgeInsets.only(top: 12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              child: BarChart(
+                BarChartData(
+                  maxY: 20,
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: ((group) {
+                        return Colors.grey;
+                      }),
+                      getTooltipItem: (a, b, c, d) => null,
+                    ),
+                    touchCallback: (FlTouchEvent event, response) {
+                      if (response == null || response.spot == null) {
+                        setState(() {
+                          touchedGroupIndex = -1;
+                          showingBarGroups = List.of(rawBarGroups);
+                        });
+                        return;
+                      }
 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  // makeTransactionsIcon(),
-                  // const SizedBox(
-                  //   width: 38,
-                  // ),
-                  // const Text(
-                  //   'Transactions',
-                  //   style: TextStyle(color: Colors.white, fontSize: 22),
-                  // ),
-                  // const SizedBox(
-                  //   width: 4,
-                  // ),
-                  // const Text(
-                  //   'state',
-                  //   style: TextStyle(color: Color(0xff77839a), fontSize: 16),
-                  // ),
-                ],
-              ),
-              // const SizedBox(
-              //   height: 38,
-              // ),
-              Expanded(
-                child: BarChart(
-                  BarChartData(
-                    maxY: 20,
-                    barTouchData: BarTouchData(
-                      touchTooltipData: BarTouchTooltipData(
-                        getTooltipColor: ((group) {
-                          return Colors.grey;
-                        }),
-                        getTooltipItem: (a, b, c, d) => null,
-                      ),
-                      touchCallback: (FlTouchEvent event, response) {
-                        if (response == null || response.spot == null) {
-                          setState(() {
-                            touchedGroupIndex = -1;
-                            showingBarGroups = List.of(rawBarGroups);
-                          });
+                      touchedGroupIndex = response.spot!.touchedBarGroupIndex;
+
+                      setState(() {
+                        if (!event.isInterestedForInteractions) {
+                          touchedGroupIndex = -1;
+                          showingBarGroups = List.of(rawBarGroups);
                           return;
                         }
-
-                        touchedGroupIndex = response.spot!.touchedBarGroupIndex;
-
-                        setState(() {
-                          if (!event.isInterestedForInteractions) {
-                            touchedGroupIndex = -1;
-                            showingBarGroups = List.of(rawBarGroups);
-                            return;
+                        showingBarGroups = List.of(rawBarGroups);
+                        if (touchedGroupIndex != -1) {
+                          var sum = 0.0;
+                          for (final rod
+                              in showingBarGroups[touchedGroupIndex].barRods) {
+                            sum += rod.toY;
                           }
-                          showingBarGroups = List.of(rawBarGroups);
-                          if (touchedGroupIndex != -1) {
-                            var sum = 0.0;
-                            for (final rod
-                            in showingBarGroups[touchedGroupIndex].barRods) {
-                              sum += rod.toY;
-                            }
-                            final avg = sum /
-                                showingBarGroups[touchedGroupIndex]
-                                    .barRods
-                                    .length;
+                          final avg = sum /
+                              showingBarGroups[touchedGroupIndex]
+                                  .barRods
+                                  .length;
 
-                            showingBarGroups[touchedGroupIndex] =
-                                showingBarGroups[touchedGroupIndex].copyWith(
-                                  barRods: showingBarGroups[touchedGroupIndex]
-                                      .barRods
-                                      .map((rod) {
-                                    return rod.copyWith(
-                                        toY: avg, color: widget.avgColor);
-                                  }).toList(),
-                                );
-                          }
-                        });
-                      },
-                    ),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: bottomTitles,
-                          reservedSize: 42,
-                        ),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: false,
-                          reservedSize: 28,
-                          interval: 1,
-                          getTitlesWidget: leftTitles,
-                        ),
-                      ),
-                    ),
-                    borderData: FlBorderData(
-                      show: false,
-                    ),
-                    barGroups: showingBarGroups,
-                    gridData: const FlGridData(show: false),
+                          showingBarGroups[touchedGroupIndex] =
+                              showingBarGroups[touchedGroupIndex].copyWith(
+                            barRods: showingBarGroups[touchedGroupIndex]
+                                .barRods
+                                .map((rod) {
+                              return rod.copyWith(
+                                  toY: avg, color: widget.avgColor);
+                            }).toList(),
+                          );
+                        }
+                      });
+                    },
                   ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: bottomTitles,
+                        reservedSize: 42,
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: false,
+                        reservedSize: 28,
+                        interval: 1,
+                        getTitlesWidget: leftTitles,
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: false,
+                  ),
+                  barGroups: showingBarGroups,
+                  gridData: const FlGridData(show: false),
                 ),
               ),
-              const SizedBox(
-                height: 12,
-              ),
-            ],
-          ),
-
+            ),
+            const SizedBox(
+              height: 12,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -213,7 +187,15 @@ class UserAgeState extends State<UserAge> {
   }
 
   Widget bottomTitles(double value, TitleMeta meta) {
-    final titles = <String>['10대 이하', '20대', '30대', '40대', '50대', '60대', '70대 이상'];
+    final titles = <String>[
+      '10대 이하',
+      '20대',
+      '30대',
+      '40대',
+      '50대',
+      '60대',
+      '70대 이상'
+    ];
 
     final Widget text = Text(
       titles[value.toInt()],

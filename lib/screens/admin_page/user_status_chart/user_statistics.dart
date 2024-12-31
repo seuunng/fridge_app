@@ -25,15 +25,12 @@ class _UserStatisticsState extends State<UserStatistics> {
   }
 
   Future<void> _fetchUserStats() async {
-    // Firestore에서 데이터 가져오기
     final snapshot = await FirebaseFirestore.instance.collection('users').get();
     Map<String, int> dateCount = {};
 
-    // 1년 전 날짜 계산
     DateTime now = DateTime.now();
     DateTime oneYearAgo = DateTime(now.year - 1, now.month);
 
-    // 날짜별로 사용자 수 집계
     for (var doc in snapshot.docs) {
       final signUpDateRaw = doc.data()['signupdate'];
       final signUpDate = signUpDateRaw is Timestamp
@@ -43,7 +40,6 @@ class _UserStatisticsState extends State<UserStatistics> {
       if (signUpDate.isAfter(oneYearAgo) && signUpDate.isBefore(now)) {
         final dateKey = DateFormat('yyyy-MM').format(signUpDate);
 
-        // 해당 날짜의 사용자 수를 증가
         if (dateCount.containsKey(dateKey)) {
           dateCount[dateKey] = dateCount[dateKey]! + 1;
         } else {
@@ -51,17 +47,16 @@ class _UserStatisticsState extends State<UserStatistics> {
         }
       }
     }
-// 누락된 달을 0으로 초기화하여 12개월 데이터를 유지
+
     Map<String, int> completeDateCount = {};
     for (int i = 11; i >= 0; i--) {
       DateTime month = DateTime(now.year, now.month - i, 1);
       String dateKey = DateFormat('yyyy-MM').format(month);
       completeDateCount[dateKey] = dateCount[dateKey] ?? 0;
     }
-    // 누적 합계로 변환
+
     List<FlSpot> spots = [];
     int cumulativeCount = 0;
-    // int dayIndex = 0;
 
     completeDateCount.entries.toList().asMap().forEach((index, entry) {
       cumulativeCount += entry.value; // 누적 합계 계산
@@ -72,7 +67,6 @@ class _UserStatisticsState extends State<UserStatistics> {
       _userStats = spots;
     });
   }
-  // bool showAvg = false;
 
   @override
   Widget build(BuildContext context) {
@@ -102,8 +96,9 @@ class _UserStatisticsState extends State<UserStatistics> {
               minX: 0,
               maxX: _userStats.isNotEmpty ? _userStats.length.toDouble() : 12,
               minY: 0,
-              maxY:  (_userStats.isNotEmpty
-                  ? _userStats.map((e) => e.y).reduce((a, b) => a > b ? a : b) + 5
+              maxY: (_userStats.isNotEmpty
+                  ? _userStats.map((e) => e.y).reduce((a, b) => a > b ? a : b) +
+                      5
                   : 10),
               gridData: FlGridData(
                 show: false,

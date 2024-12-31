@@ -10,7 +10,6 @@ class UserTable extends StatefulWidget {
 }
 
 class _UserTableState extends State<UserTable> {
-  // 초기 사용자 데이터 빈 리스트로 설정
   List<Map<String, dynamic>> userData = [];
 
   @override
@@ -19,11 +18,9 @@ class _UserTableState extends State<UserTable> {
     fetchUserData();
   }
 
-  // Firestore에서 사용자 데이터를 가져오는 함수
   Future<void> fetchUserData() async {
     final snapshot = await FirebaseFirestore.instance.collection('users').get();
 
-    // 모든 비동기 작업을 리스트로 저장
     final futures = snapshot.docs.asMap().entries.map((entry) async {
       final index = entry.key + 1; // 1부터 시작하는 연번
       final data = entry.value.data();
@@ -34,7 +31,6 @@ class _UserTableState extends State<UserTable> {
       final formattedDate = DateFormat('yyyy-MM-dd').format(signUpDate);
       final userId = entry.value.id;
 
-      // 각 컬렉션에서 사용자의 데이터 개수 세기
       final recipeCount = await FirebaseFirestore.instance
           .collection('recipe')
           .where('userID', isEqualTo: userId)
@@ -78,10 +74,8 @@ class _UserTableState extends State<UserTable> {
       };
     }).toList();
 
-    // 모든 비동기 작업이 완료될 때까지 기다린 후 userData에 할당
     userData = await Future.wait(futures);
 
-    // UI 갱신을 위해 setState 호출
     setState(() {});
   }
 
@@ -102,7 +96,6 @@ class _UserTableState extends State<UserTable> {
 
   void _sortBy(String columnName, SortState currentState) {
     setState(() {
-      // 열의 정렬 상태를 업데이트
       for (var column in columns) {
         if (column['name'] == columnName) {
           column['state'] = currentState == SortState.none
@@ -115,9 +108,7 @@ class _UserTableState extends State<UserTable> {
         }
       }
 
-      // 정렬 수행
       if (currentState == SortState.none) {
-        // 정렬 없으면 원래 데이터 순서 유지
         userData.sort((a, b) => a['연번'].compareTo(b['연번']));
       } else {
         userData.sort((a, b) {

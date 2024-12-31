@@ -18,11 +18,9 @@ class _ThemeTableState extends State<ThemeTable> {
     {'name': '변동', 'state': SortState.none}
   ];
 
-  // 사용자 데이터
   List<Map<String, dynamic>> userData = [];
   List<Map<String, dynamic>> originalData = [];
 
-  // 선택된 행의 인덱스를 저장하는 리스트
   List<int> selectedRows = [];
 
   bool isEditing = false;
@@ -34,7 +32,6 @@ class _ThemeTableState extends State<ThemeTable> {
   void initState() {
     super.initState();
     _loadThemesData();
-    // addSampleTheme();
   }
 
   Future<void> _loadThemesData() async {
@@ -74,7 +71,6 @@ class _ThemeTableState extends State<ThemeTable> {
     _themeNameController.clear();
   }
 
-// 데이터 수정 버튼 클릭 시 호출할 함수
   void _editTheme(int index) async {
     final selectedThemes = userData[index];
 
@@ -111,7 +107,6 @@ class _ThemeTableState extends State<ThemeTable> {
     }
   }
 
-  // 체크박스를 사용해 선택한 행 삭제
   void _deleteSelectedRows(int index) async {
     final selectedThemes = userData[index];
 
@@ -189,7 +184,7 @@ class _ThemeTableState extends State<ThemeTable> {
 
       // 정렬 동작
       if (newSortState == SortState.none) {
-        userData = List.from(originalData);  // 원본 데이터로 복원
+        userData = List.from(originalData); // 원본 데이터로 복원
       } else {
         userData.sort((a, b) {
           int result = a[columnName].compareTo(b[columnName]);
@@ -213,7 +208,7 @@ class _ThemeTableState extends State<ThemeTable> {
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: EdgeInsets.only(top:1),
+        padding: EdgeInsets.only(top: 1),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Column(
@@ -241,7 +236,8 @@ class _ThemeTableState extends State<ThemeTable> {
                                   width: 1, color: Colors.black), // 셀 아래 테두리 추가
                             ),
                           ),
-                          child: column['name'] == '선택' || column['name'] == '변동'
+                          child: column['name'] == '선택' ||
+                                  column['name'] == '변동'
                               ? Center(
                                   child: Text(column['name']),
                                 )
@@ -250,7 +246,8 @@ class _ThemeTableState extends State<ThemeTable> {
                                       _sortBy(column['name'], column['state']),
                                   child: Center(
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(column['name']),
                                         Icon(
@@ -272,8 +269,6 @@ class _ThemeTableState extends State<ThemeTable> {
                   ),
                 ],
               ),
-
-              // 입력 필드들이 들어간 행
               Table(
                 border: TableBorder(
                   horizontalInside: BorderSide(width: 1, color: Colors.black),
@@ -313,7 +308,8 @@ class _ThemeTableState extends State<ThemeTable> {
                                     icon: Icon(Icons.clear, size: 16),
                                     onPressed: () {
                                       setState(() {
-                                        _themeNameController.clear(); // 입력 필드 내용 삭제
+                                        _themeNameController
+                                            .clear(); // 입력 필드 내용 삭제
                                       });
                                     },
                                   )
@@ -392,7 +388,8 @@ class _ThemeTableState extends State<ThemeTable> {
                           verticalAlignment: TableCellVerticalAlignment.middle,
                           child: Container(
                               height: 40,
-                              child: Center(child: Text(row['연번'].toString())))),
+                              child:
+                                  Center(child: Text(row['연번'].toString())))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
                           child: Center(child: Text(row['테마명'].toString()))),
@@ -413,7 +410,9 @@ class _ThemeTableState extends State<ThemeTable> {
                   );
                 }).toList(),
               ),
-              SizedBox(height: 20,),
+              SizedBox(
+                height: 20,
+              ),
               // 선택한 행 삭제 버튼
               BasicElevatedButton(
                 onPressed: selectedRows.isNotEmpty
@@ -427,7 +426,9 @@ class _ThemeTableState extends State<ThemeTable> {
                 iconTitle: Icons.edit,
                 buttonTitle: '수정',
               ),
-              SizedBox(height: 20,),
+              SizedBox(
+                height: 20,
+              ),
             ],
           ),
         ),

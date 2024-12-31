@@ -70,7 +70,6 @@ class RecipeModel {
   @override
   int get hashCode => id.hashCode;
 
-  // Firestore에 저장할 때 사용할 메서드
   Map<String, dynamic> toFirestore() {
     return {
       'ID': id,

@@ -9,21 +9,17 @@ class AdminLogin extends StatefulWidget {
 class _AdminLoginState extends State<AdminLogin> {
   final TextEditingController _passwordController = TextEditingController();
 
-  // 비밀번호 확인 함수
   void _handleSubmit() {
     String password = _passwordController.text;
-    // 비밀번호 처리 로직 (예: 비밀번호 확인)
     if (password == '1111') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => AdminMainPage()), // 다음 페이지로 이동
       );
     } else {
-      // 비밀번호가 틀렸을 때 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('비밀번호가 올바르지 않습니다.')),
       );
-      // 추가 로직 구현 (로그인 처리 등)
     }
   }
 

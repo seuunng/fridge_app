@@ -3,8 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
-import 'package:food_for_later_new/models/default_food_model.dart';
-import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/items_in_fridge.dart';
 import 'package:food_for_later_new/models/recipe_method_model.dart';
 import 'package:food_for_later_new/models/recipe_thema_model.dart';
@@ -13,7 +11,6 @@ import 'package:food_for_later_new/screens/recipe/recipe_grid.dart';
 import 'package:food_for_later_new/screens/recipe/recipe_grid_theme.dart';
 import 'package:food_for_later_new/screens/recipe/view_research_list.dart';
 import 'package:food_for_later_new/screens/recipe/view_scrap_recipe_list.dart';
-import '../../models/recipe_model.dart';
 
 class RecipeMainPage extends StatefulWidget {
   final List<String> category;

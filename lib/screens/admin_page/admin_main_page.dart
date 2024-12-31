@@ -5,7 +5,6 @@ import 'package:food_for_later_new/screens/admin_page/admin_dashboard_trends.dar
 import 'package:food_for_later_new/screens/admin_page/admin_dashboard_user_status.dart';
 import 'package:food_for_later_new/screens/admin_page/admin_feedback_management.dart';
 import 'package:food_for_later_new/screens/admin_page/admin_password_change.dart';
-import 'package:food_for_later_new/screens/fridge/fridge_main_page.dart';
 import 'package:food_for_later_new/screens/home_screen.dart';
 
 class AdminMainPage extends StatefulWidget {
@@ -16,7 +15,6 @@ class AdminMainPage extends StatefulWidget {
 class _AdminMainPageState extends State<AdminMainPage> {
   int _selectedIndex = 0;
 
-  // 각 페이지를 리스트로 관리
   final List<Widget> _pages = [
     AdminDashboardUserStatus(),
     AdminDashboardUsageMetrics(),
@@ -64,8 +62,9 @@ class _AdminMainPageState extends State<AdminMainPage> {
                 Navigator.pop(context); // 사이드바 닫기
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()), // HomeScreen으로 이동
-                      (Route<dynamic> route) => false, // 현재의 모든 라우트를 제거
+                  MaterialPageRoute(
+                      builder: (context) => HomeScreen()), // HomeScreen으로 이동
+                  (Route<dynamic> route) => false, // 현재의 모든 라우트를 제거
                 );
               },
             ),

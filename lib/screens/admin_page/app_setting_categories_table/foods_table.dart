@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
-import 'package:food_for_later_new/models/default_food_model.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
 
@@ -13,7 +12,6 @@ class FoodsTable extends StatefulWidget {
 }
 
 class _FoodsTableState extends State<FoodsTable> {
-  // 각 열에 대한 정렬 상태를 관리하는 리스트
   List<Map<String, dynamic>> columns = [
     {'name': '선택', 'state': SortState.none},
     {'name': '연번', 'state': SortState.none},
@@ -21,7 +19,6 @@ class _FoodsTableState extends State<FoodsTable> {
     {'name': '식품명', 'state': SortState.none},
     {'name': '냉장고카테고리', 'state': SortState.none},
     {'name': '소비기한', 'state': SortState.none},
-    // {'name': '유통기한', 'state': SortState.none},
     {'name': '장보기카테고리', 'state': SortState.none},
     {'name': '변동', 'state': SortState.none}
   ];
@@ -32,18 +29,15 @@ class _FoodsTableState extends State<FoodsTable> {
   List<Map<String, dynamic>> originalData = [];
   List<int> selectedRows = [];
 
-  // 드롭다운 선택 항목들
   final List<String> categoryOptions = [];
   final List<String> fridgeCategoryOptions = ['냉장', '냉동', '실온'];
   final List<String> shoppingCategoryOptions = [];
   List<Map<String, dynamic>> _tableData = [];
 
-  // 선택된 값들을 저장할 변수들
   String? _selectedCategory;
   String? _selectedFridgeCategory;
   String? _selectedShoppingListCategory;
 
-// 추가할 때 사용할 입력 필드 컨트롤러들
   final TextEditingController _foodNameController = TextEditingController();
   final TextEditingController _shelfLifeController = TextEditingController();
   final TextEditingController _expirationDateController =
@@ -57,38 +51,6 @@ class _FoodsTableState extends State<FoodsTable> {
     _loadShoppingCategories();
     // addSampleFood();
   }
-
-  // 샘플데이터 입력 메서드
-  // Future<void> addFoodToFirestore(DefaultFoodModel foodModel) async {
-  //   final collectionRef = FirebaseFirestore.instance.collection('default_foods_categories');
-  //
-  //   try {
-  //     // Firestore에 데이터 추가
-  //     await collectionRef.add(foodModel.toFirestore());
-  //
-  //     print('데이터가 성공적으로 추가되었습니다.');
-  //   } catch (e) {
-  //     print('Firestore에 데이터를 추가하는 중 오류가 발생했습니다: $e');
-  //   }
-  // }
-  // void addSampleFood() async {
-  //   DefaultFoodModel newFood = DefaultFoodModel(
-  //     id: '1', // Firestore가 자동으로 id를 생성하기 때문에 굳이 넣을 필요는 없음.
-  //     categories: '육류', // 대분류 카테고리
-  //     itemsByCategory: [
-  //       {
-  //         'itemId': '1',
-  //         'itemName': '삼겹살',
-  //         'defaultFridgeCategory': '냉장',
-  //         'shoppingListCategory': '육류/수산',
-  //         'shelfLife': 5,
-  //         'expirationDate': 10,
-  //         'isDisabled': false,
-  //       },
-  //     ],
-  //   );
-  //   await addFoodToFirestore(newFood);
-  // }
 
   Future<void> _loadFoodsData() async {
     final snapshot = await FirebaseFirestore.instance.collection('foods').get();
@@ -106,7 +68,6 @@ class _FoodsTableState extends State<FoodsTable> {
         '냉장고카테고리': food.defaultFridgeCategory,
         '장보기카테고리': food.shoppingListCategory,
         '소비기한': food.shelfLife,
-        // '유통기한': food.expirationDate,
       });
       setState(() {
         userData = foods;
@@ -147,7 +108,6 @@ class _FoodsTableState extends State<FoodsTable> {
     });
   }
 
-  // 사용자 데이터를 추가하는 함수
   void _addFood(String categoryName, Map<String, dynamic> newItem) async {
     final snapshot = FirebaseFirestore.instance.collection('foods');
 
@@ -174,13 +134,11 @@ class _FoodsTableState extends State<FoodsTable> {
       _selectedFridgeCategory = selectedFood['냉장고카테고리'] ?? '';
       _selectedShoppingListCategory = selectedFood['장보기카테고리'] ?? '';
       _shelfLifeController.text = selectedFood['소비기한'].toString();
-      // _expirationDateController.text = selectedFood['유통기한'].toString();
     });
     isEditing = true;
     selectedFoodIndex = index;
   }
 
-  // 파이어베이스에 데이터를 수정해서 업데이트하는 함수
   void _updateFood(int index) async {
     final selectedFood = userData[index];
 
@@ -191,17 +149,13 @@ class _FoodsTableState extends State<FoodsTable> {
         _selectedShoppingListCategory ?? selectedFood['장보기카테고리'];
     final shelfLife =
         int.tryParse(_shelfLifeController.text) ?? selectedFood['소비기한'];
-    // final expirationDate =
-    //     int.tryParse(_expirationDateController.text) ?? selectedFood['유통기한'];
 
     try {
       if (selectedFood.containsKey('documentId')) {
-        // Firestore에서 foods 컬렉션을 참조
         final docRef = FirebaseFirestore.instance
             .collection('foods')
             .doc(selectedFood['documentId']); // 각 음식의 문서 ID
 
-        // Firestore에 데이터를 업데이트
         await docRef.update({
           'foodsName': foodName,
           'defaultCategory': category,
@@ -211,7 +165,6 @@ class _FoodsTableState extends State<FoodsTable> {
           // 'expirationDate': expirationDate,
         });
 
-        // 로컬 상태에서도 데이터 업데이트
         setState(() {
           userData[index] = {
             ...selectedFood,
@@ -220,7 +173,6 @@ class _FoodsTableState extends State<FoodsTable> {
             '냉장고카테고리': fridgeCategory,
             '장보기카테고리': shoppingListCategory,
             '소비기한': shelfLife,
-            // '유통기한': expirationDate,
           };
         });
       } else {
@@ -284,7 +236,6 @@ class _FoodsTableState extends State<FoodsTable> {
   }
 
   void _sortBy(String columnName, SortState currentState) {
-    // 정렬 상태 변경 로직
     SortState newSortState;
     if (currentState == SortState.none) {
       newSortState = SortState.ascending;
@@ -295,7 +246,6 @@ class _FoodsTableState extends State<FoodsTable> {
     }
 
     setState(() {
-      // 선택한 열에 대한 상태만 업데이트
       for (var column in columns) {
         if (column['name'] == columnName) {
           column['state'] = newSortState;
@@ -304,7 +254,6 @@ class _FoodsTableState extends State<FoodsTable> {
         }
       }
 
-      // 정렬 동작
       if (newSortState == SortState.none) {
         userData = List.from(originalData); // 원본 데이터로 복원
       } else {
@@ -354,7 +303,6 @@ class _FoodsTableState extends State<FoodsTable> {
                   3: FixedColumnWidth(100),
                   4: FixedColumnWidth(120),
                   5: FixedColumnWidth(80),
-                  // 6: FixedColumnWidth(80),
                   6: FixedColumnWidth(180),
                   7: FixedColumnWidth(80),
                 },
@@ -550,35 +498,6 @@ class _FoodsTableState extends State<FoodsTable> {
                           },
                         ),
                       ),
-                      // TableCell(
-                      //   child: TextField(
-                      //     controller: _expirationDateController,
-                      //     textAlign: TextAlign.center,
-                      //     keyboardType: TextInputType.number,
-                      //     decoration: InputDecoration(
-                      //       hintText: '유통기한',
-                      //       hintStyle: TextStyle(
-                      //         fontSize: 14, // 글씨 크기 줄이기
-                      //         color: Colors.grey, // 글씨 색상 회색으로
-                      //       ),
-                      //       suffixIcon:
-                      //           _expirationDateController.text.isNotEmpty
-                      //               ? IconButton(
-                      //                   icon: Icon(Icons.clear, size: 16),
-                      //                   onPressed: () {
-                      //                     setState(() {
-                      //                       _expirationDateController
-                      //                           .clear(); // 입력 필드 내용 삭제
-                      //                     });
-                      //                   },
-                      //                 )
-                      //               : null, // 내용이 없을 때는 버튼을 표시하지 않음
-                      //     ),
-                      //     onChanged: (value) {
-                      //       setState(() {}); // 입력 내용이 바뀔 때 상태 업데이트
-                      //     },
-                      //   ),
-                      // ),
                       TableCell(
                         verticalAlignment: TableCellVerticalAlignment.middle,
                         child: DropdownButtonFormField<String>(
@@ -642,7 +561,6 @@ class _FoodsTableState extends State<FoodsTable> {
                                     print('카테고리를 선택하세요.');
                                   }
                                 }
-
                                 setState(() {
                                   _clearFields();
                                   _refreshTable();
@@ -732,7 +650,9 @@ class _FoodsTableState extends State<FoodsTable> {
                   );
                 }).toList(),
               ),
-              SizedBox(height: 20,),
+              SizedBox(
+                height: 20,
+              ),
               // 선택한 행 삭제 버튼
               BasicElevatedButton(
                 onPressed: selectedRows.isNotEmpty
@@ -746,7 +666,9 @@ class _FoodsTableState extends State<FoodsTable> {
                 iconTitle: Icons.delete,
                 buttonTitle: '선택한 항목 삭제',
               ),
-              SizedBox(height: 20,),
+              SizedBox(
+                height: 20,
+              ),
             ],
           ),
         ),

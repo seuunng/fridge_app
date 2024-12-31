@@ -5,16 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:food_for_later_new/firebase_service.dart';
-import 'package:food_for_later_new/screens/auth/kakao_web_login.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:intl/intl.dart';
-import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao;
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/login_elevated_button.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart'; // WebView 사용
 import 'kakao_mobile_login.dart' if (dart.library.html) 'kakao_web_login.dart';
 import 'kakao_mobile_login.dart' as mobile;
 import 'kakao_web_login.dart' as web;
@@ -44,7 +41,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> addUserToFirestore(firebase_auth.User user,
-      {String? nickname, String? email, String? gender, String? birthYear}) async {
+      {String? nickname,
+      String? email,
+      String? gender,
+      String? birthYear}) async {
     final userDoc =
         FirebaseFirestore.instance.collection('users').doc(user.uid);
 
@@ -143,16 +143,19 @@ class _LoginPageState extends State<LoginPage> {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       await fetchGoogleUserInfo(googleAuth.accessToken!);
 
-      final firebase_auth.OAuthCredential credential = firebase_auth.GoogleAuthProvider.credential(
+      final firebase_auth.OAuthCredential credential =
+          firebase_auth.GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
       // Firebase에 사용자 인증
-      firebase_auth.UserCredential result = await _auth.signInWithCredential(credential);
+      firebase_auth.UserCredential result =
+          await _auth.signInWithCredential(credential);
       if (result.user != null) {
         await addUserToFirestore(result.user!); // Firestore에 사용자 추가
         await recordSessionStart();
@@ -184,14 +187,16 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> fetchGoogleUserInfo(String accessToken) async {
     final response = await http.get(
-      Uri.parse('https://people.googleapis.com/v1/people/me?personFields=genders,birthdays'),
+      Uri.parse(
+          'https://people.googleapis.com/v1/people/me?personFields=genders,birthdays'),
       headers: {'Authorization': 'Bearer $accessToken'},
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final String? gender = data['genders']?[0]['value']; // 성별
-      final String? birthYear = data['birthdays']?[0]['date']['year'].toString(); // 출생연도
+      final String? birthYear =
+          data['birthdays']?[0]['date']['year'].toString(); // 출생연도
 
       print('성별: $gender');
       print('출생연도: $birthYear');
@@ -342,7 +347,8 @@ class _LoginPageState extends State<LoginPage> {
   void assignRandomAvatarToUser(String userId) async {
     // 랜덤으로 아바타 선택
     int randomAvatarIndex = Random().nextInt(25) + 1; // 1~25 사이 랜덤 숫자
-    String avatarPath = 'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png';
+    String avatarPath =
+        'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png';
 
     // Firestore에 저장
     await FirebaseFirestore.instance

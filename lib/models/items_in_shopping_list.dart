@@ -6,7 +6,6 @@ class ItemsInShoppingList {
   final String userId;
   final bool isChecked;
 
-
   ItemsInShoppingList({
     required this.id,
     required this.items,
@@ -14,8 +13,8 @@ class ItemsInShoppingList {
     required this.isChecked,
   });
 
-  // Firestore 데이터를 가져올 때 사용하는 팩토리 메서드
-  factory ItemsInShoppingList.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory ItemsInShoppingList.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
     return ItemsInShoppingList(
       id: doc.id,
@@ -25,7 +24,6 @@ class ItemsInShoppingList {
     );
   }
 
-  // Firestore에 데이터를 저장할 때 사용하는 메서드
   Map<String, dynamic> toFirestore() {
     return {
       'Items': items,

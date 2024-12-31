@@ -13,7 +13,6 @@ class RecordCategoryModel {
     required this.color,
   });
 
-  // JSON 데이터를 객체로 변환하는 메서드
   factory RecordCategoryModel.fromJson(Map<String, dynamic> json) {
     return RecordCategoryModel(
       id: json['id'] as String,
@@ -23,7 +22,6 @@ class RecordCategoryModel {
     );
   }
 
-  // Firestore 문서를 객체로 변환하는 메서드
   factory RecordCategoryModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return RecordCategoryModel(
@@ -34,7 +32,6 @@ class RecordCategoryModel {
     );
   }
 
-  // 객체를 JSON 데이터로 변환하는 메서드
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -44,7 +41,6 @@ class RecordCategoryModel {
     };
   }
 
-  // 객체를 Firestore 문서로 변환하는 메서드
   Map<String, dynamic> toFirestore() {
     return {
       'zone': zone,
