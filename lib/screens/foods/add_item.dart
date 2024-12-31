@@ -389,6 +389,7 @@ class _AddItemState extends State<AddItem> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.pageTitle),
@@ -410,6 +411,7 @@ class _AddItemState extends State<AddItem> {
                         contentPadding: EdgeInsets.symmetric(
                             vertical: 8.0, horizontal: 10.0),
                       ),
+                      style: TextStyle(color: theme.chipTheme.labelStyle!.color),
                       onChanged: (value) {
                         _searchItems(value); // 검색어 입력 시 아이템 필터링
                       },

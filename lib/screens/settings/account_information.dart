@@ -24,6 +24,7 @@ class _AccountInformationState extends State<AccountInformation> {
   final TextEditingController _passwordController = TextEditingController();
   firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  String _avatar = 'assets/avatar/avatar-01.png';
 
   @override
   void initState() {
@@ -42,12 +43,14 @@ class _AccountInformationState extends State<AccountInformation> {
         setState(() {
           _email = userDoc.data()?['email'] ?? '이메일 없음';
           _nickname = userDoc.data()?['nickname'] ?? '닉네임 없음';
+          _avatar = userDoc.data()?['avatar'] ?? 'assets/avatar/avatar-01.png';
         });
       } else {
         // Firestore에 사용자 데이터가 없을 경우 기본값 설정
         setState(() {
           _email = userDoc.data()?['email'] ?? '이메일 없음';
           _nickname = userDoc.data()?['email']?.split('@')[0] ?? '닉네임 없음';
+          _avatar = userDoc.data()?['avatar'] ?? 'assets/avatar/avatar-01.png';
         });
       }
     }
@@ -173,6 +176,16 @@ class _AccountInformationState extends State<AccountInformation> {
               Row(
                 children: [
                   Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      _showAvatarChangeDialog(); // 아바타 변경 다이얼로그 호출
+                    },
+                    child: CircleAvatar(
+                      radius: 20, // 아바타 크기
+                      backgroundImage: AssetImage(_avatar),
+                    ),
+                  ),
+                  SizedBox(width: 10),
                   Text(
                     _nickname,
                     style: TextStyle(fontSize: 16,
@@ -286,11 +299,13 @@ class _AccountInformationState extends State<AccountInformation> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('${user?.email}로 전송합니다.'),
+                Text('${user?.email}로 전송합니다.',
+                    style: TextStyle(color: theme.colorScheme.onSurface)),
                 TextField(
                   controller: _passwordController,
                   decoration: InputDecoration(hintText: '현재 비밀번호를 입력하세요'),
                   obscureText: true,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                 ),
               ],
             ),
@@ -374,6 +389,7 @@ class _AccountInformationState extends State<AccountInformation> {
             controller: _nickNameController,
             // obscureText: true,
             decoration: InputDecoration(hintText: '새 닉네임을 입력하세요'),
+              style: TextStyle(color: theme.colorScheme.onSurface)
           ),
           actions: [
             TextButton(
@@ -462,6 +478,59 @@ class _AccountInformationState extends State<AccountInformation> {
                 Navigator.pop(context);
                 await _deleteAccount();
               },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  Future<void> _showAvatarChangeDialog() async {
+    final theme = Theme.of(context);
+    List<String> avatarList = List.generate(
+      25,
+          (index) => 'assets/avatar/avatar-${(index + 1).toString().padLeft(2, '0')}.png',
+    );
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('아바타 선택', style: TextStyle(color: theme.colorScheme.onSurface)),
+          content: Container(
+            width: double.maxFinite,
+            child: GridView.builder(
+              shrinkWrap: true,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5, // 한 줄에 5개의 아바타 표시
+                crossAxisSpacing: 5,
+                mainAxisSpacing: 5,
+              ),
+              itemCount: avatarList.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () async {
+                    String selectedAvatar = avatarList[index];
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user?.uid)
+                        .set({'avatar': selectedAvatar}, SetOptions(merge: true));
+                    setState(() {
+                      _avatar = selectedAvatar;
+                    });
+                    Navigator.pop(context); // 다이얼로그 닫기
+                  },
+                  child: CircleAvatar(
+                    radius: 30,
+                    backgroundImage: AssetImage(avatarList[index]),
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('닫기'),
+              onPressed: () => Navigator.pop(context),
             ),
           ],
         );

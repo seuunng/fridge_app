@@ -127,11 +127,11 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                   child: CircularProgressIndicator(),
                 );
               }
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Center(
-                  child: Text('데이터가 없습니다.'),
-                );
-              }
+              // if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              //   return Center(
+              //     child: Text('데이터가 없습니다.'),
+              //   );
+              // }
               // Firestore 데이터를 recordsList로 변환
               recordsList = _mapFirestoreToRecordsList(snapshot.data!);
 

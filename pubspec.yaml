@@ -100,6 +100,31 @@ flutter:
     - assets/images/google_logo.png
     - assets/images/kakao_talk_logo.png
     - assets/images/naver_logo.png
+    - assets/avatar/avatar-01.png
+    - assets/avatar/avatar-02.png
+    - assets/avatar/avatar-03.png
+    - assets/avatar/avatar-04.png
+    - assets/avatar/avatar-05.png
+    - assets/avatar/avatar-06.png
+    - assets/avatar/avatar-07.png
+    - assets/avatar/avatar-08.png
+    - assets/avatar/avatar-09.png
+    - assets/avatar/avatar-10.png
+    - assets/avatar/avatar-11.png
+    - assets/avatar/avatar-12.png
+    - assets/avatar/avatar-13.png
+    - assets/avatar/avatar-14.png
+    - assets/avatar/avatar-15.png
+    - assets/avatar/avatar-16.png
+    - assets/avatar/avatar-17.png
+    - assets/avatar/avatar-18.png
+    - assets/avatar/avatar-19.png
+    - assets/avatar/avatar-20.png
+    - assets/avatar/avatar-21.png
+    - assets/avatar/avatar-22.png
+    - assets/avatar/avatar-23.png
+    - assets/avatar/avatar-24.png
+    - assets/avatar/avatar-25.png
     - assets/fonts/
     - assets/env/.env
 

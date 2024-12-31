@@ -22,7 +22,6 @@ class _RecipeReviewState extends State<RecipeReview> {
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   TextEditingController reviewContentController = TextEditingController();
-  // bool isNiced = false; // 이미 좋아요를 눌렀는지 여부
 
   @override
   void initState() {
@@ -31,10 +30,12 @@ class _RecipeReviewState extends State<RecipeReview> {
   }
 
   void _loadReviewsFromFirestore() async {
+    print('_loadReviewsFromFirestore() 실행');
     List<Map<String, dynamic>> fetchedReviews = await fetchRecipeReviews();
     setState(() {
       recipeReviews = fetchedReviews;
     });
+    
   }
 
   Future<List<Map<String, dynamic>>> fetchRecipeReviews() async {
@@ -45,31 +46,54 @@ class _RecipeReviewState extends State<RecipeReview> {
               .where('recipeId', isEqualTo: widget.recipeId) // 실제 레시피 ID로 대체
               .get();
 
-      List<Map<String, dynamic>> recipeReviews = snapshot.docs.map((doc) {
+      List<Map<String, dynamic>> recipeReviews = [];
+
+      for (var doc in snapshot.docs) {
         Map<String, dynamic> data = doc.data();
-        data['docId'] = doc.id; // 각 리뷰의 Firestore 문서 ID를 추가
-        data['isNiced'] = false; // 기본값 false
-        return data;
-      }).toList();
+        data['docId'] = doc.id;
 
-      for (int i = 0; i < recipeReviews.length; i++) {
-        final String reviewId = recipeReviews[i]['reviewId'];
+        // 기본값 설정
+        data['isNiced'] = false; // 좋아요 상태
+        data['avatar'] = 'assets/avatar/avatar-01.png'; // 기본 아바타
+        data['nickname'] = 'Unknown User'; // 기본 닉네임
 
-        // niced_reviews에서 좋아요 상태를 확인
-        QuerySnapshot<Map<String, dynamic>> nicedSnapshot =
-            await FirebaseFirestore.instance
-                .collection('niced_reviews')
-                .where('recipeId', isEqualTo: widget.recipeId)
-                .where('reviewId', isEqualTo: reviewId)
-                .where('userId', isEqualTo: '현재 유저아이디') // 실제 유저 ID로 대체
-                .get();
+        // 2. 작성자의 아바타 가져오기
+        String? reviewUserId = data['userId'];
+        if (reviewUserId != null && reviewUserId.isNotEmpty) {
+          // userId가 있는 경우 Firestore에서 작성자 데이터 가져오기
+          DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(reviewUserId)
+              .get();
 
-        // 좋아요 상태를 반영
-        if (nicedSnapshot.docs.isNotEmpty) {
-          recipeReviews[i]['isNiced'] =
-              nicedSnapshot.docs.first.data()['isNiced'] ?? false;
+          if (userDoc.exists) {
+            data['avatar'] = userDoc.data()?['avatar'] ?? 'assets/avatar/avatar-01.png';
+            data['nickname'] = userDoc.data()?['nickname'] ?? 'Unknown User';
+          } else {
+            print('작성자 정보가 없습니다. userId: $reviewUserId');
+          }
+        } else {
+          // userId가 없으면 로그 출력
+          print('리뷰에 userId가 없습니다. reviewId: ${doc.id}');
         }
+        // 3. 현재 유저의 좋아요 상태 가져오기
+        QuerySnapshot<Map<String, dynamic>> nicedSnapshot = await FirebaseFirestore.instance
+            .collection('niced_reviews')
+            .where('recipeId', isEqualTo: widget.recipeId)
+            .where('reviewId', isEqualTo: data['reviewId'])
+            .where('userId', isEqualTo: userId) // 현재 로그인한 유저 ID
+            .get();
+
+        if (widget.recipeId.isEmpty || data['reviewId'] == null || userId.isEmpty) {
+          print('Error: recipeId, reviewId, or userId is missing!');
+        }
+        if (nicedSnapshot.docs.isNotEmpty) {
+          data['isNiced'] = true; // 좋아요 상태 업데이트
+        }
+
+        recipeReviews.add(data);
       }
+
 
       return recipeReviews;
     } catch (e) {
@@ -256,6 +280,8 @@ class _RecipeReviewState extends State<RecipeReview> {
                         List<String>.from(recipeReviews[index]['images'] ?? []);
                     final bool isAuthor =
                         recipeReviews[index]['userId'] == userId;
+                    final String avatar = recipeReviews[index]['avatar'];
+                    final String nickname = recipeReviews[index]['nickname']; // 작성자의 아바타
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -265,13 +291,15 @@ class _RecipeReviewState extends State<RecipeReview> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                CircleAvatar(child: Icon(Icons.person)),
+                                CircleAvatar(
+                                  radius: 20, // 아바타 크기
+                                  backgroundImage: AssetImage(avatar),),
                                 SizedBox(width: 10),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      recipeReviews[index]['userId']!,
+                                      nickname,
                                       style: TextStyle(fontSize: 12),
                                     ),
                                     SizedBox(width: 4),

@@ -187,7 +187,7 @@ class _RecordsListViewState extends State<RecordsListView> {
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             print('StreamBuilder: No data found');
             return Center(
-              child: Text('조건에 맞는 레코드가 없습니다.',
+              child: Text('조건에 맞는 기록이 없습니다.',
                   style: TextStyle(color: theme.colorScheme.onSurface)),
             );
           }

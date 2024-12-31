@@ -18,6 +18,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart'; // WebView 사�
 import 'kakao_mobile_login.dart' if (dart.library.html) 'kakao_web_login.dart';
 import 'kakao_mobile_login.dart' as mobile;
 import 'kakao_web_login.dart' as web;
+import 'dart:math'; // 여기 추가
 
 class LoginPage extends StatefulWidget {
   @override
@@ -107,6 +108,7 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (result.user != null) {
         await addUserToFirestore(result.user!); // Firestore에 사용자 추가
+        assignRandomAvatarToUser(result.user!.uid);
         Navigator.pushReplacementNamed(context, '/home');
       }
     } on firebase_auth.FirebaseAuthException catch (e) {
@@ -155,6 +157,7 @@ class _LoginPageState extends State<LoginPage> {
       if (result.user != null) {
         await addUserToFirestore(result.user!); // Firestore에 사용자 추가
         await recordSessionStart();
+        assignRandomAvatarToUser(result.user!.uid);
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
         }
@@ -246,6 +249,7 @@ class _LoginPageState extends State<LoginPage> {
               nickname: res.account.nickname,
               email: res.account.email,
             );
+            assignRandomAvatarToUser(firebaseUser.user!.uid);
             Navigator.pushReplacementNamed(context, '/home');
           }
         }
@@ -309,6 +313,17 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void assignRandomAvatarToUser(String userId) async {
+    // 랜덤으로 아바타 선택
+    int randomAvatarIndex = Random().nextInt(25) + 1; // 1~25 사이 랜덤 숫자
+    String avatarPath = 'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png';
+
+    // Firestore에 저장
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .set({'avatar': avatarPath}, SetOptions(merge: true));
+  }
 
   @override
   Widget build(BuildContext context) {

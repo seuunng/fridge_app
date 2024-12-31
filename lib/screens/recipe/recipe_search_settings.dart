@@ -16,8 +16,8 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // List<String> selectedSources = [];
-  List<String>? selectedCookingMethods = [];
-  List<String>? selectedPreferredFoodCategories = [];
+  List<String> selectedCookingMethods = [];
+  List<String> selectedPreferredFoodCategories = [];
 
   TextEditingController excludeKeywordController = TextEditingController();
 
@@ -135,10 +135,10 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
   Future<void> _loadSearchSettingsFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      selectedCookingMethods = prefs.getStringList('selectedCookingMethods');
+      selectedCookingMethods = prefs.getStringList('selectedCookingMethods') ?? [];
       selectedPreferredFoodCategories =
-          prefs.getStringList('selectedPreferredFoodCategories');
-      excludeKeywords = prefs.getStringList('excludeKeywords');
+          prefs.getStringList('selectedPreferredFoodCategories') ?? [];
+      excludeKeywords = prefs.getStringList('excludeKeywords') ?? [];
     });
   }
 
@@ -304,9 +304,9 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
               onSelected: (selected) {
                 setState(() {
                   if (selected) {
-                    selectedCookingMethods?.add(method);
+                    selectedCookingMethods.add(method);
                   } else {
-                    selectedCookingMethods?.remove(method);
+                    selectedCookingMethods.remove(method);
                   }
                 });
               },
@@ -348,10 +348,10 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
           selected: isSelected,
           onSelected: (selected) {
             setState(() {
-              if (selected) {
-                selectedPreferredFoodCategories?.add(categoryName);
+              if (selected && !selectedPreferredFoodCategories.contains(categoryName)) {
+                selectedPreferredFoodCategories.add(categoryName);
               } else {
-                selectedPreferredFoodCategories?.remove(categoryName);
+                selectedPreferredFoodCategories.remove(categoryName);
               }
             });
           },
