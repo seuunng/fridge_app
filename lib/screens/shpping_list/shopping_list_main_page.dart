@@ -324,10 +324,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                 .collection('foods')
                 .where('foodsName', isEqualTo: itemName)
                 .get();
-
-            print(
-                'matchingFood: ${matchingFood.docs.map((doc) => doc['foodsName']).join(', ')}');
-
             if (matchingFood.docs.isEmpty) {
               print("일치하는 음식이 없습니다: $itemName");
               continue;
@@ -349,16 +345,12 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
               );
               // 중복되어도 장보기 목록에서만 삭제
             } else {
-              print('냉장고에 추가 중: $itemName');
-              // 냉장고에 아이템 추가 (중복되지 않은 경우)
               await FirebaseFirestore.instance.collection('fridge_items').add({
                 'items': itemName,
                 'FridgeId': fridgeId, // 선택된 냉장고
                 'fridgeCategoryId': fridgeCategoryId,
                 'userId': userId,
                 'registrationDate': Timestamp.fromDate(DateTime.now()),
-                // 'expirationDate': expirationDate,
-                // 'shelfLife': shelfLife,
               });
             }
 
@@ -473,11 +465,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       );
     }
   }
-  // void _startDeleteMode() {
-  //   setState(() {
-  //     showCheckBoxes= true;
-  //   });
-  // }
 
 // 삭제 모드를 해제하고 애니메이션을 중지
   void stopShoppingListDeleteMode() {
@@ -524,7 +511,8 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                       return DropdownMenuItem(
                         value: section,
                         child: Text(section,
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                            style:
+                                TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(), // 반복문을 통해 DropdownMenuItem 생성
                     onChanged: (value) {
@@ -620,34 +608,32 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   // 각 섹션의 타이틀 빌드
   Widget _buildSectionTitle(String title) {
     final theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        bool isWeb = constraints.maxWidth > 600; // 웹 기준 너비 설정
-        double spacing = isWeb ? 4.0 : 8.0; // 웹에서는 더 좁은 간격
+    return LayoutBuilder(builder: (context, constraints) {
+      bool isWeb = constraints.maxWidth > 600; // 웹 기준 너비 설정
+      double spacing = isWeb ? 4.0 : 8.0; // 웹에서는 더 좁은 간격
 
-        return Padding(
-          padding: EdgeInsets.only(left: 8, top: spacing, bottom: spacing),
-          child: Row(
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface),
+      return Padding(
+        padding: EdgeInsets.only(left: 8, top: spacing, bottom: spacing),
+        child: Row(
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface),
+            ),
+            SizedBox(width: 10), // 제목과 수평선 사이 간격
+            Expanded(
+              child: Divider(
+                thickness: 2, // 수평선 두께
+                color: Colors.grey, // 수평선 색상
               ),
-              SizedBox(width: 10), // 제목과 수평선 사이 간격
-              Expanded(
-                child: Divider(
-                  thickness: 2, // 수평선 두께
-                  color: Colors.grey, // 수평선 색상
-                ),
-              ),
-            ],
-          ),
-        );
-      }
-    );
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   // 물건을 추가할 수 있는 그리드
@@ -668,98 +654,97 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           List<bool>.filled(items.length, false, growable: true); // 수정!
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        bool isWeb = constraints.maxWidth > 600;
-        double crossAxisSpacing = isWeb ? 4.0 : 8.0;
-        double mainAxisSpacing = isWeb ? 2.0 : 8.0;
-        double childAspectRatio = isWeb ? 12 : 9; // 웹에서 더 좁은 비율
+    return LayoutBuilder(builder: (context, constraints) {
+      bool isWeb = constraints.maxWidth > 600;
+      double crossAxisSpacing = isWeb ? 4.0 : 8.0;
+      double mainAxisSpacing = isWeb ? 2.0 : 8.0;
+      double childAspectRatio = isWeb ? 12 : 9; // 웹에서 더 좁은 비율
 
-        return Padding(
-          padding: EdgeInsets.only(left: 16),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.only(top: isWeb ? 2.0 : 8.0),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 1,
-              crossAxisSpacing: crossAxisSpacing,
-              mainAxisSpacing: mainAxisSpacing,
-              childAspectRatio: childAspectRatio,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    strikeThroughItems[category]![index] =
-                        !strikeThroughItems[category]![index];
-                    checkedItems[category]![index] =
-                        strikeThroughItems[category]![index]; // 취소선 상태에 따라 체크박스 업데이트
-
-                    // Firestore에서 isChecked 값 업데이트
-                    String itemName = items[index];
-                    _updateIsCheckedInFirestore(
-                        itemName, strikeThroughItems[category]![index]);
-                  });
-                },
-                onLongPress: () {
-                  setState(() {
-                    if (showCheckBoxes) {
-                      // 체크박스가 보이는 상태일 때 다시 누르면 체크박스 숨김
-                      showCheckBoxes = false;
-
-                      // 모든 checkedItems를 false로 초기화
-                      checkedItems.forEach((category, checkedList) {
-                        for (int i = 0; i < checkedList.length; i++) {
-                          checkedList[i] = false;
-                        }
-                      });
-
-                      // 냉장고로 이동 버튼을 감추기 위해 UI를 갱신
-                    } else {
-                      // 체크박스를 다시 보이게 할 때는 취소선이 있는 아이템 체크박스 true로 설정
-                      showCheckBoxes = true;
-                      _selectStrikeThroughItems(); // 취소선이 있는 아이템 체크박스 true
-                    }
-                  });
-                },
-                child: Container(
-                  padding: EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Row(
-                    children: [
-                      if (showCheckBoxes)
-                        Checkbox(
-                          value: checkedItems[category]![index], // 체크 상태
-                          onChanged: (bool? value) {
-                            setState(() {
-                              checkedItems[category]![index] = value!; // 체크박스 업데이트
-                            });
-                          },
-                        ),
-                      Expanded(
-                        child: Text(
-                          items[index],
-                          style: TextStyle(
-                              decoration: strikeThroughItems[category]![index]
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                              decorationThickness: 2.0, // 취소선의 두께
-                              decorationColor: theme.colorScheme.onSurface,
-                              color: theme.colorScheme.onSurface),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+      return Padding(
+        padding: EdgeInsets.only(left: 16),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.only(top: isWeb ? 2.0 : 8.0),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 1,
+            crossAxisSpacing: crossAxisSpacing,
+            mainAxisSpacing: mainAxisSpacing,
+            childAspectRatio: childAspectRatio,
           ),
-        );
-      }
-    );
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  strikeThroughItems[category]![index] =
+                      !strikeThroughItems[category]![index];
+                  checkedItems[category]![index] = strikeThroughItems[
+                      category]![index]; // 취소선 상태에 따라 체크박스 업데이트
+
+                  // Firestore에서 isChecked 값 업데이트
+                  String itemName = items[index];
+                  _updateIsCheckedInFirestore(
+                      itemName, strikeThroughItems[category]![index]);
+                });
+              },
+              onLongPress: () {
+                setState(() {
+                  if (showCheckBoxes) {
+                    // 체크박스가 보이는 상태일 때 다시 누르면 체크박스 숨김
+                    showCheckBoxes = false;
+
+                    // 모든 checkedItems를 false로 초기화
+                    checkedItems.forEach((category, checkedList) {
+                      for (int i = 0; i < checkedList.length; i++) {
+                        checkedList[i] = false;
+                      }
+                    });
+
+                    // 냉장고로 이동 버튼을 감추기 위해 UI를 갱신
+                  } else {
+                    // 체크박스를 다시 보이게 할 때는 취소선이 있는 아이템 체크박스 true로 설정
+                    showCheckBoxes = true;
+                    _selectStrikeThroughItems(); // 취소선이 있는 아이템 체크박스 true
+                  }
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Row(
+                  children: [
+                    if (showCheckBoxes)
+                      Checkbox(
+                        value: checkedItems[category]![index], // 체크 상태
+                        onChanged: (bool? value) {
+                          setState(() {
+                            checkedItems[category]![index] =
+                                value!; // 체크박스 업데이트
+                          });
+                        },
+                      ),
+                    Expanded(
+                      child: Text(
+                        items[index],
+                        style: TextStyle(
+                            decoration: strikeThroughItems[category]![index]
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                            decorationThickness: 2.0, // 취소선의 두께
+                            decorationColor: theme.colorScheme.onSurface,
+                            color: theme.colorScheme.onSurface),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    });
   }
 }

@@ -2,8 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
-import 'package:food_for_later_new/models/record_category_model.dart';
-import 'package:food_for_later_new/screens/admin_page/admin_main_page.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,7 +35,7 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
       final snapshot = await _db
           .collection('record_categories')
           .where('userId', isEqualTo: userId)
-          .where('isDeleted', isEqualTo: false)// 최신순 정렬
+          .where('isDeleted', isEqualTo: false) // 최신순 정렬
           .get();
 
       if (snapshot.docs.isEmpty) {
@@ -49,9 +47,8 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
           final data = doc.data();
           return {
             'category': data['zone'] ?? '기록 없음',
-            'fields': data['units'] != null
-                ? List<String>.from(data['units'])
-                : [],
+            'fields':
+                data['units'] != null ? List<String>.from(data['units']) : [],
             'color': data['color'] != null
                 ? Color(int.parse(data['color'].replaceFirst('#', '0xff')))
                 : Colors.grey,
@@ -59,16 +56,19 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
         }).toList();
 
         final prefs = await SharedPreferences.getInstance();
-        final localSelectedCategories = prefs.getStringList('selectedCategories') ?? [];
+        final localSelectedCategories =
+            prefs.getStringList('selectedCategories') ?? [];
 
         // 카테고리를 categoryOptions에 반영
         setState(() {
           categoryOptions = {
             for (var category in categories)
-              category['category']: localSelectedCategories.contains(category['category']),
+              category['category']:
+                  localSelectedCategories.contains(category['category']),
           };
 
-          categoryOptions['모두'] = localSelectedCategories.length == categories.length;
+          categoryOptions['모두'] =
+              localSelectedCategories.length == categories.length;
 
           // "모두" 옵션 추가
           selectedCategories = localSelectedCategories.isEmpty
@@ -83,6 +83,7 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
       );
     }
   }
+
   Future<void> _createDefaultCategories() async {
     try {
       final defaultCategories = [
@@ -107,7 +108,7 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
           'color': category['color'],
           'userId': userId,
           'createdAt': FieldValue.serverTimestamp(), // 생성 시간 추가
-          'isDeleted':  category['isDeleted'],
+          'isDeleted': category['isDeleted'],
         });
       }
 
@@ -122,7 +123,8 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
 
   Future<void> _loadSearchSettingsFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
-    final localSelectedCategories = prefs.getStringList('selectedCategories') ?? [];
+    final localSelectedCategories =
+        prefs.getStringList('selectedCategories') ?? [];
 
     setState(() {
       selectedCategories = localSelectedCategories;
@@ -137,7 +139,6 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
       endDate = endDateString != null && endDateString.isNotEmpty
           ? DateTime.parse(endDateString)
           : DateTime.now();
-
     });
   }
 
@@ -178,8 +179,6 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
           }
         } else {
           if (selectedCategories.length <= 1) {
-            print('(categoryOptions $categoryOptions');
-            // 최소 하나의 카테고리가 선택되어야 함
             print('카테고리는 하나 이상 선택해야 합니다.');
             categoryOptions[category] = true; // 해제 방지
             return;
@@ -242,7 +241,9 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
           children: [
             Text(
               '카테고리 선택',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface),
             ),
             Wrap(
@@ -263,11 +264,11 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                       category,
                       style: isSelected
                           ? theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.chipTheme.secondaryLabelStyle?.color,
-                      )
+                              color: theme.chipTheme.secondaryLabelStyle?.color,
+                            )
                           : theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.chipTheme.labelStyle?.color,
-                      ),
+                              color: theme.chipTheme.labelStyle?.color,
+                            ),
                     ),
                     selected: isSelected,
                     onSelected: (selected) {
@@ -283,7 +284,9 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
             // 제외 검색어 선택
             Text(
               '기간 선택',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface),
             ),
             Column(
@@ -370,14 +373,18 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                 Expanded(
                   child: Text(
                     '시작 날짜',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                         color: theme.colorScheme.onSurface),
                   ),
                 ),
                 Expanded(
                   child: Text(
                     '끝 날짜',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                         color: theme.colorScheme.onSurface),
                   ),
                 ),
@@ -390,8 +397,8 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                     startDate != null
                         ? DateFormat('yyyy-MM-dd').format(startDate!)
                         : '날짜를 선택하세요',
-                    style: TextStyle(fontSize: 16,
-                        color: theme.colorScheme.onSurface),
+                    style: TextStyle(
+                        fontSize: 16, color: theme.colorScheme.onSurface),
                   ),
                 ),
                 Expanded(
@@ -406,8 +413,8 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                     endDate != null
                         ? DateFormat('yyyy-MM-dd').format(endDate!)
                         : '날짜를 선택하세요',
-                    style: TextStyle(fontSize: 16,
-                        color: theme.colorScheme.onSurface),
+                    style: TextStyle(
+                        fontSize: 16, color: theme.colorScheme.onSurface),
                   ),
                 ),
                 Expanded(

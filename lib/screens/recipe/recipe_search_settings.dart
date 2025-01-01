@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/preferred_food_model.dart';
 import 'package:food_for_later_new/models/recipe_method_model.dart';
-import 'package:food_for_later_new/screens/admin_page/admin_main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RecipeSearchSettings extends StatefulWidget {
@@ -69,26 +68,24 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
         // 데이터가 없는 경우 기본 데이터 추가
         await _addDefaultPreferredCategories();
       } else {
+        final categories = snapshot.docs.map((doc) {
+          return PreferredFoodModel.fromFirestore(doc.data());
+        }).toList();
 
-      final categories = snapshot.docs.map((doc) {
-        return PreferredFoodModel.fromFirestore(doc.data());
-      }).toList();
+        setState(() {
+          itemsByPreferredCategory = {};
 
-      setState(() {
-        itemsByPreferredCategory = {};
-
-        for (var categoryModel in categories) {
-          categoryModel.categoryName.forEach((categoryName, itemList) {
-            if (itemsByPreferredCategory.containsKey(categoryName)) {
-              itemsByPreferredCategory[categoryName]!.add(categoryModel);
-            } else {
-              itemsByPreferredCategory[categoryName] = [categoryModel];
-            }
-          });
-        }
-      });
+          for (var categoryModel in categories) {
+            categoryModel.categoryName.forEach((categoryName, itemList) {
+              if (itemsByPreferredCategory.containsKey(categoryName)) {
+                itemsByPreferredCategory[categoryName]!.add(categoryModel);
+              } else {
+                itemsByPreferredCategory[categoryName] = [categoryModel];
+              }
+            });
+          }
+        });
       }
-      // print(itemsByPreferredCategory);
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -96,11 +93,16 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
       );
     }
   }
+
   Future<void> _addDefaultPreferredCategories() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
       final defaultCategories = {
-        '알러지': ['우유', '계란', '땅콩',],
+        '알러지': [
+          '우유',
+          '계란',
+          '땅콩',
+        ],
         '유제품': ['우유', '치즈', '요거트'],
         '비건': ['육류', '해산물', '유제품', '계란', '꿀'],
         '무오신채': ['마늘', '양파', '부추', '파', '달래'],
@@ -132,10 +134,12 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
       );
     }
   }
+
   Future<void> _loadSearchSettingsFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      selectedCookingMethods = prefs.getStringList('selectedCookingMethods') ?? [];
+      selectedCookingMethods =
+          prefs.getStringList('selectedCookingMethods') ?? [];
       selectedPreferredFoodCategories =
           prefs.getStringList('selectedPreferredFoodCategories') ?? [];
       excludeKeywords = prefs.getStringList('excludeKeywords') ?? [];
@@ -294,11 +298,11 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
                 method,
                 style: isSelected
                     ? theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.chipTheme.secondaryLabelStyle?.color,
-                )
+                        color: theme.chipTheme.secondaryLabelStyle?.color,
+                      )
                     : theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.chipTheme.labelStyle?.color,
-                ),
+                        color: theme.chipTheme.labelStyle?.color,
+                      ),
               ),
               selected: isSelected,
               onSelected: (selected) {
@@ -348,7 +352,8 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
           selected: isSelected,
           onSelected: (selected) {
             setState(() {
-              if (selected && !selectedPreferredFoodCategories.contains(categoryName)) {
+              if (selected &&
+                  !selectedPreferredFoodCategories.contains(categoryName)) {
                 selectedPreferredFoodCategories.add(categoryName);
               } else {
                 selectedPreferredFoodCategories.remove(categoryName);

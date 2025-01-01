@@ -30,12 +30,10 @@ class _RecipeReviewState extends State<RecipeReview> {
   }
 
   void _loadReviewsFromFirestore() async {
-    print('_loadReviewsFromFirestore() 실행');
     List<Map<String, dynamic>> fetchedReviews = await fetchRecipeReviews();
     setState(() {
       recipeReviews = fetchedReviews;
     });
-    
   }
 
   Future<List<Map<String, dynamic>>> fetchRecipeReviews() async {
@@ -61,30 +59,34 @@ class _RecipeReviewState extends State<RecipeReview> {
         String? reviewUserId = data['userId'];
         if (reviewUserId != null && reviewUserId.isNotEmpty) {
           // userId가 있는 경우 Firestore에서 작성자 데이터 가져오기
-          DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(reviewUserId)
-              .get();
+          DocumentSnapshot<Map<String, dynamic>> userDoc =
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(reviewUserId)
+                  .get();
 
           if (userDoc.exists) {
-            data['avatar'] = userDoc.data()?['avatar'] ?? 'assets/avatar/avatar-01.png';
+            data['avatar'] =
+                userDoc.data()?['avatar'] ?? 'assets/avatar/avatar-01.png';
             data['nickname'] = userDoc.data()?['nickname'] ?? 'Unknown User';
           } else {
             print('작성자 정보가 없습니다. userId: $reviewUserId');
           }
         } else {
-          // userId가 없으면 로그 출력
           print('리뷰에 userId가 없습니다. reviewId: ${doc.id}');
         }
         // 3. 현재 유저의 좋아요 상태 가져오기
-        QuerySnapshot<Map<String, dynamic>> nicedSnapshot = await FirebaseFirestore.instance
-            .collection('niced_reviews')
-            .where('recipeId', isEqualTo: widget.recipeId)
-            .where('reviewId', isEqualTo: data['reviewId'])
-            .where('userId', isEqualTo: userId) // 현재 로그인한 유저 ID
-            .get();
+        QuerySnapshot<Map<String, dynamic>> nicedSnapshot =
+            await FirebaseFirestore.instance
+                .collection('niced_reviews')
+                .where('recipeId', isEqualTo: widget.recipeId)
+                .where('reviewId', isEqualTo: data['reviewId'])
+                .where('userId', isEqualTo: userId) // 현재 로그인한 유저 ID
+                .get();
 
-        if (widget.recipeId.isEmpty || data['reviewId'] == null || userId.isEmpty) {
+        if (widget.recipeId.isEmpty ||
+            data['reviewId'] == null ||
+            userId.isEmpty) {
           print('Error: recipeId, reviewId, or userId is missing!');
         }
         if (nicedSnapshot.docs.isNotEmpty) {
@@ -93,7 +95,6 @@ class _RecipeReviewState extends State<RecipeReview> {
 
         recipeReviews.add(data);
       }
-
 
       return recipeReviews;
     } catch (e) {
@@ -281,7 +282,8 @@ class _RecipeReviewState extends State<RecipeReview> {
                     final bool isAuthor =
                         recipeReviews[index]['userId'] == userId;
                     final String avatar = recipeReviews[index]['avatar'];
-                    final String nickname = recipeReviews[index]['nickname']; // 작성자의 아바타
+                    final String nickname =
+                        recipeReviews[index]['nickname']; // 작성자의 아바타
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -293,7 +295,8 @@ class _RecipeReviewState extends State<RecipeReview> {
                               children: [
                                 CircleAvatar(
                                   radius: 20, // 아바타 크기
-                                  backgroundImage: AssetImage(avatar),),
+                                  backgroundImage: AssetImage(avatar),
+                                ),
                                 SizedBox(width: 10),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -168,8 +168,6 @@ class _AddItemState extends State<AddItem> {
           final model = PreferredFoodModel.fromFirestore(data);
 
           model.categoryName.forEach((key, value) {
-            print('categoryName key: $key, value: $value'); // 디버깅
-
             if (loadedData.containsKey(key)) {
               loadedData[key]!.addAll(value.map((item) => PreferredFoodModel(
                     categoryName: {

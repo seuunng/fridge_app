@@ -34,7 +34,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
           'category': _selectedCategory,
           'timestamp': FieldValue.serverTimestamp(), // 서버 시간을 저장
           'postType': '의견보내기',
-          'author' : userId,
+          'author': userId,
         });
         String postNo = docRef.id;
         await _db.collection('feedback').doc(docRef.id).update({
@@ -47,7 +47,6 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
         _titleController.clear();
         _contentController.clear();
         Navigator.pop(context);
-
       } catch (e) {
         // 오류 발생 시
         ScaffoldMessenger.of(context).showSnackBar(
@@ -77,7 +76,9 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
               children: [
                 Text(
                   '구분',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onSurface),
                 ),
                 Spacer(), // 텍스트와 드롭다운 사이 간격
@@ -89,7 +90,8 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
                       return DropdownMenuItem<String>(
                         value: category,
                         child: Text(category,
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                            style:
+                                TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -105,32 +107,40 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
             SizedBox(height: 16),
             Text(
               '제목',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface),
             ),
             TextField(
               controller: _titleController,
-              style: TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
+              style:
+                  TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
               decoration: InputDecoration(
                 hintText: '제목을 입력하세요',
                 hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6), // 힌트 텍스트 스타일
+                  color: theme.colorScheme.onSurface
+                      .withOpacity(0.6), // 힌트 텍스트 스타일
                 ),
               ),
             ),
             SizedBox(height: 16),
             Text(
               '내용',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface),
             ),
             TextField(
               controller: _contentController,
-              style: TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
+              style:
+                  TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
               decoration: InputDecoration(
                 hintText: '내용을 입력하세요',
                 hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6), // 힌트 텍스트 스타일
+                  color: theme.colorScheme.onSurface
+                      .withOpacity(0.6), // 힌트 텍스트 스타일
                 ),
               ),
               maxLines: 5, // 여러 줄 입력 가능

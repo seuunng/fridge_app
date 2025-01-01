@@ -179,7 +179,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final googleProvider = firebase_auth.GoogleAuthProvider();
       final userCredential = await auth.signInWithPopup(googleProvider);
-      print('Google 로그인 성공: ${userCredential.user}');
+      // print('Google 로그인 성공: ${userCredential.user}');
     } catch (e) {
       print('Google 로그인 실패: $e');
     }
@@ -197,9 +197,6 @@ class _LoginPageState extends State<LoginPage> {
       final String? gender = data['genders']?[0]['value']; // 성별
       final String? birthYear =
           data['birthdays']?[0]['date']['year'].toString(); // 출생연도
-
-      print('성별: $gender');
-      print('출생연도: $birthYear');
     } else {
       print('Google 사용자 정보 가져오기 실패: ${response.body}');
     }
@@ -287,7 +284,7 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         print("네이버 로그인 실패: ${res.status}");
         if (res.errorMessage != null) {
-          print("Error Message: ${res.errorMessage}");
+          print("네이버 로그인 실패 Error Message: ${res.errorMessage}");
         }
       }
     } catch (e) {
@@ -336,7 +333,6 @@ class _LoginPageState extends State<LoginPage> {
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print('firebaseCustomToken $data');
       return data['firebaseCustomToken'];
     } else {
       print('Firebase Function Error: ${response.body}');

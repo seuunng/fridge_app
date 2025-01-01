@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/screens/records/create_record.dart';
 import 'package:intl/intl.dart';
-
 import '../../models/record_model.dart';
 
 class ReadRecord extends StatefulWidget {
@@ -21,7 +20,6 @@ class ReadRecord extends StatefulWidget {
 class _ReadRecordState extends State<ReadRecord> {
   Map<String, List<String>> categoryMap = {};
 
-// Firestore에서 record_categories 데이터를 불러오는 함수
   Future<void> _fetchRecordCategories() async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -46,10 +44,14 @@ class _ReadRecordState extends State<ReadRecord> {
     super.initState();
     _fetchRecordCategories(); // 초기화 시 record_categories 불러오기
   }
+
   // Firestore에서 해당 기록을 삭제하는 함수
   Future<void> _deleteRecord(String recordId) async {
     try {
-      await FirebaseFirestore.instance.collection('record').doc(recordId).delete();
+      await FirebaseFirestore.instance
+          .collection('record')
+          .doc(recordId)
+          .delete();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('기록이 삭제되었습니다.')),
       );
@@ -70,16 +72,22 @@ class _ReadRecordState extends State<ReadRecord> {
         title: Text('기록 보기'),
         actions: [
           IconButton(
-            icon: Icon(Icons.delete, ),
+            icon: Icon(
+              Icons.delete,
+            ),
             onPressed: () {
               // 삭제 버튼을 누르면 다이얼로그 표시
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: Text('기록 삭제',
-                    style: TextStyle(color: theme.colorScheme.onSurface),),
-                  content: Text('이 기록을 삭제하시겠습니까?',
-                    style: TextStyle(color: theme.colorScheme.onSurface),),
+                  title: Text(
+                    '기록 삭제',
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                  ),
+                  content: Text(
+                    '이 기록을 삭제하시겠습니까?',
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
@@ -111,22 +119,19 @@ class _ReadRecordState extends State<ReadRecord> {
           if (snapshot.hasError) {
             return Center(
               child: Text('데이터를 가져오는 중 오류가 발생했습니다.',
-                  style: TextStyle(color: theme.colorScheme.onSurface)
-              ),
+                  style: TextStyle(color: theme.colorScheme.onSurface)),
             );
           }
           // Firestore 데이터를 RecordModel로 변환
-          final recordData = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-          // print('Firestore 데이터: $recordData'); // Firestore에서 가져온 데이터 출력
+          final recordData =
+              snapshot.data?.data() as Map<String, dynamic>? ?? {};
 
-          final record = RecordModel.fromJson(recordData, id: snapshot.data?.id ?? 'unknown');
-          // print('RecordModel: $record'); // 기록 모델 데이터 출력
-          // print('RecordModel.records: ${record.records}'); // 레코드 리스트 출력
+          final record = RecordModel.fromJson(recordData,
+              id: snapshot.data?.id ?? 'unknown');
 
           if (record.records.isEmpty) {
             print('레코드가 비어 있습니다.');
           }
-
 
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return Center(
@@ -147,18 +152,25 @@ class _ReadRecordState extends State<ReadRecord> {
                 child: Row(
                   children: [
                     Text(
-                      DateFormat('yyyy-MM-dd').format(record.date) ?? 'Unknown Date',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                      DateFormat('yyyy-MM-dd').format(record.date) ??
+                          'Unknown Date',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface),
                     ),
                     Text(
                       ' | ',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface),
                     ),
                     Text(
                       '${record.zone} 기록',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface),
                     ),
                   ],
@@ -169,7 +181,6 @@ class _ReadRecordState extends State<ReadRecord> {
                   itemCount: record.records.length,
                   itemBuilder: (context, index) {
                     final rec = record.records[index];
-                    // print('RecordDetail: $rec');
                     return Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -179,18 +190,21 @@ class _ReadRecordState extends State<ReadRecord> {
                             children: [
                               Text(
                                 rec.unit ?? 'Unknown Field',
-                                style: TextStyle(fontSize: 16,
+                                style: TextStyle(
+                                    fontSize: 16,
                                     color: theme.colorScheme.onSurface),
                               ),
                               Text(
                                 ' | ',
                                 style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                     color: theme.colorScheme.onSurface),
                               ),
                               Text(
                                 rec.contents ?? 'No description',
-                                style: TextStyle(fontSize: 16,
+                                style: TextStyle(
+                                    fontSize: 16,
                                     color: theme.colorScheme.onSurface),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -212,7 +226,8 @@ class _ReadRecordState extends State<ReadRecord> {
                                     return Icon(Icons.broken_image, size: 60);
                                   },
                                 );
-                              } else if (!kIsWeb && File(imagePath).existsSync()) {
+                              } else if (!kIsWeb &&
+                                  File(imagePath).existsSync()) {
                                 // 로컬 이미지 파일 경로일 경우
                                 return Image.file(
                                   File(imagePath),
@@ -229,7 +244,8 @@ class _ReadRecordState extends State<ReadRecord> {
                                   width: 60,
                                   height: 60,
                                   color: Colors.grey,
-                                  child: Center(child: Text('Invalid Image Path')),
+                                  child:
+                                      Center(child: Text('Invalid Image Path')),
                                 );
                               }
                             }).toList(),
@@ -273,5 +289,4 @@ class _ReadRecordState extends State<ReadRecord> {
       ),
     );
   }
-
 }

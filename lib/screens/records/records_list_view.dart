@@ -82,7 +82,6 @@ class _RecordsListViewState extends State<RecordsListView> {
           .update({
         'records': FieldValue.arrayRemove([rec.toMap()]),
       });
-      // print('Record $recordId, Sub-record deleted: $rec');
     } catch (e) {
       print('Error deleting sub-record: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -192,19 +191,22 @@ class _RecordsListViewState extends State<RecordsListView> {
             );
           }
 
-          final recordsList = snapshot.data!.docs.map(
+          final recordsList = snapshot.data!.docs
+              .map(
                 (QueryDocumentSnapshot e) {
-              try {
-                return RecordModel.fromJson(
-                  e.data() as Map<String, dynamic>,
-                  id: e.id,
-                );
-              } catch (e) {
-                print('Error parsing record: $e');
-                return null; // 오류 발생 시 null 반환
-              }
-            },
-          ).where((record) => record != null).toList();
+                  try {
+                    return RecordModel.fromJson(
+                      e.data() as Map<String, dynamic>,
+                      id: e.id,
+                    );
+                  } catch (e) {
+                    print('Error parsing record: $e');
+                    return null; // 오류 발생 시 null 반환
+                  }
+                },
+              )
+              .where((record) => record != null)
+              .toList();
 
           return ListView.builder(
             shrinkWrap: true,
@@ -212,11 +214,9 @@ class _RecordsListViewState extends State<RecordsListView> {
             itemCount: recordsList.length,
             itemBuilder: (context, index) {
               final record = recordsList[index];
-              // 타입 출력
-              // print('Record Type: ${record.runtimeType}');
-
               return Column(
-                  children: List.generate(record?.records.length ?? 0, (recIndex) {
+                  children:
+                      List.generate(record?.records.length ?? 0, (recIndex) {
                 final rec = record?.records[recIndex];
                 return Dismissible(
                   key: Key('${record?.id}_$recIndex'),
@@ -302,7 +302,10 @@ class _RecordsListViewState extends State<RecordsListView> {
 
                         // recordsList에서 항목이 비어 있는 경우 제거
                         if (record?.records.isEmpty ?? false) {
-                          FirebaseFirestore.instance.collection('record').doc(record.id).delete();
+                          FirebaseFirestore.instance
+                              .collection('record')
+                              .doc(record.id)
+                              .delete();
                           recordsList.removeAt(index);
                         }
                       });
@@ -385,36 +388,37 @@ class _RecordsListViewState extends State<RecordsListView> {
                                 Wrap(
                                   spacing: 8.0,
                                   runSpacing: 4.0,
-                                  children:  rec?.images?.map((imageUrl) {
-                                          if (imageUrl.startsWith('https://') ||
-                                              imageUrl.startsWith('http://')) {
-                                            // Firebase Storage URL이면 NetworkImage 사용
-                                            return Image.network(
-                                              imageUrl,
-                                              width: 50,
-                                              height: 50,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                return Text(
-                                                    'Error loading image');
-                                              },
-                                            );
-                                          } else {
-                                            // 로컬 파일 경로이면 FileImage 사용
-                                            return Image.file(
-                                              File(imageUrl),
-                                              width: 50,
-                                              height: 50,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                return Text(
-                                                    'Error loading image');
-                                              },
-                                            );
-                                          }
-                                        }).toList() ?? [], //s가 null일 경우 빈 컨테이너를 표시
+                                  children: rec?.images?.map((imageUrl) {
+                                        if (imageUrl.startsWith('https://') ||
+                                            imageUrl.startsWith('http://')) {
+                                          // Firebase Storage URL이면 NetworkImage 사용
+                                          return Image.network(
+                                            imageUrl,
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Text(
+                                                  'Error loading image');
+                                            },
+                                          );
+                                        } else {
+                                          // 로컬 파일 경로이면 FileImage 사용
+                                          return Image.file(
+                                            File(imageUrl),
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Text(
+                                                  'Error loading image');
+                                            },
+                                          );
+                                        }
+                                      }).toList() ??
+                                      [], //s가 null일 경우 빈 컨테이너를 표시
                                 ),
                               ],
                             ),

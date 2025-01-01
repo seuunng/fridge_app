@@ -226,7 +226,6 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
                     if (newValue != null) {
                       setState(() {
                         selectedStatus = newValue;
-                        print(newValue); // 선택한 값을 selectedStatus에 저장
                       });
                     }
                   },

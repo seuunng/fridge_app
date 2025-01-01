@@ -1,10 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:food_for_later_new/screens/admin_page/admin_main_page.dart';
-
-import '../admin_page/admin_feedback_management.dart';
 
 class EditRecordCategories extends StatefulWidget {
   @override
@@ -12,7 +8,6 @@ class EditRecordCategories extends StatefulWidget {
 }
 
 class _EditRecordCategoriesState extends State<EditRecordCategories> {
-  // Firestore에서 가져온 카테고리 데이터를 저장하는 리스트
   List<Map<String, dynamic>> userData = [];
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
@@ -89,7 +84,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
           'color': category['color'],
           'userId': userId,
           'createdAt': FieldValue.serverTimestamp(), // 생성 시간 추가
-          'isDeleted':  category['isDeleted'],
+          'isDeleted': category['isDeleted'],
         });
       }
 

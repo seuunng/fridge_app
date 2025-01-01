@@ -5,5 +5,4 @@ enum CustomThemeMode {
   green,
   brown,
   pink
-  // 필요한 경우 더 추가
 }

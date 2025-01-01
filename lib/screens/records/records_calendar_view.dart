@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/screens/records/read_record.dart';
 import 'package:intl/intl.dart';
-
 import 'package:food_for_later_new/models/record_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,7 +49,6 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
   List<RecordModel>? getRecordsForDate(DateTime date) {
     String formattedDate = DateFormat('yyyy-MM-dd').format(date);
     return recordsList.where((record) {
-      // record.date가 Timestamp라면 DateTime으로 변환
       DateTime recordDate;
       if (record.date is Timestamp) {
         recordDate = (record.date as Timestamp).toDate();

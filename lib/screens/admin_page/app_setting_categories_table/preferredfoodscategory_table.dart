@@ -165,7 +165,6 @@ class _PreferredfoodscategoryTableState
   }
 
   Future<void> _deleteFoodFromCategory(String category, String foodName) async {
-    print('_deleteFoodFromCategory 실행');
     bool shouldDelete = await showDialog(
       context: context,
       builder: (BuildContext context) {

@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/screens/records/read_record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../models/record_model.dart';
 
 class RecordsAlbumView extends StatefulWidget {

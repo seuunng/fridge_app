@@ -178,9 +178,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
   Future<void> loadRecipesByPreferredFoodsCategory() async {
     try {
-      List<String> allPreferredItems = itemsByCategory.values
-          .expand((list) => list)
-          .toList();
+      List<String> allPreferredItems =
+          itemsByCategory.values.expand((list) => list).toList();
 
       print('allPreferredItems ${allPreferredItems} ');
 
@@ -193,8 +192,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       await fetchRecipes(
           keywords: keywords,
           topIngredients: topIngredients,
-          cookingMethods: this.selectedCookingMethods
-      );
+          cookingMethods: this.selectedCookingMethods);
     } catch (e) {
       print('Error loading recipes by preferred foods category: $e');
     }
@@ -215,8 +213,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
     await fetchRecipes(
         keywords: keywords,
         topIngredients: topIngredients,
-        cookingMethods: this.selectedCookingMethods
-    );
+        cookingMethods: this.selectedCookingMethods);
   }
 
   Future<void> fetchRecipes({
@@ -224,10 +221,11 @@ class _ViewResearchListState extends State<ViewResearchList> {
     List<String>? topIngredients,
     List<String>? cookingMethods,
     bool filterExcluded = true,
-
   }) async {
     try {
-      keywords = keywords?.where((keyword) => keyword.trim().isNotEmpty).toList() ?? [];
+      keywords =
+          keywords?.where((keyword) => keyword.trim().isNotEmpty).toList() ??
+              [];
       if ((keywords.isEmpty) &&
           (topIngredients == null || topIngredients.isEmpty) &&
           (excludeKeywords == null || excludeKeywords!.isEmpty) &&
@@ -235,16 +233,20 @@ class _ViewResearchListState extends State<ViewResearchList> {
         final querySnapshot = await _db.collection('recipe').get();
         setState(() {
           matchingRecipes = querySnapshot.docs
-              .map((doc) => RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
+              .map((doc) =>
+                  RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
               .toList();
         });
         return;
       }
 
       final cleanedKeywords =
-          keywords?.where((keyword) => keyword.trim().isNotEmpty).toList() ?? [];
-      final cleanedTopIngredients =
-          topIngredients?.where((ingredient) => ingredient.trim().isNotEmpty).toList() ?? [];
+          keywords?.where((keyword) => keyword.trim().isNotEmpty).toList() ??
+              [];
+      final cleanedTopIngredients = topIngredients
+              ?.where((ingredient) => ingredient.trim().isNotEmpty)
+              .toList() ??
+          [];
 
       List<DocumentSnapshot> keywordResults = [];
       List<DocumentSnapshot> topIngredientResults = [];
@@ -253,9 +255,18 @@ class _ViewResearchListState extends State<ViewResearchList> {
       // Firestore 쿼리 실행
       if (cleanedKeywords.isNotEmpty) {
         final querySnapshots = await Future.wait([
-          _db.collection('recipe').where('foods', arrayContainsAny: cleanedKeywords).get(),
-          _db.collection('recipe').where('methods', arrayContainsAny: cleanedKeywords).get(),
-          _db.collection('recipe').where('themes', arrayContainsAny: cleanedKeywords).get(),
+          _db
+              .collection('recipe')
+              .where('foods', arrayContainsAny: cleanedKeywords)
+              .get(),
+          _db
+              .collection('recipe')
+              .where('methods', arrayContainsAny: cleanedKeywords)
+              .get(),
+          _db
+              .collection('recipe')
+              .where('themes', arrayContainsAny: cleanedKeywords)
+              .get(),
         ]);
         for (var snapshot in querySnapshots) {
           keywordResults.addAll(snapshot.docs);
@@ -270,9 +281,18 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
       if (cleanedTopIngredients.isNotEmpty) {
         final querySnapshots = await Future.wait([
-          _db.collection('recipe').where('foods', arrayContainsAny: cleanedTopIngredients).get(),
-          _db.collection('recipe').where('methods', arrayContainsAny: cleanedTopIngredients).get(),
-          _db.collection('recipe').where('themes', arrayContainsAny: cleanedTopIngredients).get(),
+          _db
+              .collection('recipe')
+              .where('foods', arrayContainsAny: cleanedTopIngredients)
+              .get(),
+          _db
+              .collection('recipe')
+              .where('methods', arrayContainsAny: cleanedTopIngredients)
+              .get(),
+          _db
+              .collection('recipe')
+              .where('themes', arrayContainsAny: cleanedTopIngredients)
+              .get(),
         ]);
         for (var snapshot in querySnapshots) {
           topIngredientResults.addAll(snapshot.docs);
@@ -306,7 +326,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
         }
 
         // 제외 키워드 필터링
-        if (filterExcluded && excludeKeywords != null &&
+        if (filterExcluded &&
+            excludeKeywords != null &&
             excludeKeywords!.isNotEmpty) {
           combinedResults = _filterExcludedItems(
             docs: combinedResults,
@@ -318,7 +339,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
         setState(() {
           matchingRecipes = combinedResults
               .map((doc) =>
-              RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
+                  RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
               .toList();
         });
       }
@@ -516,8 +537,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
                               fetchRecipes(
                                   keywords: keywords,
                                   topIngredients: topIngredients,
-                                  cookingMethods: selectedCookingMethods
-                              ); // 검색 실행
+                                  cookingMethods:
+                                      selectedCookingMethods); // 검색 실행
                               _searchController.clear();
                             }
                           }),
@@ -549,8 +570,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
   List<Widget> _buildChips() {
     final theme = Theme.of(context);
     List<String> keywordsChips = [];
-    keywordsChips.addAll(keywords
-        .where((ingredient) => !keywordsChips.contains(ingredient)));
+    keywordsChips.addAll(
+        keywords.where((ingredient) => !keywordsChips.contains(ingredient)));
     keywordsChips.removeWhere((ingredient) {
       if (topIngredients.contains(ingredient)) {
         return true;
@@ -572,13 +593,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
         ),
         deleteIcon: Icon(Icons.close, size: 16.0),
         onDeleted: () async {
-          setState(() {// 키워드 삭제
+          setState(() {
+            // 키워드 삭제
             keywords.remove(keyword); // 키워드 삭제
           });
           await fetchRecipes(
-                  keywords: keywords,
-                  // cookingMethods: selectedCookingMethods,
-                  // topIngredients: topIngredients
+            keywords: keywords,
+            // cookingMethods: selectedCookingMethods,
+            // topIngredients: topIngredients
           );
         },
         shape: RoundedRectangleBorder(
@@ -611,8 +633,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
             fetchRecipes(
                 keywords: keywords,
                 topIngredients: null,
-                cookingMethods: this.selectedCookingMethods
-            ); // 레시피 다시 불러오기
+                cookingMethods: this.selectedCookingMethods); // 레시피 다시 불러오기
           });
         },
         shape: RoundedRectangleBorder(
@@ -640,190 +661,196 @@ class _ViewResearchListState extends State<ViewResearchList> {
       );
     }
 
-    return LayoutBuilder(
-        builder: (context, constraints) {
-          // 화면 너비에 따라 레이아웃 조정
-          bool isWeb = constraints.maxWidth > 600;
-          // int crossAxisCount = isWeb ? 2 : 1; // 웹에서는 두 열, 모바일에서는 한 열
-          double aspectRatio = isWeb ? 1.2 : 3.0; // 웹에서는 더 넓은 비율
-          double imageSize = isWeb ? 120.0 : 60.0; // 웹에서는 더 큰 이미지 크기
+    return LayoutBuilder(builder: (context, constraints) {
+      // 화면 너비에 따라 레이아웃 조정
+      bool isWeb = constraints.maxWidth > 600;
+      // int crossAxisCount = isWeb ? 2 : 1; // 웹에서는 두 열, 모바일에서는 한 열
+      double aspectRatio = isWeb ? 1.2 : 3.0; // 웹에서는 더 넓은 비율
+      double imageSize = isWeb ? 120.0 : 60.0; // 웹에서는 더 큰 이미지 크기
 
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.all(8.0),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 1, // 열 개수
-              crossAxisSpacing: 8.0,
-              mainAxisSpacing: 8.0,
-              childAspectRatio: isWeb ? 1.2 : (aspectRatio ?? 3.0), // 앱에서만 비율 적용
-              mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
-            ),
-            itemCount: matchingRecipes.length,
-            itemBuilder: (context, index) {
-              RecipeModel recipe = matchingRecipes[index];
+      return GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.all(8.0),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 1, // 열 개수
+            crossAxisSpacing: 8.0,
+            mainAxisSpacing: 8.0,
+            childAspectRatio: isWeb ? 1.2 : (aspectRatio ?? 3.0), // 앱에서만 비율 적용
+            mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
+          ),
+          itemCount: matchingRecipes.length,
+          itemBuilder: (context, index) {
+            RecipeModel recipe = matchingRecipes[index];
 
-              String recipeName = recipe.recipeName;
-              double recipeRating = recipe.rating;
-              bool hasMainImage = recipe.mainImages.isNotEmpty; // 이미지가 있는지 확인
+            String recipeName = recipe.recipeName;
+            double recipeRating = recipe.rating;
+            bool hasMainImage = recipe.mainImages.isNotEmpty; // 이미지가 있는지 확인
 
-              List<String> keywordList = [
-                ...recipe.foods, // 이 레시피의 food 키워드들
-                ...recipe.methods, // 이 레시피의 method 키워드들
-                ...recipe.themes // 이 레시피의 theme 키워드들
-              ];
+            List<String> keywordList = [
+              ...recipe.foods, // 이 레시피의 food 키워드들
+              ...recipe.methods, // 이 레시피의 method 키워드들
+              ...recipe.themes // 이 레시피의 theme 키워드들
+            ];
 
-              return FutureBuilder<bool>(
-                future: loadScrapedData(recipe.id), // 각 레시피별로 스크랩 상태를 확인
-                builder: (context, snapshot) {
-                  bool isScraped = snapshot.data ?? false;
+            return FutureBuilder<bool>(
+              future: loadScrapedData(recipe.id), // 각 레시피별로 스크랩 상태를 확인
+              builder: (context, snapshot) {
+                bool isScraped = snapshot.data ?? false;
 
-                  // 카테고리 그리드 렌더링
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ReadRecipe(
-                                recipeId: recipe.id, searchKeywords: keywords)),
-                      ).then((result) {
-                        if (result == true) {
-                          _refreshRecipeData();
-                        }
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        // border: Border.all(color: Colors.green, width: 2),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ), // 카테고리 버튼 크기 설정
+                // 카테고리 그리드 렌더링
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ReadRecipe(
+                              recipeId: recipe.id, searchKeywords: keywords)),
+                    ).then((result) {
+                      if (result == true) {
+                        _refreshRecipeData();
+                      }
+                    });
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      // border: Border.all(color: Colors.green, width: 2),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ), // 카테고리 버튼 크기 설정
 
-                      child: Row(
-                        children: [
-                          // 왼쪽에 정사각형 그림
-                          Container(
-                            width: imageSize,
-                            height: imageSize,
-                            decoration: BoxDecoration(
-                              color: Colors.grey, // Placeholder color for image
-                              borderRadius: BorderRadius.circular(4.0),
-                            ),
-                            child: hasMainImage
-                                ? Image.network(
-                                    recipe.mainImages[0],
-                                    width: imageSize,
-                                    height: imageSize,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(Icons.error);
-                                    },
-                                  )
-                                : Icon(
-                                    Icons.image, // 이미지가 없을 경우 대체할 아이콘
-                                    size: 40,
-                                    color: Colors.grey,
-                                  ),
+                    child: Row(
+                      children: [
+                        // 왼쪽에 정사각형 그림
+                        Container(
+                          width: imageSize,
+                          height: imageSize,
+                          decoration: BoxDecoration(
+                            color: Colors.grey, // Placeholder color for image
+                            borderRadius: BorderRadius.circular(4.0),
                           ),
-                          SizedBox(width: 10), // 간격 추가
-                          // 요리 이름과 키워드를 포함하는 Column
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width:
-                                          MediaQuery.of(context).size.width * 0.25,
-                                      child: Text(
-                                        recipeName,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    Spacer(),
-                                    _buildRatingStars(recipeRating),
-                                    IconButton(
-                                      icon: Icon(
-                                        isScraped
-                                            ? Icons.bookmark
-                                            : Icons.bookmark_border,
-                                        size: 20,
-                                        color: Colors.black,
-                                      ), // 스크랩 아이콘 크기 조정
-                                      onPressed: () => _toggleScraped(recipe.id),
-                                    ),
-                                  ],
+                          child: hasMainImage
+                              ? Image.network(
+                                  recipe.mainImages[0],
+                                  width: imageSize,
+                                  height: imageSize,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(Icons.error);
+                                  },
+                                )
+                              : Icon(
+                                  Icons.image, // 이미지가 없을 경우 대체할 아이콘
+                                  size: 40,
+                                  color: Colors.grey,
                                 ),
-                                // 키워드
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Wrap(
-                                          spacing: 6.0,
-                                          runSpacing: 4.0,
-                                          children: keywordList.map((ingredient) {
-                                            bool inFridge = fridgeIngredients.contains(ingredient);
-                                            bool isKeyword = keywords.contains(ingredient) ||
-                                                (useFridgeIngredientsState && topIngredients.contains(ingredient));;
-                                            bool isFromPreferredFoods =
-                                                itemsByCategory.values.any((list) => list.contains(ingredient));
-                                            return Container(
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 2.0, horizontal: 4.0),
-                                              decoration: BoxDecoration(
+                        ),
+                        SizedBox(width: 10), // 간격 추가
+                        // 요리 이름과 키워드를 포함하는 Column
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.25,
+                                    child: Text(
+                                      recipeName,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  _buildRatingStars(recipeRating),
+                                  IconButton(
+                                    icon: Icon(
+                                      isScraped
+                                          ? Icons.bookmark
+                                          : Icons.bookmark_border,
+                                      size: 20,
+                                      color: Colors.black,
+                                    ), // 스크랩 아이콘 크기 조정
+                                    onPressed: () => _toggleScraped(recipe.id),
+                                  ),
+                                ],
+                              ),
+                              // 키워드
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Wrap(
+                                        spacing: 6.0,
+                                        runSpacing: 4.0,
+                                        children: keywordList.map((ingredient) {
+                                          bool inFridge = fridgeIngredients
+                                              .contains(ingredient);
+                                          bool isKeyword = keywords
+                                                  .contains(ingredient) ||
+                                              (useFridgeIngredientsState &&
+                                                  topIngredients
+                                                      .contains(ingredient));
+                                          ;
+                                          bool isFromPreferredFoods =
+                                              itemsByCategory.values.any(
+                                                  (list) => list
+                                                      .contains(ingredient));
+                                          return Container(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 2.0, horizontal: 4.0),
+                                            decoration: BoxDecoration(
+                                              color: isKeyword ||
+                                                      isFromPreferredFoods
+                                                  ? Colors.lightGreen
+                                                  : inFridge
+                                                      ? Colors.grey
+                                                      : Colors.transparent,
+                                              border: Border.all(
+                                                color: Colors.grey,
+                                                width: 0.5,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                            ),
+                                            child: Text(
+                                              ingredient,
+                                              style: TextStyle(
+                                                fontSize: 12.0,
                                                 color: isKeyword ||
                                                         isFromPreferredFoods
-                                                    ? Colors.lightGreen
+                                                    ? Colors.white
                                                     : inFridge
-                                                        ? Colors.grey
-                                                        : Colors.transparent,
-                                                border: Border.all(
-                                                  color: Colors.grey,
-                                                  width: 0.5,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
+                                                        ? Colors.white
+                                                        : Colors.black,
                                               ),
-                                              child: Text(
-                                                ingredient,
-                                                style: TextStyle(
-                                                  fontSize: 12.0,
-                                                  color: isKeyword ||
-                                                          isFromPreferredFoods
-                                                      ? Colors.white
-                                                      : inFridge
-                                                          ? Colors.white
-                                                          : Colors.black,
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ],
-                                    ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  );
-                },
-              );
-            });
-      }
-    );
+                  ),
+                );
+              },
+            );
+          });
+    });
   }
 
   Widget _buildRatingStars(double rating) {

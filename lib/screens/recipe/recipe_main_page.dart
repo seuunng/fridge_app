@@ -139,7 +139,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
   void _loadItemsInFridgeFromFirestore() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
-      final snapshot = await _db.collection('fridge_items')
+      final snapshot = await _db
+          .collection('fridge_items')
           .where('userId', isEqualTo: userId)
           .get();
       final itemsInFridge = snapshot.docs.map((doc) {
@@ -248,18 +249,20 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                         context,
                         MaterialPageRoute(
                           builder: (context) => ViewResearchList(
-                            category: [searchKeyword], // 필터링된 결과 전달
-                            useFridgeIngredients: false,
-                            initialKeywords: [searchKeyword]
-                          ),
+                              category: [searchKeyword], // 필터링된 결과 전달
+                              useFridgeIngredients: false,
+                              initialKeywords: [searchKeyword]),
                         ),
                       );
                     },
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.bookmark, size: 60,
-                      color: Theme.of(context).colorScheme.onSurface), // 스크랩 아이콘 크기 조정
+                  icon: Icon(Icons.bookmark,
+                      size: 60,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface), // 스크랩 아이콘 크기 조정
                   onPressed: () {
                     Navigator.push(
                       context,

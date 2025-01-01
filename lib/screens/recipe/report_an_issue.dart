@@ -1,16 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:food_for_later_new/screens/admin_page/admin_main_page.dart';
 
 class ReportAnIssue extends StatefulWidget {
   final String postType; // 게시물 유형 (레시피, 리뷰)
   final String postNo; // 게시물 ID (레시피 ID, 리뷰 ID)
 
-  ReportAnIssue({
-    required this.postType,
-    required this.postNo
-  });
+  ReportAnIssue({required this.postType, required this.postNo});
 
   @override
   _ReportAnIssueState createState() => _ReportAnIssueState();
@@ -81,7 +77,9 @@ class _ReportAnIssueState extends State<ReportAnIssue> {
               children: [
                 Text(
                   '구분',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onSurface),
                 ),
                 Spacer(), // 텍스트와 드롭다운 사이 간격
@@ -93,7 +91,8 @@ class _ReportAnIssueState extends State<ReportAnIssue> {
                       return DropdownMenuItem<String>(
                         value: category,
                         child: Text(category,
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                            style:
+                                TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -108,32 +107,40 @@ class _ReportAnIssueState extends State<ReportAnIssue> {
             SizedBox(height: 16),
             Text(
               '제목',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface),
             ),
             TextField(
               controller: _titleController,
-              style: TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
+              style:
+                  TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
               decoration: InputDecoration(
                 hintText: '제목을 입력하세요',
                 hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6), // 힌트 텍스트 스타일
+                  color: theme.colorScheme.onSurface
+                      .withOpacity(0.6), // 힌트 텍스트 스타일
                 ),
               ),
             ),
             SizedBox(height: 16),
             Text(
               '내용',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface),
             ),
             TextField(
               controller: _contentController,
-              style: TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
+              style:
+                  TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
               decoration: InputDecoration(
                 hintText: '내용을 입력하세요',
                 hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6), // 힌트 텍스트 스타일
+                  color: theme.colorScheme.onSurface
+                      .withOpacity(0.6), // 힌트 텍스트 스타일
                 ),
               ),
               maxLines: 5, // 여러 줄 입력 가능

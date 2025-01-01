@@ -30,8 +30,6 @@ class _RecipeGridState extends State<RecipeGrid> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -42,7 +40,8 @@ class _RecipeGridState extends State<RecipeGrid> {
             child: _buildCategoryGrid(),
           ),
           if (!widget.categories.isEmpty && selectedCategory != null) ...[
-            Divider(thickness: 1,
+            Divider(
+              thickness: 1,
               color: Colors.grey, // 색상 설정
               indent: 20, // 왼쪽 여백
               endIndent: 20, // 오른쪽 여백),),
@@ -58,6 +57,7 @@ class _RecipeGridState extends State<RecipeGrid> {
       ),
     );
   }
+
   Widget _buildCategoryGrid() {
     final theme = Theme.of(context);
     if (widget.categories.isEmpty) {
@@ -65,61 +65,62 @@ class _RecipeGridState extends State<RecipeGrid> {
       return Container();
     }
 
-    return LayoutBuilder(
-        builder: (context, constraints) {
-          bool isWeb = constraints.maxWidth > 600; // 웹인지 판별
-          double maxCrossAxisExtent = isWeb ? 200 : 70;  // 웹에서는 6열, 모바일에서는 3열
-          double childAspectRatio = isWeb ? 1 : 1; // 웹과 모바일에서 비율 조정
+    return LayoutBuilder(builder: (context, constraints) {
+      bool isWeb = constraints.maxWidth > 600; // 웹인지 판별
+      double maxCrossAxisExtent = isWeb ? 200 : 70; // 웹에서는 6열, 모바일에서는 3열
+      double childAspectRatio = isWeb ? 1 : 1; // 웹과 모바일에서 비율 조정
 
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.all(8.0),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: maxCrossAxisExtent, // 열 개수 조정
-            crossAxisSpacing: 8.0, // 가로 간격
-            mainAxisSpacing: 8.0, // 세로 간격
-            childAspectRatio: childAspectRatio,
-          ),
-          itemCount: widget.categories.length,
-          itemBuilder: (context, index) {
-            String category = widget.categories[index];
-            // String currentItem = selectedItems[index];
-            // 카테고리 그리드 렌더링
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  selectedCategory = selectedCategory == category ? null : category;
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: selectedCategory == category
-                      ? theme.chipTheme.selectedColor
-                      : theme.chipTheme.backgroundColor,
-                  borderRadius: BorderRadius.circular(8.0),
-                ), // 카테고리 버튼 크기 설정
-                // height: 60,
-                // margin: EdgeInsets.symmetric(vertical: 8.0),
-                child: Center(
-                  child: AutoSizeText(
-                    category,
-                    style: TextStyle(color: selectedCategory == category
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.all(8.0),
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: maxCrossAxisExtent, // 열 개수 조정
+          crossAxisSpacing: 8.0, // 가로 간격
+          mainAxisSpacing: 8.0, // 세로 간격
+          childAspectRatio: childAspectRatio,
+        ),
+        itemCount: widget.categories.length,
+        itemBuilder: (context, index) {
+          String category = widget.categories[index];
+          // String currentItem = selectedItems[index];
+          // 카테고리 그리드 렌더링
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedCategory =
+                    selectedCategory == category ? null : category;
+              });
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: selectedCategory == category
+                    ? theme.chipTheme.selectedColor
+                    : theme.chipTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(8.0),
+              ), // 카테고리 버튼 크기 설정
+              // height: 60,
+              // margin: EdgeInsets.symmetric(vertical: 8.0),
+              child: Center(
+                child: AutoSizeText(
+                  category,
+                  style: TextStyle(
+                    color: selectedCategory == category
                         ? theme.chipTheme.secondaryLabelStyle!.color
-                        : theme.chipTheme.labelStyle!.color,),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    minFontSize: 6, // 최소 글자 크기 설정
-                    maxFontSize: 16, // 최대 글자 크기 설정
+                        : theme.chipTheme.labelStyle!.color,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  minFontSize: 6, // 최소 글자 크기 설정
+                  maxFontSize: 16, // 최대 글자 크기 설정
                 ),
               ),
-            );
-          },
-        );
-      }
-    );
+            ),
+          );
+        },
+      );
+    });
   }
 
   Widget _buildCategoryItemsGrid() {
@@ -130,58 +131,56 @@ class _RecipeGridState extends State<RecipeGrid> {
 
     List<String> items = widget.itemsByCategory[selectedCategory!] ?? [];
 
-    return LayoutBuilder(
-        builder: (context, constraints) {
-          bool isWeb = constraints.maxWidth > 600; // 웹 여부 판단
-          double maxCrossAxisExtent = isWeb ? 200 : 70;  // 웹에서는 5열, 모바일에서는 3열
-          double childAspectRatio = isWeb ? 1 : 1; // 웹에서 더 넓은 비율
-        return GridView.builder(
-          shrinkWrap: true,
-          // GridView의 크기를 콘텐츠에 맞게 줄임
-          physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.all(8.0),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: maxCrossAxisExtent, // 열 개수
-            crossAxisSpacing: 8.0, // 가로 간격
-            mainAxisSpacing: 8.0, // 세로 간격
-            childAspectRatio: childAspectRatio, // 비율 설정
-          ),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            String currentItem = items[index];
-            // 기존 아이템 그리드 렌더링
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => ViewResearchList(
-                          category: [currentItem],
-                          useFridgeIngredients: false,
-                        )));
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: theme.chipTheme.backgroundColor,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                height: 60,
-                child: Center(
-                  child: AutoSizeText(
-                    currentItem,
-                    style: TextStyle(color: theme.chipTheme.labelStyle!.color),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    minFontSize: 6, // 최소 글자 크기 설정
-                    maxFontSize: 16, // 최대 글자 크기 설정
-                  ),
+    return LayoutBuilder(builder: (context, constraints) {
+      bool isWeb = constraints.maxWidth > 600; // 웹 여부 판단
+      double maxCrossAxisExtent = isWeb ? 200 : 70; // 웹에서는 5열, 모바일에서는 3열
+      double childAspectRatio = isWeb ? 1 : 1; // 웹에서 더 넓은 비율
+      return GridView.builder(
+        shrinkWrap: true,
+        // GridView의 크기를 콘텐츠에 맞게 줄임
+        physics: NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.all(8.0),
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: maxCrossAxisExtent, // 열 개수
+          crossAxisSpacing: 8.0, // 가로 간격
+          mainAxisSpacing: 8.0, // 세로 간격
+          childAspectRatio: childAspectRatio, // 비율 설정
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          String currentItem = items[index];
+          // 기존 아이템 그리드 렌더링
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ViewResearchList(
+                            category: [currentItem],
+                            useFridgeIngredients: false,
+                          )));
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.chipTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              height: 60,
+              child: Center(
+                child: AutoSizeText(
+                  currentItem,
+                  style: TextStyle(color: theme.chipTheme.labelStyle!.color),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  minFontSize: 6, // 최소 글자 크기 설정
+                  maxFontSize: 16, // 최대 글자 크기 설정
                 ),
               ),
-            );
-          },
-        );
-      }
-    );
+            ),
+          );
+        },
+      );
+    });
   }
 }

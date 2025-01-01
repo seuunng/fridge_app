@@ -106,7 +106,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
           .collection('recipe_method_categories')
           .doc(newItem.id)
           .set(newItem.toFirestore());
-      print('데이터 추가 성공');
     } catch (e) {
       print('데이터 추가 실패: $e');
     }
@@ -162,7 +161,6 @@ class _HowtocookTableState extends State<HowtocookTable> {
                   : selectedMethod['조리방법명'];
             });
 
-            print('조리 방법이 성공적으로 업데이트되었습니다.');
           } else {
             print('해당 조리 방법을 찾을 수 없습니다.');
           }

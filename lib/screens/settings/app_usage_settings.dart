@@ -5,7 +5,6 @@ import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/components/custom_dropdown.dart';
-import 'package:food_for_later_new/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppUsageSettings extends StatefulWidget {

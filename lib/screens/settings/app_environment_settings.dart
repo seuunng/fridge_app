@@ -14,7 +14,7 @@ class AppEnvironmentSettings extends StatefulWidget {
 
 class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
   // 드롭다운 선택을 위한 변수
-  CustomThemeMode _tempTheme = CustomThemeMode.light;// 임시 테마 값
+  CustomThemeMode _tempTheme = CustomThemeMode.light; // 임시 테마 값
   // final List<String> _categories_them = ['Light', 'Dark']; // 카테고리 리스트
   String _selectedCategory_font = 'NanumGothic'; // 기본 선택값
   List<String> _categories_font = [];
@@ -33,7 +33,8 @@ class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
       _categories_font = fontProvider.fonts.toSet().toList(); // 중복 제거
       // _selectedCategory_font가 _categories_font에 없는 경우 초기화
       if (!_categories_font.contains(_selectedCategory_font)) {
-        _selectedCategory_font = _categories_font.isNotEmpty ? _categories_font.first : 'Arial';
+        _selectedCategory_font =
+            _categories_font.isNotEmpty ? _categories_font.first : 'Arial';
       }
     });
   }
@@ -43,17 +44,17 @@ class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
       _tempTheme = CustomThemeMode.values.firstWhere(
-              (mode) => mode.toString().split('.').last == prefs.getString('themeMode'),
+          (mode) =>
+              mode.toString().split('.').last == prefs.getString('themeMode'),
           orElse: () => CustomThemeMode.light);
       _selectedCategory_font = prefs.getString('fontType') ?? 'NanumGothic';
     });
-
   }
 
   void _saveSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('themeMode', _tempTheme.toString().split('.').last);
-    await prefs.setString('fontType', _selectedCategory_font);// 저장할 때만 테마를 변경
+    await prefs.setString('fontType', _selectedCategory_font); // 저장할 때만 테마를 변경
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     themeProvider.setThemeMode(_tempTheme);
     themeProvider.setFontType(_selectedCategory_font);
@@ -76,7 +77,9 @@ class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
               SizedBox(width: 16),
               Text(
                 '테마',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSurface),
               ),
               Spacer(), // 텍스트와 드롭다운 사이 간격
@@ -87,9 +90,9 @@ class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
                   // value: Provider.of<ThemeProvider>(context, listen: false).themeMode == ThemeMode.light ? 'Light' : 'Dark',
                   items: CustomThemeMode.values.map((mode) {
                     return DropdownMenuItem<CustomThemeMode>(
-                    value: mode,
-                    child: Text(mode.toString().split('.').last,
-                        style: TextStyle(color: theme.colorScheme.onSurface)),
+                      value: mode,
+                      child: Text(mode.toString().split('.').last,
+                          style: TextStyle(color: theme.colorScheme.onSurface)),
                     );
                   }).toList(),
                   onChanged: (CustomThemeMode? newValue) {
@@ -106,7 +109,9 @@ class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
               SizedBox(width: 16),
               Text(
                 '폰트',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSurface),
               ),
               Spacer(), // 텍스트와 드롭다운 사이 간격
@@ -118,7 +123,6 @@ class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
                     return DropdownMenuItem<String>(
                       value: font,
                       child: Text(font,
-
                           style: TextStyle(
                               fontFamily: font,
                               color: theme.colorScheme.onSurface)),

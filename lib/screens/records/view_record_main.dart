@@ -30,41 +30,46 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
     _loadSelectedCategory();
     _loadSelectedRecordListType(); // 초기화 시 Firestore에서 데이터를 불러옴
   }
+
   @override
-  void didChangeDependencies() { // 이 페이지에서 사용되는 종속성이 변경될 때 호출됩니다
+  void didChangeDependencies() {
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
+
   @override
-  void didPopNext() { // 다른 페이지로 이동했다가 다시 이 페이지로 돌아올 때 호출
-    // super.didPopNext();
+  void didPopNext() {
     _loadSelectedRecordListType();
   }
+
   @override
-  void dispose() { // 페이지가 완전히 사라지거나 소멸될 때 호출
+  void dispose() {
     routeObserver.unsubscribe(this); // routeObserver 구독 해제
     _loadSelectedRecordListType();
     super.dispose();
   }
+
   void _loadSelectedCategory() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
-      // 저장된 카테고리를 로드하여 필요한 변수에 반영
       selectedCategory = prefs.getString('selectedCategory_records') ?? '모두';
     });
   }
+
   void _loadSelectedRecordListType() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
-      selectedRecordListType = prefs.getString('selectedRecordListType') ?? '앨범형';
+      selectedRecordListType =
+          prefs.getString('selectedRecordListType') ?? '앨범형';
       int initialPage = _getInitialPage(selectedRecordListType);
       _pageController = PageController(initialPage: initialPage);
       _currentPage = initialPage;
       _getPageTitle();
     });
   }
+
   int _getInitialPage(String recordListType) {
     switch (recordListType) {
       case '앨범형':
@@ -177,7 +182,7 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
           ],
         ),
       ),
-      body:  Column(
+      body: Column(
         children: [
           Expanded(
             child: Center(
@@ -194,8 +199,7 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
           ),
         ],
       ),
-      floatingActionButton:
-      FloatingAddButton(
+      floatingActionButton: FloatingAddButton(
         heroTag: 'record_add_button',
         onPressed: () {
           Navigator.push(

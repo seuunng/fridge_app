@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert'; // json.encode, json.decode를 위한 패키지
 import 'package:http/http.dart' as http; // HTTP 요청을 위한 패키지s
 
 final emailUrl = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
 
 void showShareOptions(
-    BuildContext context, String fromEmail, String toEmail, String nickname, String recipeName, String recipeUrl, ) {
+  BuildContext context,
+  String fromEmail,
+  String toEmail,
+  String nickname,
+  String recipeName,
+  String recipeUrl,
+) {
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {
@@ -49,9 +53,6 @@ void showShareOptions(
               leading: Icon(Icons.email),
               title: Text('메일로 보내기'),
               onTap: () {
-                print('fromEmail: $fromEmail');
-                print('toEmail: $toEmail');
-                print('nickname: $nickname');
                 sendEmail(fromEmail, toEmail, nickname, recipeName, recipeUrl);
                 Navigator.pop(context);
               },
@@ -71,7 +72,6 @@ void _shareToKakaoTalk(String recipeName, String recipeUrl) async {
     try {
       Uri uri = await ShareClient.instance.shareScrap(url: recipeUrl);
       await ShareClient.instance.launchKakaoTalk(uri);
-      print('카카오톡 공유 완료');
     } catch (error) {
       print('카카오톡 공유 실패 $error');
     }
@@ -86,7 +86,8 @@ void _shareToKakaoTalk(String recipeName, String recipeUrl) async {
   }
 }
 
-Future<void> sendEmail(String fromEmail, String toEmail, String nickname, String recipeName, String recipeUrl) async {
+Future<void> sendEmail(String fromEmail, String toEmail, String nickname,
+    String recipeName, String recipeUrl) async {
   const String emailJsUrl = 'https://api.emailjs.com/api/v1.0/email/send';
   try {
     final response = await http.post(
@@ -108,14 +109,7 @@ Future<void> sendEmail(String fromEmail, String toEmail, String nickname, String
         },
       }),
     );
-
-    if (response.statusCode == 200) {
-      print('이메일 전송 성공');
-    } else {
-      print('이메일 전송 실패: ${response.body}');
-    }
   } catch (e) {
     print('이메일 전송 중 오류 발생: $e');
   }
 }
-

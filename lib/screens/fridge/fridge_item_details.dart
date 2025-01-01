@@ -192,8 +192,9 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
             children: [
               Row(
                 children: [
-                  Text('카테고리명', style: TextStyle(fontSize: 18,
-                      color: theme.colorScheme.onSurface)),
+                  Text('카테고리명',
+                      style: TextStyle(
+                          fontSize: 18, color: theme.colorScheme.onSurface)),
                   Spacer(),
                   DropdownButton<FoodsModel>(
                     value: foodsCategories.contains(selectedFoodsCategory)
@@ -222,8 +223,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                 children: [
                   Text(
                     '식품명',
-                    style: TextStyle(fontSize: 18,
-                      color: theme.colorScheme.onSurface),
+                    style: TextStyle(
+                        fontSize: 18, color: theme.colorScheme.onSurface),
                   ),
                   Spacer(),
                   SizedBox(
@@ -254,8 +255,9 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
               SizedBox(height: 20),
               Row(
                 children: [
-                  Text('냉장고 카테고리', style: TextStyle(fontSize: 18,
-                      color: theme.colorScheme.onSurface)),
+                  Text('냉장고 카테고리',
+                      style: TextStyle(
+                          fontSize: 18, color: theme.colorScheme.onSurface)),
                   Spacer(),
                   DropdownButton<FridgeCategory>(
                     value: fridgeCategories.contains(selectedFridgeCategory)
@@ -266,7 +268,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                       return DropdownMenuItem<FridgeCategory>(
                         value: value,
                         child: Text(value.categoryName,
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                            style:
+                                TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
                     onChanged: (FridgeCategory? newValue) {
@@ -281,8 +284,9 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
               SizedBox(height: 20),
               Row(
                 children: [
-                  Text('장보기 카테고리', style: TextStyle(fontSize: 18,
-                      color: theme.colorScheme.onSurface)),
+                  Text('장보기 카테고리',
+                      style: TextStyle(
+                          fontSize: 18, color: theme.colorScheme.onSurface)),
                   Spacer(),
                   DropdownButton<ShoppingCategory>(
                     value: shoppingListCategories
@@ -295,7 +299,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                       return DropdownMenuItem<ShoppingCategory>(
                         value: value,
                         child: Text(value.categoryName,
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                            style:
+                                TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
                     onChanged: (ShoppingCategory? newValue) {
@@ -338,8 +343,9 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
               // 소비기한 선택 드롭다운
               Row(
                 children: [
-                  Text('품질유지기한', style: TextStyle(fontSize: 18,
-                      color: theme.colorScheme.onSurface)),
+                  Text('품질유지기한',
+                      style: TextStyle(
+                          fontSize: 18, color: theme.colorScheme.onSurface)),
                   Spacer(),
                   Row(
                     children: [
@@ -352,7 +358,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                         },
                       ),
                       Text('$consumptionDays 일',
-                          style: TextStyle(fontSize: 18,
+                          style: TextStyle(
+                              fontSize: 18,
                               color: theme.colorScheme.onSurface)),
                       IconButton(
                         icon: Icon(Icons.add),

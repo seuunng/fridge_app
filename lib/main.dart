@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
@@ -57,7 +56,7 @@ Future<void> main() async {
   String initialFont = prefs.getString('fontType') ?? 'NanumGothic';
   String themeModeStr = prefs.getString('themeMode') ?? 'light';
   CustomThemeMode initialThemeMode = CustomThemeMode.values.firstWhere(
-        (mode) => mode.toString().split('.').last == themeModeStr,
+    (mode) => mode.toString().split('.').last == themeModeStr,
     orElse: () => CustomThemeMode.light,
   );
 
@@ -84,15 +83,12 @@ class MyApp extends StatelessWidget {
         onGenerateRoute: (settings) {
           final Uri uri = Uri.parse(settings.name ?? '');
 
-          print('.....Parsed URI: ${uri.path}');
-          print('.....Path Segments: ${uri.pathSegments}');
-          print('.....Navigating to: ${settings.name}');
-
           if (uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'recipe') {
-            final recipeId = uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
-            print('Recipe ID: $recipeId'); // Recipe ID 확인
+            final recipeId =
+                uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
             return MaterialPageRoute(
-              builder: (context) => ReadRecipe(recipeId: recipeId, searchKeywords: []),
+              builder: (context) =>
+                  ReadRecipe(recipeId: recipeId, searchKeywords: []),
             );
           }
 
@@ -132,8 +128,10 @@ class AuthStateWidget extends StatelessWidget {
         // URI를 가져와서 외부 링크로 접근했는지 확인
         final Uri uri = Uri.base;
         if (uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'recipe') {
-          final recipeId = uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
-          return ReadRecipe(recipeId: recipeId, searchKeywords: []); // 특정 레시피 페이지로 이동
+          final recipeId =
+              uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
+          return ReadRecipe(
+              recipeId: recipeId, searchKeywords: []); // 특정 레시피 페이지로 이동
         }
 
         // 인증 상태에 따라 기본 라우팅 처리

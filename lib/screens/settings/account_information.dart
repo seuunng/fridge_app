@@ -60,7 +60,8 @@ class _AccountInformationState extends State<AccountInformation> {
     try {
       if (user != null) {
         // 최근 인증이 필요할 경우 재인증 수행
-        await user?.reauthenticateWithCredential(firebase_auth.EmailAuthProvider.credential(
+        await user?.reauthenticateWithCredential(
+            firebase_auth.EmailAuthProvider.credential(
           email: user?.email ?? '',
           password: 'your_password_here', // 사용자가 입력한 비밀번호
         ));
@@ -95,7 +96,6 @@ class _AccountInformationState extends State<AccountInformation> {
   Future<void> googleLogout() async {
     try {
       await _googleSignIn.signOut();
-      print('Google 로그아웃 성공');
     } catch (error) {
       print('Google 로그아웃 실패: $error');
     }
@@ -104,176 +104,173 @@ class _AccountInformationState extends State<AccountInformation> {
   Future<void> kakaoLogout() async {
     try {
       await UserApi.instance.logout();
-      print('Kakao 로그아웃 성공');
     } catch (error) {
       print('Kakao 로그아웃 실패: $error');
     }
   }
 
-
-    Future<void> logout() async {
-      try {
-        await firebase_auth.FirebaseAuth.instance.signOut();
-        await googleLogout();
-        await kakaoLogout();
-        await recordSessionEnd(); // 세션 종료 기록
-        await FlutterNaverLogin.logOut(); // Firebase 로그아웃
-        print('모든 로그아웃 완료');
-      } catch (error) {
-        print('로그아웃 중 오류 발생: $error');
-      }
+  Future<void> logout() async {
+    try {
+      await firebase_auth.FirebaseAuth.instance.signOut();
+      await googleLogout();
+      await kakaoLogout();
+      await recordSessionEnd(); // 세션 종료 기록
+      await FlutterNaverLogin.logOut(); // Firebase 로그아웃
+    } catch (error) {
+      print('로그아웃 중 오류 발생: $error');
     }
+  }
 
-    // 새 비밀번호 이메일 전송 함수 예시 (실제 API나 SMTP 설정이 필요)
-    Future<void> _sendEmailWithNewPassword(String email,
-        String newPassword) async {
-      final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
+  // 새 비밀번호 이메일 전송 함수 예시 (실제 API나 SMTP 설정이 필요)
+  Future<void> _sendEmailWithNewPassword(
+      String email, String newPassword) async {
+    final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
 
-      // EmailJS API로 요청할 데이터 정의
-      final response = await http.post(
-        url,
-        headers: {
-          'origin': 'http://localhost',
-          'Content-Type': 'application/json',
+    // EmailJS API로 요청할 데이터 정의
+    final response = await http.post(
+      url,
+      headers: {
+        'origin': 'http://localhost',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'service_id': dotenv.env['EMAILJS_SERVICE_ID'],
+        'template_id': dotenv.env['EMAILJS_TEMPLATE_ID'],
+        'user_id': dotenv.env['EMAILJS_USER_ID'],
+        'template_params': {
+          'to_email': email,
+          'message': '임시 비밀번호: ${newPassword}',
         },
-        body: json.encode({
-          'service_id': dotenv.env['EMAILJS_SERVICE_ID'],
-          'template_id': dotenv.env['EMAILJS_TEMPLATE_ID'],
-          'user_id': dotenv.env['EMAILJS_USER_ID'],
-          'template_params': {
-            'to_email': email,
-            'message': '임시 비밀번호: ${newPassword}',
-          },
-        }),
-      );
-      if (response.statusCode == 200) {
-        print('이메일 전송 성공');
-      } else {
-        print('이메일 전송 실패: ${response.body}');
-      }
-    }
+      }),
+    );
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('계정 정보'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 닉네임 정보
+            Text(
+              '닉네임 ',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface),
+            ),
 
-    @override
-    Widget build(BuildContext context) {
-      final theme = Theme.of(context);
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('계정 정보'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 닉네임 정보
-              Text(
-                '닉네임 ',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface),
-              ),
-
-              Row(
-                children: [
-                  Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      _showAvatarChangeDialog(); // 아바타 변경 다이얼로그 호출
-                    },
-                    child: CircleAvatar(
-                      radius: 20, // 아바타 크기
-                      backgroundImage: AssetImage(_avatar),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    _nickname,
-                    style: TextStyle(fontSize: 16,
-                        color: theme.colorScheme.onSurface),
-                  ),
-                  Spacer(),
-                  BasicElevatedButton(
-                    onPressed: () {
-                      _showNicknameChangeDialog(); // 검색 버튼 클릭 시 검색어 필터링
-                    },
-                    iconTitle: Icons.edit,
-                    buttonTitle: '수정',
-                  ),
-                ],
-              ),
-              // 이메일 정보
-              Text(
-                '이메일 ',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface),
-              ),
-              Row(
-                children: [
-                  Spacer(),
-                  Text(
-                    _email,
-                    style: TextStyle(fontSize: 16,
-                        color: theme.colorScheme.onSurface),
-                  ),
-                  Spacer(),
-                  SizedBox(
-                    width: 70,
-                    height: 50,
-                  )
-                ],
-              ),
-              Text(
-                '비밀번호 ',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface),
-              ),
-              Row(
-                children: [
-                  Spacer(),
-                  // 비밀번호 변경 버튼
-                  BasicElevatedButton(
-                    onPressed: () {
-                      _showPasswordSendDialog(); // 검색 버튼 클릭 시 검색어 필터링
-                    },
-                    iconTitle: Icons.edit,
-                    buttonTitle: '수정',
-                  )
-                ],
-              ),
-            ],
-          ),
-        ),
-        bottomNavigationBar: Container(
-          color: Colors.transparent,
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            // 버튼 사이 간격을 균등하게 설정
-            children: [
-              // Expanded(
-              //   child: NavbarButton(
-              //     buttonTitle: '회원탈퇴',
-              //     onPressed: () {
-              //       // 람다식으로 함수 전달
-              //       _withdrawAlertDialog();
-              //     },
-              //   ),
-              // ),
-              // SizedBox(width: 20), // 두 버튼 사이 간격
-              Expanded(
-                child: NavbarButton(
-                  buttonTitle: '로그아웃',
-                  onPressed: () {
-                    // 람다식으로 함수 전달
-                    _logoutAlertDialog();
+            Row(
+              children: [
+                Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    _showAvatarChangeDialog(); // 아바타 변경 다이얼로그 호출
                   },
+                  child: CircleAvatar(
+                    radius: 20, // 아바타 크기
+                    backgroundImage: AssetImage(_avatar),
+                  ),
                 ),
-              ),
-            ],
-          ),
+                SizedBox(width: 10),
+                Text(
+                  _nickname,
+                  style: TextStyle(
+                      fontSize: 16, color: theme.colorScheme.onSurface),
+                ),
+                Spacer(),
+                BasicElevatedButton(
+                  onPressed: () {
+                    _showNicknameChangeDialog(); // 검색 버튼 클릭 시 검색어 필터링
+                  },
+                  iconTitle: Icons.edit,
+                  buttonTitle: '수정',
+                ),
+              ],
+            ),
+            // 이메일 정보
+            Text(
+              '이메일 ',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface),
+            ),
+            Row(
+              children: [
+                Spacer(),
+                Text(
+                  _email,
+                  style: TextStyle(
+                      fontSize: 16, color: theme.colorScheme.onSurface),
+                ),
+                Spacer(),
+                SizedBox(
+                  width: 70,
+                  height: 50,
+                )
+              ],
+            ),
+            Text(
+              '비밀번호 ',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface),
+            ),
+            Row(
+              children: [
+                Spacer(),
+                // 비밀번호 변경 버튼
+                BasicElevatedButton(
+                  onPressed: () {
+                    _showPasswordSendDialog(); // 검색 버튼 클릭 시 검색어 필터링
+                  },
+                  iconTitle: Icons.edit,
+                  buttonTitle: '수정',
+                )
+              ],
+            ),
+          ],
         ),
-      );
-    }
+      ),
+      bottomNavigationBar: Container(
+        color: Colors.transparent,
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          // 버튼 사이 간격을 균등하게 설정
+          children: [
+            // Expanded(
+            //   child: NavbarButton(
+            //     buttonTitle: '회원탈퇴',
+            //     onPressed: () {
+            //       // 람다식으로 함수 전달
+            //       _withdrawAlertDialog();
+            //     },
+            //   ),
+            // ),
+            // SizedBox(width: 20), // 두 버튼 사이 간격
+            Expanded(
+              child: NavbarButton(
+                buttonTitle: '로그아웃',
+                onPressed: () {
+                  // 람다식으로 함수 전달
+                  _logoutAlertDialog();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   // 비밀번호 변경 다이얼로그
   Future<void> _showPasswordSendDialog() async {
@@ -283,8 +280,7 @@ class _AccountInformationState extends State<AccountInformation> {
       const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
       Random random = Random();
       return String.fromCharCodes(Iterable.generate(length,
-              (_) =>
-              characters.codeUnitAt(random.nextInt(characters.length))));
+          (_) => characters.codeUnitAt(random.nextInt(characters.length))));
     }
 
     String newPassword = _generateRandomPassword(6); // 6자리 비밀번호 생성
@@ -305,7 +301,7 @@ class _AccountInformationState extends State<AccountInformation> {
                   controller: _passwordController,
                   decoration: InputDecoration(hintText: '현재 비밀번호를 입력하세요'),
                   obscureText: true,
-                    style: TextStyle(color: theme.colorScheme.onSurface),
+                  style: TextStyle(color: theme.colorScheme.onSurface),
                 ),
               ],
             ),
@@ -320,15 +316,13 @@ class _AccountInformationState extends State<AccountInformation> {
                 child: Text('보내기'),
                 onPressed: () async {
                   try {
-                    firebase_auth.AuthCredential credential = firebase_auth
-                        .EmailAuthProvider.credential(
+                    firebase_auth.AuthCredential credential =
+                        firebase_auth.EmailAuthProvider.credential(
                       email: user?.email ?? '',
                       password: _passwordController.text
                           .trim(), // 사용자가 입력한 현재 비밀번호로 설정
                     );
-                    if (_passwordController.text
-                        .trim()
-                        .isEmpty) {
+                    if (_passwordController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('현재 비밀번호를 입력해주세요.')),
                       );
@@ -349,8 +343,7 @@ class _AccountInformationState extends State<AccountInformation> {
                       // 사용자에게 재로그인 요구
                       await firebase_auth.FirebaseAuth.instance.signOut();
                       Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (context) =>
-                              LoginPage()));
+                          MaterialPageRoute(builder: (context) => LoginPage()));
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('비밀번호 업데이트 실패: ${e.message}')),
@@ -386,11 +379,10 @@ class _AccountInformationState extends State<AccountInformation> {
           title: Text('닉네임 변경',
               style: TextStyle(color: theme.colorScheme.onSurface)),
           content: TextField(
-            controller: _nickNameController,
-            // obscureText: true,
-            decoration: InputDecoration(hintText: '새 닉네임을 입력하세요'),
-              style: TextStyle(color: theme.colorScheme.onSurface)
-          ),
+              controller: _nickNameController,
+              // obscureText: true,
+              decoration: InputDecoration(hintText: '새 닉네임을 입력하세요'),
+              style: TextStyle(color: theme.colorScheme.onSurface)),
           actions: [
             TextButton(
               child: Text('취소'),
@@ -407,8 +399,7 @@ class _AccountInformationState extends State<AccountInformation> {
                   await FirebaseFirestore.instance
                       .collection('users')
                       .doc(user?.uid) // 사용자 ID를 기준으로 문서 선택
-                      .set(
-                      {'nickname': newNickname}, SetOptions(merge: true));
+                      .set({'nickname': newNickname}, SetOptions(merge: true));
                   // 로컬 상태 업데이트
                   setState(() {
                     _nickname = newNickname;
@@ -427,6 +418,7 @@ class _AccountInformationState extends State<AccountInformation> {
       },
     );
   }
+
   // 로그아웃 처리
   void _logoutAlertDialog() async {
     await showDialog<String>(
@@ -447,8 +439,8 @@ class _AccountInformationState extends State<AccountInformation> {
                 logout();
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) =>
-                        LoginPage()), // 로그인 페이지로 이동
+                    MaterialPageRoute(
+                        builder: (context) => LoginPage()), // 로그인 페이지로 이동
                   );
                 });
               },
@@ -484,18 +476,21 @@ class _AccountInformationState extends State<AccountInformation> {
       },
     );
   }
+
   Future<void> _showAvatarChangeDialog() async {
     final theme = Theme.of(context);
     List<String> avatarList = List.generate(
       25,
-          (index) => 'assets/avatar/avatar-${(index + 1).toString().padLeft(2, '0')}.png',
+      (index) =>
+          'assets/avatar/avatar-${(index + 1).toString().padLeft(2, '0')}.png',
     );
 
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('아바타 선택', style: TextStyle(color: theme.colorScheme.onSurface)),
+          title: Text('아바타 선택',
+              style: TextStyle(color: theme.colorScheme.onSurface)),
           content: Container(
             width: double.maxFinite,
             child: GridView.builder(
@@ -513,7 +508,8 @@ class _AccountInformationState extends State<AccountInformation> {
                     await FirebaseFirestore.instance
                         .collection('users')
                         .doc(user?.uid)
-                        .set({'avatar': selectedAvatar}, SetOptions(merge: true));
+                        .set({'avatar': selectedAvatar},
+                            SetOptions(merge: true));
                     setState(() {
                       _avatar = selectedAvatar;
                     });
@@ -537,4 +533,4 @@ class _AccountInformationState extends State<AccountInformation> {
       },
     );
   }
-  }
+}

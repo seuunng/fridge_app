@@ -2,14 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/screens/admin_page/admin_login.dart';
-import 'package:food_for_later_new/screens/foods/add_item_to_category.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_main_page.dart';
 import 'package:food_for_later_new/screens/recipe/recipe_main_page.dart';
 import 'package:food_for_later_new/screens/recipe/recipe_search_settings.dart';
 import 'package:food_for_later_new/screens/records/edit_record_categories.dart';
 import 'package:food_for_later_new/screens/records/record_search_settings.dart';
-import 'package:food_for_later_new/screens/records/records_calendar_view.dart';
 import 'package:food_for_later_new/screens/records/view_record_main.dart';
 import 'package:food_for_later_new/screens/settings/account_information.dart';
 import 'package:food_for_later_new/screens/settings/app_environment_settings.dart';
@@ -28,9 +26,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   late String _selectedCategory;
   String _selectedCategory_records = '앨범형';
-  final GlobalKey<FridgeMainPageState> _fridgeMainPageKey = GlobalKey<FridgeMainPageState>();
+  final GlobalKey<FridgeMainPageState> _fridgeMainPageKey =
+      GlobalKey<FridgeMainPageState>();
   final GlobalKey<ShoppingListMainPageState> _shoppingListMainPageKey =
-  GlobalKey<ShoppingListMainPageState>();
+      GlobalKey<ShoppingListMainPageState>();
   late List<Widget> _pages;
   String selectedRecordListType = '앨범형';
 
@@ -56,10 +55,11 @@ class _HomeScreenState extends State<HomeScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
-      selectedRecordListType = prefs.getString('selectedRecordListType') ?? '앨범형';
+      selectedRecordListType =
+          prefs.getString('selectedRecordListType') ?? '앨범형';
     });
-    // print('selectedRecordListType $selectedRecordListType');
   }
+
   void _onItemTapped(int index) {
     if (index < _pages.length) {
       setState(() {
@@ -177,7 +177,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) return null;
 
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
       return userDoc.data()?['role'] as String?;
     } catch (e) {
       print('Error fetching user role: $e');
@@ -193,6 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -209,94 +213,92 @@ class _HomeScreenState extends State<HomeScreen> {
       drawer: Drawer(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           child: Column(
-        children: <Widget>[
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).drawerTheme.backgroundColor
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '설정',
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface,
-                  fontSize: 24,
-                )
+            children: <Widget>[
+              DrawerHeader(
+                decoration: BoxDecoration(
+                    color: Theme.of(context).drawerTheme.backgroundColor),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('설정',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontSize: 24,
+                      )),
+                ),
               ),
-            ),
-          ),
-          ListTile(
-            leading: Icon(Icons.person,
-                color: Theme.of(context).colorScheme.onSurface),
-            title: Text('계정 정보'),
-            onTap: () {
-              Navigator.pop(context); // 사이드바 닫기
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        AccountInformation()), // 계정 정보 페이지로 이동
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.system_security_update_good,
-                color: Theme.of(context).colorScheme.onSurface),
-            title: Text('어플 사용 설정'),
-            onTap: () {
-              Navigator.pop(context); // 사이드바 닫기
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => AppUsageSettings()), // 계정 정보 페이지로 이동
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.language,
-                color: Theme.of(context).colorScheme.onSurface),
-            title: Text('어플 환경 설정'),
-            onTap: () {
-              Navigator.pop(context); // 사이드바 닫기
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        AppEnvironmentSettings()), // 계정 정보 페이지로 이동
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.send,
-            color: Theme.of(context).colorScheme.onSurface),
-            title: Text('의견보내기'),
-            onTap: () {
-              Navigator.pop(context); // 사이드바 닫기
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        FeedbackSubmission()), // 계정 정보 페이지로 이동
-              );
-            },
-          ),
-          Spacer(),
-          if (isAdmin)
-          ListTile(
-            leading: Icon(Icons.verified_user,
-                color: Theme.of(context).colorScheme.onSurface),
-            title: Text('관리자 페이지'),
-            onTap: () {
-              Navigator.pop(context); // 사이드바 닫기
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => AdminLogin()), // 계정 정보 페이지로 이동
-              );
-            },
-          ),
-        ],
-      )),
+              ListTile(
+                leading: Icon(Icons.person,
+                    color: Theme.of(context).colorScheme.onSurface),
+                title: Text('계정 정보'),
+                onTap: () {
+                  Navigator.pop(context); // 사이드바 닫기
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            AccountInformation()), // 계정 정보 페이지로 이동
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.system_security_update_good,
+                    color: Theme.of(context).colorScheme.onSurface),
+                title: Text('어플 사용 설정'),
+                onTap: () {
+                  Navigator.pop(context); // 사이드바 닫기
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            AppUsageSettings()), // 계정 정보 페이지로 이동
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.language,
+                    color: Theme.of(context).colorScheme.onSurface),
+                title: Text('어플 환경 설정'),
+                onTap: () {
+                  Navigator.pop(context); // 사이드바 닫기
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            AppEnvironmentSettings()), // 계정 정보 페이지로 이동
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.send,
+                    color: Theme.of(context).colorScheme.onSurface),
+                title: Text('의견보내기'),
+                onTap: () {
+                  Navigator.pop(context); // 사이드바 닫기
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            FeedbackSubmission()), // 계정 정보 페이지로 이동
+                  );
+                },
+              ),
+              Spacer(),
+              if (isAdmin)
+                ListTile(
+                  leading: Icon(Icons.verified_user,
+                      color: Theme.of(context).colorScheme.onSurface),
+                  title: Text('관리자 페이지'),
+                  onTap: () {
+                    Navigator.pop(context); // 사이드바 닫기
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => AdminLogin()), // 계정 정보 페이지로 이동
+                    );
+                  },
+                ),
+            ],
+          )),
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages, // _pages 리스트에서 선택된 인덱스의 페이지를 표시
@@ -306,7 +308,10 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.kitchen), label: '냉장고',),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.kitchen),
+            label: '냉장고',
+          ),
           BottomNavigationBarItem(
               icon: Icon(Icons.shopping_cart), label: '장보기'),
           BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: '레시피'),
@@ -319,4 +324,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

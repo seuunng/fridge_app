@@ -102,9 +102,8 @@ class _CreateRecordState extends State<CreateRecord> {
           return {
             'id': doc.id,
             'category': data['zone'] ?? '기록 없음',
-            'fields': data['units'] != null
-                ? List<String>.from(data['units'])
-                : [],
+            'fields':
+                data['units'] != null ? List<String>.from(data['units']) : [],
             'color': data['color'] != null
                 ? Color(int.parse(data['color'].replaceFirst('#', '0xff')))
                 : Colors.grey,
@@ -155,11 +154,10 @@ class _CreateRecordState extends State<CreateRecord> {
           'units': category['units'],
           'color': category['color'],
           'createdAt': current.toIso8601String(),
-          'isDeleted':  category['isDeleted'],
+          'isDeleted': category['isDeleted'],
         });
       }
 
-      print('기본 카테고리가 생성되었습니다.');
       _loadCategories(); // 새로 생성한 기본 카테고리 로드
     } catch (e) {
       print('기본 카테고리 생성 중 오류 발생: $e');
@@ -204,7 +202,6 @@ class _CreateRecordState extends State<CreateRecord> {
     final List<XFile>? pickedFiles = await picker.pickMultiImage();
 
     if (pickedFiles == null || pickedFiles.isEmpty) {
-      // 이미지 선택이 취소된 경우
       print('No image selected.');
       return;
     }
@@ -228,10 +225,11 @@ class _CreateRecordState extends State<CreateRecord> {
         if (kIsWeb) {
           // 웹 환경에서는 Blob URL 생성
           final bytes = await file.readAsBytes();
-          final blobUrl = Uri.dataFromBytes(bytes, mimeType: 'image/jpeg').toString();
-        setState(() {
-          _imageFiles!.add(file.path); // 로컬 경로를 XFile 객체로 변환하여 추가
-        });
+          final blobUrl =
+              Uri.dataFromBytes(bytes, mimeType: 'image/jpeg').toString();
+          setState(() {
+            _imageFiles!.add(file.path); // 로컬 경로를 XFile 객체로 변환하여 추가
+          });
         } else {
           setState(() {
             _imageFiles!.add(file.path); // 로컬 파일 경로 추가
@@ -474,11 +472,11 @@ class _CreateRecordState extends State<CreateRecord> {
             value: currentValue, // 현재 선택된 값을 드롭다운의 value로 사용
             items: options.map<DropdownMenuItem<String>>((String value) {
               return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value,
+                  value: value,
+                  child: Text(
+                    value,
                     style: TextStyle(color: theme.colorScheme.onSurface),
-                )
-              );
+                  ));
             }).toList(),
             onChanged: (newValue) {
               if (newValue != null) {
@@ -499,9 +497,10 @@ class _CreateRecordState extends State<CreateRecord> {
       children: [
         Text(
           '기록',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface
-          ),
+          style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface),
         ),
         // SizedBox(height: 8.0),
         ListView.builder(
@@ -519,13 +518,13 @@ class _CreateRecordState extends State<CreateRecord> {
                     children: [
                       Text(
                         recordsWithImages[index]['field'] ?? '',
-                        style: TextStyle(fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onSurface),
                       ),
                       SizedBox(width: 4),
                       Text(' | ',
-                          style: TextStyle(color: theme.colorScheme.onSurface)
-                      ),
+                          style: TextStyle(color: theme.colorScheme.onSurface)),
                       SizedBox(width: 4),
                       Text(recordsWithImages[index]['contents'] ?? '',
                           style: TextStyle(color: theme.colorScheme.onSurface)),
@@ -584,7 +583,9 @@ class _CreateRecordState extends State<CreateRecord> {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 28.0),
-              child: _buildDropdown('', categoryFieldMap[selectedCategory]!['fields'],
+              child: _buildDropdown(
+                  '',
+                  categoryFieldMap[selectedCategory]!['fields'],
                   selectedField, (value) {
                 setState(() {
                   selectedField = value;
@@ -611,20 +612,22 @@ class _CreateRecordState extends State<CreateRecord> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(4.0),
-                        child: kIsWeb?  Image.network(
-                          imagePath,
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(Icons.error); // 로드 실패 시 아이콘 표시
-                          },
-                        ):Image.file(
-                          File(imagePath), // 개별 이미지의 경로에 접근
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                        ),
+                        child: kIsWeb
+                            ? Image.network(
+                                imagePath,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(Icons.error); // 로드 실패 시 아이콘 표시
+                                },
+                              )
+                            : Image.file(
+                                File(imagePath), // 개별 이미지의 경로에 접근
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                              ),
                       ),
                       Positioned(
                         right: 0,

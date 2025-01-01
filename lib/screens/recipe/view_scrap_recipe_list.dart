@@ -479,7 +479,8 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                           }
                         });
                       },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, // 여백 줄이기
+                      materialTapTargetSize:
+                          MaterialTapTargetSize.shrinkWrap, // 여백 줄이기
                     ),
                   ),
                   Expanded(

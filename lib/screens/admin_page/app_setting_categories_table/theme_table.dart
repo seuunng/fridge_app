@@ -85,9 +85,6 @@ class _ThemeTableState extends State<ThemeTable> {
     final selectedThemes = userData[index];
     final String? documentId = selectedThemes['documentId'];
 
-    print(updatedCategoryName);
-    print(documentId);
-
     if (documentId != null) {
       try {
         final snapshot = FirebaseFirestore.instance
