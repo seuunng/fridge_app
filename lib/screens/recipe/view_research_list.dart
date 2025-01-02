@@ -36,6 +36,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
   Map<String, List<String>> itemsByCategory = {};
   List<String>? excludeKeywords = [];
   late List<String> topIngredients = [];
+  String? selectedFridge = '';
+  String? selected_fridgeId = '';
 
   String searchKeyword = '';
   double rating = 0.0;
@@ -90,6 +92,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       final snapshot = await FirebaseFirestore.instance
           .collection('fridge_items')
           .where('userId', isEqualTo: userId)
+          .where('FridgeId', isEqualTo: selected_fridgeId)
           .get();
 
       setState(() {
@@ -98,6 +101,38 @@ class _ViewResearchListState extends State<ViewResearchList> {
       });
     } catch (e) {
       print('Error loading fridge items: $e');
+    }
+  }
+
+  void _loadSelectedFridge() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
+    setState(() {
+      selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+    });
+
+    if (selectedFridge != null) {
+      selected_fridgeId = await fetchFridgeId(selectedFridge!);
+    }
+  }
+
+  Future<String?> fetchFridgeId(String fridgeName) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('userId', isEqualTo: userId)
+          .where('FridgeName', isEqualTo: fridgeName)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.id; // fridgeId 반환
+      } else {
+        print("No fridge found for the given name: $fridgeName");
+        return null; // 일치하는 냉장고가 없으면 null 반환
+      }
+    } catch (e) {
+      print("Error fetching fridgeId: $e");
+      return null;
     }
   }
 

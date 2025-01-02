@@ -25,6 +25,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   List<String> fridgeName = [];
   String? selectedFridge = '';
+  String? selected_fridgeId = '';
   String? selectedFoodStatusManagement = '';
 
   List<FridgeCategory> storageSections = [];
@@ -64,7 +65,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
   @override
   void didPopNext() {
-    // 다른 페이지로 이동했다가 다시 이 페이지로 돌아올 때 호출
     super.didPopNext();
     stopDeleteMode();
     _loadSelectedFridge();
@@ -72,7 +72,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
   @override
   void dispose() {
-    // 페이지가 완전히 사라지거나 소멸될 때 호출
     routeObserver.unsubscribe(this);
     if (isDeletedMode) {
       stopDeleteMode();
@@ -84,17 +83,36 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
   @override
   void didChangeDependencies() {
-    // 이 페이지에서 사용되는 종속성이 변경될 때 호출됩니다
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
-
   void _loadCategoriesAndFridgeData() async {
     await _loadCategoriesFromFirestore();
   }
 
+  Future<String?> fetchFridgeId(String fridgeName) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('userId', isEqualTo: userId)
+          .where('FridgeName', isEqualTo: fridgeName)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.id; // fridgeId 반환
+      } else {
+        print("No fridge found for the given name: $fridgeName");
+        return null; // 일치하는 냉장고가 없으면 null 반환
+      }
+    } catch (e) {
+      print("Error fetching fridgeId: $e");
+      return null;
+    }
+  }
+
   Future<void> _loadFridgeCategoriesFromFirestore(String? fridgeId) async {
-    final fridgeId = selectedFridge;
+    final fridgeId = selected_fridgeId;
+    print(fridgeId );
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('fridge_items')
@@ -132,10 +150,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
           if (!mounted) return;
           if (foodsSnapshot.docs.isNotEmpty) {
             final foodsData = foodsSnapshot.docs.first.data();
-            // int expirationDate = foodsData['expirationDate'] ?? 0;
             int shelfLife = foodsData['shelfLife'] ?? 0;
 
-            // fridgeCategoryId가 storageSections의 categoryName과 일치하는지 확인
             int index = storageSections.indexWhere(
                 (section) => section.categoryName == fridgeCategoryId);
 
@@ -176,7 +192,9 @@ class FridgeMainPageState extends State<FridgeMainPage>
       selectedFoodStatusManagement =
           prefs.getString('selectedFoodStatusManagement') ?? '소비기한 기준';
     });
-    _loadFridgeCategoriesFromFirestore(selectedFridge); // 냉장고 데이터 로드
+    if (selectedFridge != null) {
+      selected_fridgeId = await fetchFridgeId(selectedFridge!);
+    }
   }
 
   //냉장고 내부 구분
@@ -233,7 +251,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
   }
 
   void refreshFridgeItems() {
-    _loadFridgeCategoriesFromFirestore(selectedFridge); // 아이템 목록 새로고침
+    _loadFridgeCategoriesFromFirestore(selected_fridgeId); // 아이템 목록 새로고침
   }
 
   // 유통기한에 따른 색상 결정 함수
@@ -242,10 +260,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
     final today = DateTime.now();
 
     if (selectedFoodStatusManagement == '소비기한 기준') {
-      // 소비기한 기준으로 dayLeft를 남은 일수로 계산
       dayLeft = shelfLife - today.difference(registrationDate).inDays;
 
-      // 소비기한 기준 색상 설정
       if (dayLeft > 3) {
         return Colors.green; // 3일 초과 남았을 때: 녹색
       } else if (dayLeft == 3) {
@@ -254,10 +270,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
         return Colors.red; // 소비기한이 지나거나 3일 미만 남았을 때: 빨강색
       }
     } else {
-      // 유통기한 기준으로 dayLeft를 등록일 기준으로 계산
       dayLeft = today.difference(registrationDate).inDays;
 
-      // 입고일 기준 색상 설정
       if (dayLeft >= 0 && dayLeft <= 7) {
         return Colors.green; // 1~7일: 녹색
       } else if (dayLeft >= 8 && dayLeft <= 10) {
@@ -330,14 +344,14 @@ class FridgeMainPageState extends State<FridgeMainPage>
           }
         }
       }
-      // 로컬 상태에서도 삭제
+
       setState(() {
         for (String item in itemsToDelete) {
           for (var section in itemLists) {
             section.removeWhere((map) => map.keys.first == item);
           }
         }
-        selectedItems.clear(); // 선택된 아이템 목록 초기화
+        selectedItems.clear();
         isDeletedMode = false;
       });
 
@@ -397,11 +411,14 @@ class FridgeMainPageState extends State<FridgeMainPage>
                                 TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(), // 반복문을 통해 DropdownMenuItem 생성
-                    onChanged: (value) {
+                    onChanged: (value) async {
                       setState(() {
                         selectedFridge = value!;
-                        _loadFridgeCategoriesFromFirestore(selectedFridge!);
                       });
+                      selected_fridgeId = await fetchFridgeId(value!);
+                      if (selected_fridgeId != null) {
+                        _loadFridgeCategoriesFromFirestore(selected_fridgeId!);
+                      }
                     },
                     decoration: InputDecoration(
                       labelText: '냉장고 선택',
@@ -415,7 +432,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
             child: _buildSections(), // 섹션 동적으로 생성
           ),
 
-          // 물건 추가 버튼
           floatingActionButton: !isDeletedMode
               ? FloatingAddButton(
                   heroTag: 'fridge_add_button',
@@ -429,14 +445,14 @@ class FridgeMainPageState extends State<FridgeMainPage>
                           sourcePage: 'fridge',
                           onItemAdded: () {
                             _loadFridgeCategoriesFromFirestore(
-                                selectedFridge ?? '기본 냉장고');
+                                selected_fridgeId);
                           },
                         ),
                       ),
                     );
                     setState(() {
                       _loadFridgeCategoriesFromFirestore(
-                          selectedFridge ?? '기본 냉장고');
+                          selected_fridgeId);
                     });
                   },
                 )
@@ -470,7 +486,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
     );
   }
 
-  // 각 섹션의 타이틀 빌드
   Widget _buildSectionTitle(String title) {
     final theme = Theme.of(context);
     return Padding(
@@ -500,7 +515,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
       List<Map<String, dynamic>> items, int sectionIndex) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 화면 크기나 플랫폼에 따라 crossAxisCount와 itemSize 조정
         bool isWeb = constraints.maxWidth > 600; // 임의의 기준 너비 설정
         double maxCrossAxisExtent = isWeb ? 200 : 70;
         double childAspectRatio = 1.0; // 웹에서 항목 크기 조정
@@ -619,19 +633,16 @@ class FridgeMainPageState extends State<FridgeMainPage>
                       if (foodsSnapshot.docs.isNotEmpty) {
                         final foodsData = foodsSnapshot.docs.first.data();
 
-                        // Firestore에서 불러온 데이터를 동적으로 할당
                         String defaultCategory =
                             foodsData['defaultCategory'] ?? '기타';
                         String defaultFridgeCategory =
                             foodsData['defaultFridgeCategory'] ?? '기타';
                         String shoppingListCategory =
                             foodsData['shoppingListCategory'] ?? '기타';
-                        // int expirationDays = foodsData['expirationDate'] ?? 0;
                         int shelfLife = foodsData['shelfLife'] ?? 0;
                         DateTime registrationDate =
                             items[index]['registrationDate'] ?? DateTime.now();
 
-                        // FridgeItemDetails로 동적으로 데이터를 전달
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -687,24 +698,19 @@ class FridgeMainPageState extends State<FridgeMainPage>
     return DragTarget<String>(
       onAccept: (draggedItem) async {
         setState(() {
-          // 해당 섹션으로 아이템 이동
           if (!itemLists[sectionIndex]
               .any((map) => map['items'] == draggedItem)) {
             itemLists[sectionIndex].add(
                 {'items': draggedItem, 'expirationDate': 7}); // 예시로 7일 유통기한 설정
           }
-
-          // 기존 섹션에서 아이템 제거
           for (var section in itemLists) {
             section.removeWhere((item) => item['items'] == draggedItem);
           }
         });
 
-        // Firestore에서 fridgeCategoryId 업데이트
         String newFridgeCategoryId = storageSections[sectionIndex].categoryName;
 
         try {
-          // Firestore에서 해당 아이템을 찾아 fridgeCategoryId 업데이트
           QuerySnapshot snapshot = await FirebaseFirestore.instance
               .collection('fridge_items')
               .where('items', isEqualTo: draggedItem)
@@ -713,7 +719,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
           if (snapshot.docs.isNotEmpty) {
             String docId = snapshot.docs.first.id;
 
-            // fridgeCategoryId 업데이트
             await FirebaseFirestore.instance
                 .collection('fridge_items')
                 .doc(docId)
@@ -747,7 +752,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
     );
   }
 
-  // 물건을 추가할 수 있는 그리드
   Widget _buildGrid(int sectionIndex, DateTime registrationDate) {
     if (sectionIndex >= itemLists.length) {
       return Container(); // 인덱스가 범위를 벗어나면 빈 컨테이너 반환
@@ -766,21 +770,17 @@ class FridgeMainPageState extends State<FridgeMainPage>
           }
         });
 
-        // 드래그한 항목의 fridgeCategoryId 업데이트
         String newFridgeCategoryId = storageSections[sectionIndex].categoryName;
 
         try {
-          // Firestore에서 해당 아이템을 찾아 fridgeCategoryId를 업데이트
           QuerySnapshot snapshot = await FirebaseFirestore.instance
               .collection('fridge_items')
               .where('items', isEqualTo: data)
               .get();
 
           if (snapshot.docs.isNotEmpty) {
-            // 해당 아이템의 문서 ID 가져오기
             String docId = snapshot.docs.first.id;
 
-            // fridgeCategoryId 업데이트
             await FirebaseFirestore.instance
                 .collection('fridge_items')
                 .doc(docId)
@@ -872,7 +872,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
                 },
                 onDoubleTap: () async {
                   try {
-                    // Firestore에서 현재 선택된 아이템의 정보를 불러옵니다.
                     final foodsSnapshot = await FirebaseFirestore.instance
                         .collection('foods')
                         .where('foodsName',
@@ -882,7 +881,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
                     if (foodsSnapshot.docs.isNotEmpty) {
                       final foodsData = foodsSnapshot.docs.first.data();
 
-                      // Firestore에서 불러온 데이터를 동적으로 할당
                       String defaultCategory =
                           foodsData['defaultCategory'] ?? '기타';
                       String defaultFridgeCategory =
@@ -895,7 +893,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
                           items[index]['registrationDate'] ?? DateTime.now();
                       String formattedDate =
                           DateFormat('yyyy-MM-dd').format(registrationDate);
-                      // FridgeItemDetails로 동적으로 데이터를 전달
                       Navigator.push(
                         context,
                         MaterialPageRoute(

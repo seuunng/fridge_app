@@ -547,7 +547,6 @@ class _AddRecipeState extends State<AddRecipe> {
                       EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                 ),
                 onChanged: (value) {
-                  // 검색어가 비어있으면 빈 리스트로 설정
                   if (value.isEmpty) {
                     setState(() {
                       filteredIngredients = [];
@@ -585,18 +584,18 @@ class _AddRecipeState extends State<AddRecipe> {
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: isSelected
                               ? theme.chipTheme.labelStyle!.color
-                              : theme.chipTheme
-                                  .selectedColor, // 선택된 항목은 글씨 색을 흰색으로
+                              : theme.chipTheme.selectedColor, // 선택된 항목은 글씨 색을 흰색으로
                         ),
                       ),
                       backgroundColor: isSelected
                           ? theme.chipTheme.selectedColor
-                          : theme
-                              .chipTheme.backgroundColor, // 선택된 항목은 배경색을 파란색으로
+                          : theme.chipTheme.backgroundColor,
                       padding: EdgeInsets.symmetric(
-                          horizontal: 4.0, vertical: 0.0), // 글자와 테두리 사이의 여백 줄이기
+                          horizontal: 4.0, vertical: 0.0
+                      ), // 글자와 테두리 사이의 여백 줄이기
                       labelPadding: EdgeInsets.symmetric(
-                          horizontal: 4.0), // 글자와 칩 사이의 여백 줄이기
+                          horizontal: 4.0
+                      ), // 글자와 칩 사이의 여백 줄이기
                     ),
                   ),
                 );
@@ -716,17 +715,18 @@ class _AddRecipeState extends State<AddRecipe> {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: isSelected
                             ? theme.chipTheme.secondaryLabelStyle!.color
-                            : theme.chipTheme.labelStyle!
-                                .color, // 선택된 항목은 글씨 색을 흰색으로
+                            : theme.chipTheme.labelStyle!.color, // 선택된 항목은 글씨 색을 흰색으로
                       ),
                     ),
                     backgroundColor: isSelected
                         ? theme.chipTheme.selectedColor
-                        : theme.chipTheme.backgroundColor, // 선택된 항목은 배경색을 파란색으로
+                        : theme.chipTheme.backgroundColor,
                     padding: EdgeInsets.symmetric(
-                        horizontal: 4.0, vertical: 0.0), // 글자와 테두리 사이의 여백 줄이기
+                        horizontal: 4.0, vertical: 0.0
+                    ), // 글자와 테두리 사이의 여백 줄이기
                     labelPadding: EdgeInsets.symmetric(
-                        horizontal: 4.0), // 글자와 칩 사이의 여백 줄이기
+                        horizontal: 4.0
+                    ), // 글자와 칩 사이의 여백 줄이기
                   ),
                 ),
               );

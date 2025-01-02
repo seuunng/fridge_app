@@ -45,6 +45,7 @@ class _AddItemState extends State<AddItem> {
   String searchKeyword = '';
   String? selectedItem;
   String? selectedFridge = '';
+  String? selected_fridgeId = '';
 
   bool isDeleteMode = false; // 삭제 모드 여부
   List<String> deletedItems = [];
@@ -79,21 +80,9 @@ class _AddItemState extends State<AddItem> {
     setState(() {
       selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
     });
-  }
 
-  void _navigateToAddItemPage() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddItemToCategory(
-          categoryName: selectedCategory ?? '기타',
-        ),
-        fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
-      ),
-    );
-
-    if (result == true) {
-      _loadCategoriesFromFirestore();
+    if (selectedFridge != null) {
+      selected_fridgeId = await fetchFridgeId(selectedFridge!);
     }
   }
 
@@ -187,7 +176,6 @@ class _AddItemState extends State<AddItem> {
             }
           });
         }
-
         setState(() {
           itemsByPreferredCategory = Map.from(loadedData);
         });
@@ -236,7 +224,7 @@ class _AddItemState extends State<AddItem> {
 
   Future<void> _addItemsToFridge() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    final fridgeId = selectedFridge; // 여기에 실제 유저 ID를 추가하세요
+    final fridgeId = selected_fridgeId; ; // 여기에 실제 유저 ID를 추가하세요
 
     try {
       for (String itemName in selectedItems) {
@@ -300,8 +288,7 @@ class _AddItemState extends State<AddItem> {
       for (String itemName in selectedItems) {
         final existingItemSnapshot = await FirebaseFirestore.instance
             .collection('shopping_items')
-            .where('items',
-                isEqualTo: itemName.trim().toLowerCase()) // 공백 및 대소문자 제거
+            .where('items', isEqualTo: itemName.trim().toLowerCase()) // 공백 및 대소문자 제거
             .where('userId', isEqualTo: userId)
             .get();
 
@@ -318,7 +305,6 @@ class _AddItemState extends State<AddItem> {
           );
         }
       }
-
       setState(() {
         selectedItems.clear();
       });
@@ -328,12 +314,47 @@ class _AddItemState extends State<AddItem> {
         SnackBar(content: Text('아이템 추가 중 오류가 발생했습니다.')),
       );
     }
-
     Future.delayed(Duration(seconds: 1), () {
       if (mounted) {
         Navigator.pop(context); // AddItem 화면을 종료
       }
     });
+  }
+
+  Future<String?> fetchFridgeId(String fridgeName) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('userId', isEqualTo: userId)
+          .where('FridgeName', isEqualTo: fridgeName)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.id; // fridgeId 반환
+      } else {
+        print("No fridge found for the given name: $fridgeName");
+        return null; // 일치하는 냉장고가 없으면 null 반환
+      }
+    } catch (e) {
+      print("Error fetching fridgeId: $e");
+      return null;
+    }
+  }
+
+  void _navigateToAddItemPage() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddItemToCategory(
+          categoryName: selectedCategory ?? '기타',
+        ),
+        fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
+      ),
+    );
+    if (result == true) {
+      _loadCategoriesFromFirestore();
+    }
   }
 
   void _searchItems(String keyword) {

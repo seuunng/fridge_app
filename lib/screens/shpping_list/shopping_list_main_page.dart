@@ -7,7 +7,6 @@ import 'package:food_for_later_new/main.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
-import 'package:food_for_later_new/screens/fridge/fridge_main_page.dart';
 import 'package:food_for_later_new/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,19 +19,20 @@ class ShoppingListMainPage extends StatefulWidget {
 
 class ShoppingListMainPageState extends State<ShoppingListMainPage>
     with RouteAware {
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
   List<String> fridgeName = [];
-  String? selectedFridge = '';
-  String? selectedFridgeId = '';
-
   List<ShoppingCategory> _categories = [];
-  Map<String, List<String>> itemLists = {};
 
+  String? selectedFridge = '';
+  String? selected_fridgeId = '';
+
+  Map<String, List<String>> itemLists = {};
   Map<String, List<bool>> checkedItems = {};
   Map<String, List<bool>> strikeThroughItems = {};
+  Map<String, List<String>> groupedItems = {};
 
   bool showCheckBoxes = false;
-  Map<String, List<String>> groupedItems = {};
-  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
@@ -49,7 +49,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
   @override
   void didPopNext() {
-    // 다른 페이지로 이동했다가 다시 이 페이지로 돌아올 때 호출
     super.didPopNext();
     stopShoppingListDeleteMode();
     _loadSelectedFridge();
@@ -57,18 +56,13 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
   @override
   void dispose() {
-    // 페이지가 완전히 사라지거나 소멸될 때 호출
     routeObserver.unsubscribe(this); // routeObserver 구독 해제
-    // if (showCheckBoxes) {
-    //   stopShoppingListDeleteMode();
-    // }
     _loadSelectedFridge();
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
-    // 이 페이지에서 사용되는 종속성이 변경될 때 호출됩니다
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
@@ -99,7 +93,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
         final matchingFood = foodsList.firstWhere(
           (food) => food.foodsName == itemName,
-          // itemName과 foodsName이 일치하는지 확인
           orElse: () => FoodsModel(
             id: 'unknown',
             foodsName: itemName,
@@ -126,7 +119,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           final itemName = item['itemName'];
           final isChecked = item['isChecked'];
 
-          // checkedItems와 strikeThroughItems를 초기화하고 isChecked가 true이면 값을 설정
           if (itemLists.containsKey(category)) {
             final itemIndex = itemLists[category]?.indexOf(itemName) ?? -1;
             if (itemIndex != -1) {
@@ -215,7 +207,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           .get();
 
       if (snapshot.docs.isEmpty) {
-        // Firestore에 기본 냉장고 추가
         await FirebaseFirestore.instance.collection('fridges').add({
           'FridgeName': '기본 냉장고',
           'userId': userId,
@@ -237,7 +228,30 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     setState(() {
       selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
     });
-    // _loadFridgeCategoriesFromFirestore(selectedFridge); // 냉장고 데이터 로드
+
+    if (selectedFridge != null) {
+      selected_fridgeId = await fetchFridgeId(selectedFridge!);
+    }
+  }
+
+  Future<String?> fetchFridgeId(String fridgeName) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('userId', isEqualTo: userId)
+          .where('FridgeName', isEqualTo: fridgeName)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.id; // fridgeId 반환
+      } else {
+        print("No fridge found for the given name: $fridgeName");
+        return null; // 일치하는 냉장고가 없으면 null 반환
+      }
+    } catch (e) {
+      print("Error fetching fridgeId: $e");
+      return null;
+    }
   }
 
   void _selectStrikeThroughItems() async {
@@ -257,7 +271,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
           if (itemName.isNotEmpty) {
             try {
-              // Firestore에서 해당 아이템을 찾아 'isChecked' 값을 true로 업데이트
               final snapshot = await FirebaseFirestore.instance
                   .collection('shopping_items')
                   .where('items', isEqualTo: itemName) // 아이템 이름으로 문서 찾기
@@ -294,9 +307,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   }
 
   Future<void> _addItemsToFridge() async {
-    final fridgeId = selectedFridge != null && selectedFridge!.isNotEmpty
-        ? selectedFridge
-        : '기본 냉장고';
+    final fridgeId = selected_fridgeId;
 
     if (fridgeId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -319,7 +330,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           if (checkedItems[category]![index]) {
             String itemName = categoryItems[index];
 
-            // FoodsModel에서 해당 itemName에 맞는 데이터를 찾기
             final matchingFood = await FirebaseFirestore.instance
                 .collection('foods')
                 .where('foodsName', isEqualTo: itemName)
@@ -336,14 +346,13 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
             final existingItem = await FirebaseFirestore.instance
                 .collection('fridge_items')
                 .where('items', isEqualTo: itemName.trim().toLowerCase())
-                // .where('FridgeId', isEqualTo: fridgeId.trim())
+                .where('FridgeId', isEqualTo: fridgeId.trim())
                 .get();
 
             if (existingItem.docs.isNotEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('"$itemName"이(가) 이미 냉장고에 존재합니다.')),
               );
-              // 중복되어도 장보기 목록에서만 삭제
             } else {
               await FirebaseFirestore.instance.collection('fridge_items').add({
                 'items': itemName,
@@ -438,13 +447,11 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                     .delete();
               }
             }
-
             itemsToRemove.add(index);
           }
         }
 
         setState(() {
-          // 역순으로 삭제하여 인덱스 오류 방지
           for (int i = itemsToRemove.length - 1; i >= 0; i--) {
             int removeIndex = itemsToRemove[i];
             categoryItems.removeAt(removeIndex); // 아이템 삭제
@@ -466,7 +473,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     }
   }
 
-// 삭제 모드를 해제하고 애니메이션을 중지
   void stopShoppingListDeleteMode() {
     if (!mounted) return;
     setState(() {
@@ -605,7 +611,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     );
   }
 
-  // 각 섹션의 타이틀 빌드
   Widget _buildSectionTitle(String title) {
     final theme = Theme.of(context);
     return LayoutBuilder(builder: (context, constraints) {
