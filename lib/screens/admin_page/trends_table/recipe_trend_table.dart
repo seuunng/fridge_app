@@ -146,6 +146,7 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
@@ -159,7 +160,8 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
                   onTap: () => _sortBy(column['name'], column['state']),
                   child: Row(
                     children: [
-                      Text(column['name']),
+                      Text(column['name'],
+                          style: TextStyle(color: theme.colorScheme.onSurface)),
                       Icon(
                         column['state'] == SortState.ascending
                             ? Icons.arrow_upward
@@ -175,16 +177,26 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
             }).toList(),
             rows: userData.map((row) {
               return DataRow(cells: [
-                DataCell(Text(row['순위'].toString())), // '순위' 필드 사용
-                DataCell(Text(row['제목'].toString())), // '제목' 필드 사용
-                DataCell(Text(row['닉네임'].toString())), // '닉네임' 필드 사용
-                DataCell(Text(row['작성일'].toString())), // '작성일' 필드 사용
-                DataCell(Text(row['조회수'].toString())), // '조회수' 필드 사용
-                DataCell(Text(row['스크랩'].toString())), // '스크랩' 필드 사용
-                DataCell(Text(row['좋아요'].toString())), // '스크랩' 필드 사용
-                DataCell(Text(row['리뷰'].toString())), // '따라하기' 필드 사용
-                DataCell(Text(row['공유'].toString())), // '공유' 필드 사용
-                DataCell(Text(row['별점'].toString())), // '공유' 필드 사용
+                DataCell(Text(row['순위'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '순위' 필드 사용
+                DataCell(Text(row['제목'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '제목' 필드 사용
+                DataCell(Text(row['닉네임'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '닉네임' 필드 사용
+                DataCell(Text(row['작성일'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '작성일' 필드 사용
+                DataCell(Text(row['조회수'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '조회수' 필드 사용
+                DataCell(Text(row['스크랩'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '스크랩' 필드 사용
+                DataCell(Text(row['좋아요'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '스크랩' 필드 사용
+                DataCell(Text(row['리뷰'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '따라하기' 필드 사용
+                DataCell(Text(row['공유'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '공유' 필드 사용
+                DataCell(Text(row['별점'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '공유' 필드 사용
               ]);
             }).toList(),
           ),

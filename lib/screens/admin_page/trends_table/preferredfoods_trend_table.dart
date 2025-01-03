@@ -62,6 +62,7 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
@@ -75,7 +76,8 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
                   onTap: () => _sortBy(column['name'], column['state']),
                   child: Row(
                     children: [
-                      Text(column['name']),
+                      Text(column['name'],
+                          style: TextStyle(color: theme.colorScheme.onSurface)),
                       Icon(
                         column['state'] == SortState.ascending
                             ? Icons.arrow_upward
@@ -91,9 +93,12 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
             }).toList(),
             rows: userData.map((row) {
               return DataRow(cells: [
-                DataCell(Text(row['순위'].toString())), // '순위' 필드 사용
-                DataCell(Text(row['선호식품 카테고리'].toString())), // '키워드' 필드 사용
-                DataCell(Text(row['생성횟수'].toString())), //  // '공유' 필드 사용
+                DataCell(Text(row['순위'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '순위' 필드 사용
+                DataCell(Text(row['선호식품 카테고리'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '키워드' 필드 사용
+                DataCell(Text(row['생성횟수'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), //  // '공유' 필드 사용
               ]);
             }).toList(),
           ),

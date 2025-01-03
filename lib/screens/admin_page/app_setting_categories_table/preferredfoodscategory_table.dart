@@ -248,6 +248,7 @@ class _PreferredfoodscategoryTableState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
@@ -263,8 +264,8 @@ class _PreferredfoodscategoryTableState
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(150),
-                  3: FixedColumnWidth(90),
+                  2: FixedColumnWidth(180),
+                  3: FixedColumnWidth(120),
                   4: FixedColumnWidth(100),
                 },
                 children: [
@@ -282,7 +283,8 @@ class _PreferredfoodscategoryTableState
                           child: column['name'] == '선택' ||
                                   column['name'] == '변동'
                               ? Center(
-                                  child: Text(column['name']),
+                                  child: Text(column['name'],
+                                      style: TextStyle(color: theme.colorScheme.onSurface)),
                                 )
                               : GestureDetector(
                                   onTap: () =>
@@ -292,7 +294,8 @@ class _PreferredfoodscategoryTableState
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Text(column['name']),
+                                        Text(column['name'],
+                                            style: TextStyle(color: theme.colorScheme.onSurface)),
                                         Icon(
                                           column['state'] == SortState.ascending
                                               ? Icons.arrow_upward
@@ -319,8 +322,8 @@ class _PreferredfoodscategoryTableState
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(150),
-                  3: FixedColumnWidth(90),
+                  2: FixedColumnWidth(180),
+                  3: FixedColumnWidth(120),
                   4: FixedColumnWidth(100),
                 },
                 children: [
@@ -335,7 +338,8 @@ class _PreferredfoodscategoryTableState
                       TableCell(child: SizedBox.shrink()),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text('no'))),
+                          child: Center(child: Text('no',
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         child: DropdownButtonFormField<String>(
                           value: _selectedCategory,
@@ -347,7 +351,8 @@ class _PreferredfoodscategoryTableState
                           items: categoryOptions.map((String category) {
                             return DropdownMenuItem<String>(
                               value: category,
-                              child: Text(category),
+                              child: Text(category,
+                                  style: TextStyle(color: theme.colorScheme.onSurface)),
                             );
                           }).toList(),
                           decoration: InputDecoration(
@@ -441,8 +446,8 @@ class _PreferredfoodscategoryTableState
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(150),
-                  3: FixedColumnWidth(90),
+                  2: FixedColumnWidth(180),
+                  3: FixedColumnWidth(120),
                   4: FixedColumnWidth(100),
                 },
                 children: userData.asMap().entries.map((entry) {
@@ -471,13 +476,16 @@ class _PreferredfoodscategoryTableState
                           child: Container(
                               height: 40,
                               child:
-                                  Center(child: Text(row['연번'].toString())))),
+                                  Center(child: Text(row['연번'].toString(),
+                                      style: TextStyle(color: theme.colorScheme.onSurface))))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['선호식품 카테고리']))),
+                          child: Center(child: Text(row['선호식품 카테고리'],
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['식품명']))),
+                          child: Center(child: Text(row['식품명'],
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         verticalAlignment: TableCellVerticalAlignment.middle,
                         child: SizedBox(

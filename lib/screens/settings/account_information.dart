@@ -8,7 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
-import 'package:food_for_later_new/firebase_service.dart';
+import 'package:food_for_later_new/services/firebase_service.dart';
 import 'package:food_for_later_new/screens/auth/login_main_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
@@ -113,9 +113,9 @@ class _AccountInformationState extends State<AccountInformation> {
     try {
       await firebase_auth.FirebaseAuth.instance.signOut();
       await googleLogout();
-      await kakaoLogout();
-      await recordSessionEnd(); // 세션 종료 기록
+      await kakaoLogout(); // 세션 종료 기록
       await FlutterNaverLogin.logOut(); // Firebase 로그아웃
+      await FirebaseService.recordSessionEnd();
     } catch (error) {
       print('로그아웃 중 오류 발생: $error');
     }

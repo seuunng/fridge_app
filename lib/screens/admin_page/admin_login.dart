@@ -25,6 +25,7 @@ class _AdminLoginState extends State<AdminLogin> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('관리자 페이지 로그인'),
@@ -43,6 +44,7 @@ class _AdminLoginState extends State<AdminLogin> {
                   hintText: '비밀번호를 입력하세요',
                   border: OutlineInputBorder(), // 테두리 추가
                 ),
+              style: TextStyle(color: theme.colorScheme.onSurface),
                 onSubmitted: (value) {
                   _handleSubmit(); // 엔터키를 누르면 호출되는 함수
                 },

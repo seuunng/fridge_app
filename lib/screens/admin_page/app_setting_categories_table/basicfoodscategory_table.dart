@@ -79,6 +79,7 @@ class _BasicfoodscategoryTableState extends State<BasicfoodscategoryTable> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
@@ -113,7 +114,8 @@ class _BasicfoodscategoryTableState extends State<BasicfoodscategoryTable> {
                           child: column['name'] == '선택' ||
                                   column['name'] == '변동'
                               ? Center(
-                                  child: Text(column['name']),
+                                  child: Text(column['name'],
+                                      style: TextStyle(color: theme.colorScheme.onSurface)),
                                 )
                               : GestureDetector(
                                   onTap: () =>
@@ -123,7 +125,8 @@ class _BasicfoodscategoryTableState extends State<BasicfoodscategoryTable> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Text(column['name']),
+                                        Text(column['name'],
+                                            style: TextStyle(color: theme.colorScheme.onSurface)),
                                         Icon(
                                           column['state'] == SortState.ascending
                                               ? Icons.arrow_upward
@@ -165,7 +168,8 @@ class _BasicfoodscategoryTableState extends State<BasicfoodscategoryTable> {
                       TableCell(child: SizedBox.shrink()),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text('no'))),
+                          child: Center(child: Text('no',
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         child: TextField(
                           controller: _foodCategoryController,
@@ -245,10 +249,12 @@ class _BasicfoodscategoryTableState extends State<BasicfoodscategoryTable> {
                           child: Container(
                               height: 40,
                               child:
-                                  Center(child: Text(row['연번'].toString())))),
+                                  Center(child: Text(row['연번'].toString(),
+                                      style: TextStyle(color: theme.colorScheme.onSurface))))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['기본식품 카테고리']))),
+                          child: Center(child: Text(row['기본식품 카테고리'],
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         verticalAlignment: TableCellVerticalAlignment.middle,
                         child: SizedBox(

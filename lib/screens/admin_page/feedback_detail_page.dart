@@ -135,6 +135,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('의견 상세보기'),
@@ -148,7 +149,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
               children: [
                 Text(
                   widget.title,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                 ),
               ],
             ),
@@ -156,9 +157,11 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
             Row(
               children: [
                 Spacer(),
-                Text(widget.createdDate.toLocal().toString().split(' ')[0]),
+                Text(widget.createdDate.toLocal().toString().split(' ')[0],
+                    style: TextStyle(color: theme.colorScheme.onSurface)),
                 SizedBox(width: 10),
-                Text(widget.author),
+                Text(widget.author,
+                    style: TextStyle(color: theme.colorScheme.onSurface)),
               ],
             ),
             Row(
@@ -182,7 +185,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
                 Spacer(),
                 Text(
                   '게시물유형',
-                  style: TextStyle(fontWeight: FontWeight.w500),
+                  style: TextStyle(fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface),
                 ),
                 SizedBox(width: 10),
                 Text(
@@ -191,7 +194,8 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
               ],
             ),
             SizedBox(height: 20),
-            Text(widget.content),
+            Text(widget.content,
+                style: TextStyle(color: theme.colorScheme.onSurface)),
             Divider(),
             SizedBox(height: 20),
             if (reportedContent != null) _buildReportedContentWidget(),
@@ -200,7 +204,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
             Divider(),
             Text(
               '확인사항',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
             ),
             TextField(
               controller: _confirmationController, // Controller를 사용하여 초기 값 설정
@@ -234,7 +238,8 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text(value),
+                      child: Text(value,
+                          style: TextStyle(color: theme.colorScheme.onSurface)),
                     );
                   }).toList(),
                 ),

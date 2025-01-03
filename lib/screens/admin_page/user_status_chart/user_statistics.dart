@@ -114,8 +114,10 @@ class _UserStatisticsState extends State<UserStatistics> {
                 ),
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: false,
-                  ), // 왼쪽 숫자 제거
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: leftTitleWidgets,
+                  ),
                 ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
@@ -144,7 +146,19 @@ class _UserStatisticsState extends State<UserStatistics> {
                           .toList(),
                     ),
                   ),
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 6,
+                        color: Colors.white,
+                        strokeWidth: 2,
+                        strokeColor: Colors.blue,
+                      );
+                    },
+                  ),
                 ),
+
               ],
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
@@ -165,6 +179,7 @@ class _UserStatisticsState extends State<UserStatistics> {
                   },
                 ),
               ),
+
             ),
           ),
         ),

@@ -68,6 +68,7 @@ class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('트렌드'),
@@ -83,7 +84,7 @@ class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
               ),
               Text(
                 _getPageTitle(),
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
               ),
               IconButton(
                 onPressed: _goToNextTable,

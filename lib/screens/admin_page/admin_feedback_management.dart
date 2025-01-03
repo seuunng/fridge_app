@@ -172,6 +172,7 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     List<Map<String, dynamic>> filteredData = feedbackData
         .where((row) =>
             (row['title']?.toLowerCase() ?? '')
@@ -210,7 +211,8 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                     onTap: _sortByNumber, // 제목을 누르면 정렬 상태 변경
                     child: Row(
                       children: [
-                        Text('연번'),
+                        Text('연번',
+                            style: TextStyle(color: theme.colorScheme.onSurface)),
                         Icon(
                           _numberSortState == SortState.descending
                               ? Icons.arrow_upward
@@ -228,7 +230,8 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                     onTap: _sortByDate, // 제목을 누르면 정렬 상태 변경
                     child: Row(
                       children: [
-                        Text('날짜'),
+                        Text('날짜',
+                            style: TextStyle(color: theme.colorScheme.onSurface)),
                         Icon(
                           _dateSortState == SortState.descending
                               ? Icons.arrow_upward
@@ -246,7 +249,8 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                     onTap: _sortByTitle, // 제목을 누르면 정렬 상태 변경
                     child: Row(
                       children: [
-                        Text('제목'),
+                        Text('제목',
+                            style: TextStyle(color: theme.colorScheme.onSurface)),
                         Icon(
                           _titleSortState == SortState.descending
                               ? Icons.arrow_upward
@@ -264,7 +268,8 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                     onTap: _sortByAuthor, // 제목을 누르면 정렬 상태 변경
                     child: Row(
                       children: [
-                        Text('작성자'),
+                        Text('작성자',
+                            style: TextStyle(color: theme.colorScheme.onSurface)),
                         Icon(
                           _authorSortState == SortState.descending
                               ? Icons.arrow_upward
@@ -282,7 +287,8 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                     onTap: _sortByResult, // 제목을 누르면 정렬 상태 변경
                     child: Row(
                       children: [
-                        Text('처리결과'),
+                        Text('처리결과',
+                            style: TextStyle(color: theme.colorScheme.onSurface)),
                         Icon(
                           _resultSortState == SortState.descending
                               ? Icons.arrow_upward
@@ -301,10 +307,12 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                   DataCell(
                     Container(
                       width: 10,
-                      child: Text(row['연번'].toString() ?? 'N/A'),
+                      child: Text(row['연번'].toString() ?? 'N/A',
+                          style: TextStyle(color: theme.colorScheme.onSurface)),
                     ),
                   ),
-                  DataCell(Text(_formatDate(row['timestamp']) ?? 'N/A')),
+                  DataCell(Text(_formatDate(row['timestamp']) ?? 'N/A',
+                      style: TextStyle(color: theme.colorScheme.onSurface))),
                   DataCell(
                     GestureDetector(
                       onTap: () async {
@@ -349,8 +357,10 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                       ),
                     ),
                   ),
-                  DataCell(Text(row['author'].toString() ?? 'N/A')),
-                  DataCell(Text(row['status'].toString() ?? 'NEW')),
+                  DataCell(Text(row['author'].toString() ?? 'N/A',
+                      style: TextStyle(color: theme.colorScheme.onSurface))),
+                  DataCell(Text(row['status'].toString() ?? 'NEW',
+                      style: TextStyle(color: theme.colorScheme.onSurface))),
                 ]);
               }).toList()),
         ))

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/services/firebase_service.dart';
 import 'package:intl/intl.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao;
 import 'package:http/http.dart' as http;
@@ -48,19 +49,26 @@ final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
       int randomAvatarIndex = Random().nextInt(25) + 1; // 1~25 사이 랜덤 숫자
 
       if (userCredential.user != null) {
-        await FirebaseFirestore.instance
+        final userDoc = FirebaseFirestore.instance
             .collection('users')
-            .doc(userCredential.user!.uid)
-            .set({
-          'nickname': kakaoNickname,
-          'email': kakaoEmail,
-          'gender': kakaoGender ?? '알 수 없음',
-          'birthYear': kakaoBirthYear ?? '알 수 없음',
-          'signupdate': DateTime.now().toIso8601String(),
-          'avatar': kakaoAvatarUrl ?? 'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png', // 기본값 설정
-          'role': 'user',
-        });
+            .doc(userCredential.user!.uid);
+
+        final docSnapshot = await userDoc.get();
+        if (!docSnapshot.exists) {
+          // Firestore에 사용자 데이터 추가 (존재하지 않을 때만)
+          await userDoc.set({
+            'nickname': kakaoNickname,
+            'email': kakaoEmail,
+            'gender': kakaoGender ?? '알 수 없음',
+            'birthYear': kakaoBirthYear ?? '알 수 없음',
+            'signupdate': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+            'avatar': kakaoAvatarUrl ??
+                'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png', // 기본값 설정
+            'role': 'user',
+          });
+        }
       }
+      await FirebaseService.recordSessionStart();
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       throw Exception('Firebase Custom Token 생성 실패: ${response.body}');

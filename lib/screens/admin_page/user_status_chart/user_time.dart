@@ -27,8 +27,7 @@ class UserTimeState extends State<UserTime> {
     final querySnapshot = await userCollection.get();
 
     for (var doc in querySnapshot.docs) {
-      final sessions =
-          List<Map<String, dynamic>>.from(doc['openSessions'] ?? []);
+      final sessions = (doc.data()['openSessions'] as List<dynamic>?) ?? []; // 필드가 없으면 빈 리스트로 대체
       for (var session in sessions) {
         if (session['startTime'] != null) {
           final startTime = (session['startTime'] as Timestamp).toDate();

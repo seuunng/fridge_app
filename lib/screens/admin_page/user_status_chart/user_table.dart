@@ -53,13 +53,15 @@ class _UserTableState extends State<UserTable> {
       final List<dynamic> openSessions = data['openSessions'] ?? [];
       final openCount = openSessions.length; // 접속 횟수는 세션의 개수로 계산
       final totalUsageTime = openSessions.fold<int>(0, (sum, session) {
-        final startTime = session['startTime'] as Timestamp;
-        final endTime = session['endTime'] as Timestamp;
-        if (startTime is! Timestamp || endTime is! Timestamp) {
+        if (session['startTime'] == null || session['endTime'] == null) {
           return sum; // 잘못된 데이터는 건너뜀
         }
+        final startTime = session['startTime'] as Timestamp;
+        final endTime = session['endTime'] as Timestamp;
         return sum + endTime.toDate().difference(startTime.toDate()).inMinutes;
       });
+
+      final totalUsageHours = (totalUsageTime / 60).toStringAsFixed(1);
 
       return {
         '연번': index,
@@ -67,7 +69,7 @@ class _UserTableState extends State<UserTable> {
         '닉네임': data['nickname'] ?? '',
         '가입일': formattedDate,
         '접속횟수': openCount,
-        '사용시간(분)': totalUsageTime,
+        '사용시간(h)': totalUsageHours,
         '레시피': recipeCount,
         '기록': recordCount,
         '스크랩': scrapCount,
@@ -88,7 +90,7 @@ class _UserTableState extends State<UserTable> {
     // {'name': '성별', 'state': SortState.none},
     // {'name': '생년월일', 'state': SortState.none},
     {'name': '접속횟수', 'state': SortState.none},
-    {'name': '사용시간(분)', 'state': SortState.none},
+    {'name': '사용시간(h)', 'state': SortState.none},
     {'name': '레시피', 'state': SortState.none},
     {'name': '기록', 'state': SortState.none},
     {'name': '스크랩', 'state': SortState.none},
@@ -122,35 +124,44 @@ class _UserTableState extends State<UserTable> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: columns.map((column) {
-          return DataColumn(
-            label: GestureDetector(
-              onTap: () => _sortBy(column['name'], column['state']),
-              child: Row(
-                children: [
-                  Text(column['name']),
-                  Icon(
-                    column['state'] == SortState.ascending
-                        ? Icons.arrow_upward
-                        : column['state'] == SortState.descending
-                            ? Icons.arrow_downward
-                            : Icons.sort,
-                    size: 16,
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: EdgeInsets.only(top: 1),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: columns.map((column) {
+              return DataColumn(
+                label: GestureDetector(
+                  onTap: () => _sortBy(column['name'], column['state']),
+                  child: Row(
+                    children: [
+                      Text(column['name'],
+                          style: TextStyle(color: theme.colorScheme.onSurface)),
+                      Icon(
+                        column['state'] == SortState.ascending
+                            ? Icons.arrow_upward
+                            : column['state'] == SortState.descending
+                                ? Icons.arrow_downward
+                                : Icons.sort,
+                        size: 16,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
-        rows: userData.map((row) {
-          return DataRow(
-              cells: columns.map((column) {
-            return DataCell(Text(row[column['name']].toString()));
-          }).toList());
-        }).toList(),
+                ),
+              );
+            }).toList(),
+            rows: userData.map((row) {
+              return DataRow(
+                  cells: columns.map((column) {
+                return DataCell(Text(row[column['name']].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface)));
+              }).toList());
+            }).toList(),
+          ),
+        ),
       ),
     );
   }

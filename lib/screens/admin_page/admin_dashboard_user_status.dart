@@ -16,21 +16,20 @@ class _AdminDashboardUserStatusState extends State<AdminDashboardUserStatus> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('사용자 수 현황'),
+        title: Text('사용자 현황'),
       ),
       body: ListView(
         children: [
-          // 드롭다운 카테고리 선택
-          // Row(
-          //   children: [
-          //     SizedBox(width: 16),
-          //     Text(
-          //       '사용자 수 현황',
-          //       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          //     ),
-          //     Spacer(), // 텍스트와 드롭다운 사이 간격
-          //   ],
-          // ),
+          Row(
+            children: [
+              SizedBox(width: 16),
+              Text(
+                '사용자 수 현황',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Spacer(), // 텍스트와 드롭다운 사이 간격
+            ],
+          ),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             height: 200,

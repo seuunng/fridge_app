@@ -47,8 +47,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
     "육류": 10,
     "수산물": 9,
     "채소": 8,
-    "과일": 7,
-    "유제품": 6
+    "곡류": 7,
+    "과일": 6,
+    "유제품": 5,
+    "견과류": 4,
+    "가공식품/즉석식품":3,
+    "양념": 2,
+    "음료및주류": 1,
+    "디저트류": 1,
   };
 
   TextEditingController _searchController = TextEditingController();

@@ -252,6 +252,7 @@ class _HowtocookTableState extends State<HowtocookTable> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
@@ -285,7 +286,8 @@ class _HowtocookTableState extends State<HowtocookTable> {
                           child: column['name'] == '선택' ||
                                   column['name'] == '변동'
                               ? Center(
-                                  child: Text(column['name']),
+                                  child: Text(column['name'],
+                                      style: TextStyle(color: theme.colorScheme.onSurface)),
                                 )
                               : GestureDetector(
                                   onTap: () =>
@@ -295,7 +297,8 @@ class _HowtocookTableState extends State<HowtocookTable> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Text(column['name']),
+                                        Text(column['name'],
+                                            style: TextStyle(color: theme.colorScheme.onSurface)),
                                         Icon(
                                           column['state'] == SortState.ascending
                                               ? Icons.arrow_upward
@@ -337,7 +340,8 @@ class _HowtocookTableState extends State<HowtocookTable> {
                       TableCell(child: SizedBox.shrink()),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text('no'))),
+                          child: Center(child: Text('no',
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         child: TextField(
                           controller: _methodNameController,
@@ -430,10 +434,12 @@ class _HowtocookTableState extends State<HowtocookTable> {
                           child: Container(
                               height: 40,
                               child:
-                                  Center(child: Text(row['연번'].toString())))),
+                                  Center(child: Text(row['연번'].toString(),
+                                      style: TextStyle(color: theme.colorScheme.onSurface))))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['조리방법명']))),
+                          child: Center(child: Text(row['조리방법명'],
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         verticalAlignment: TableCellVerticalAlignment.middle,
                         child: SizedBox(

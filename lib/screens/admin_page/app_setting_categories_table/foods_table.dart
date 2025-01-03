@@ -283,6 +283,7 @@ class _FoodsTableState extends State<FoodsTable> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
@@ -321,7 +322,8 @@ class _FoodsTableState extends State<FoodsTable> {
                           child: column['name'] == '선택' ||
                                   column['name'] == '변동'
                               ? Center(
-                                  child: Text(column['name']),
+                                  child: Text(column['name'],
+                                      style: TextStyle(color: theme.colorScheme.onSurface)),
                                 )
                               : GestureDetector(
                                   onTap: () =>
@@ -331,7 +333,8 @@ class _FoodsTableState extends State<FoodsTable> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Text(column['name']),
+                                        Text(column['name'],
+                                            style: TextStyle(color: theme.colorScheme.onSurface)),
                                         Icon(
                                           column['state'] == SortState.ascending
                                               ? Icons.arrow_upward
@@ -380,7 +383,8 @@ class _FoodsTableState extends State<FoodsTable> {
                       TableCell(child: SizedBox.shrink()),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text('no'))),
+                          child: Center(child: Text('no',
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         child: DropdownButtonFormField<String>(
                           value: _selectedCategory,
@@ -451,7 +455,8 @@ class _FoodsTableState extends State<FoodsTable> {
                           items: fridgeCategoryOptions.map((String category) {
                             return DropdownMenuItem<String>(
                               value: category,
-                              child: Text(category),
+                              child: Text(category,
+                                  style: TextStyle(color: theme.colorScheme.onSurface)),
                             );
                           }).toList(),
                           decoration: InputDecoration(
@@ -510,7 +515,8 @@ class _FoodsTableState extends State<FoodsTable> {
                           items: shoppingCategoryOptions.map((String category) {
                             return DropdownMenuItem<String>(
                               value: category,
-                              child: Text(category),
+                              child: Text(category,
+                                  style: TextStyle(color: theme.colorScheme.onSurface)),
                             );
                           }).toList(),
                           decoration: InputDecoration(
@@ -615,25 +621,31 @@ class _FoodsTableState extends State<FoodsTable> {
                           child: Container(
                               height: 40,
                               child:
-                                  Center(child: Text(row['연번'].toString())))),
+                                  Center(child: Text(row['연번'].toString(),
+                                      style: TextStyle(color: theme.colorScheme.onSurface))))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['카테고리']))),
+                          child: Center(child: Text(row['카테고리'],
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['식품명']))),
+                          child: Center(child: Text(row['식품명'],
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['냉장고카테고리']))),
+                          child: Center(child: Text(row['냉장고카테고리'],
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['소비기한'].toString()))),
+                          child: Center(child: Text(row['소비기한'].toString(),
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       // TableCell(
                       //     verticalAlignment: TableCellVerticalAlignment.middle,
                       //     child: Center(child: Text(row['유통기한'].toString()))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['장보기카테고리']))),
+                          child: Center(child: Text(row['장보기카테고리'],
+                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         verticalAlignment: TableCellVerticalAlignment.middle,
                         child: SizedBox(

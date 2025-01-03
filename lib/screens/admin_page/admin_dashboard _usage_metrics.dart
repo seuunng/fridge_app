@@ -20,16 +20,27 @@ class _AdminDashboardUsageMetricsState
     final Map<String, int> monthlyCounts = {};
 
     for (var doc in querySnapshot.docs) {
-      if (!doc.data().containsKey('date')) continue; // date 필드가 없으면 건너뛰기
-      final createdAt = (doc['date'] as Timestamp?)?.toDate();
-      if (createdAt != null) {
+      // 필드 확인
+      final createdAt = (doc.data().containsKey('date'))
+          ? (doc['date'] as Timestamp?)?.toDate()
+          : null;
+      final scrapedAt = (doc.data().containsKey('scrapedAt'))
+          ? (doc['scrapedAt'] as Timestamp?)?.toDate()
+          : null;
+
+      // 사용할 필드 선택
+      final timestamp = createdAt ?? scrapedAt;
+
+      if (timestamp != null) {
         final monthKey =
-            '${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}';
+            '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}';
         monthlyCounts[monthKey] = (monthlyCounts[monthKey] ?? 0) + 1;
       }
     }
+
     return monthlyCounts;
   }
+
 
   List<FlSpot> calculateCumulativeData(Map<String, int> monthlyData) {
     int cumulativeCount = 0;
@@ -42,12 +53,38 @@ class _AdminDashboardUsageMetricsState
     });
   }
 
+  Future<Map<String, int>> fetchSharedData() async {
+    final collection = FirebaseFirestore.instance.collection('recipe');
+    final querySnapshot = await collection.get();
+
+    final Map<String, int> monthlyCounts = {};
+
+    for (var doc in querySnapshot.docs) {
+      if (!doc.data().containsKey('sharedCount')) continue; // sharedCount 필드가 없으면 건너뛰기
+      final createdAt = (doc['date'] as Timestamp?)?.toDate();
+      if (createdAt != null) {
+        final monthKey =
+            '${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}';
+        final Map<String, num> monthlyCounts = {};
+        monthlyCounts[monthKey] =
+            (monthlyCounts[monthKey] ?? 0) + (doc['sharedCount'] ?? 0);
+      }
+    }
+    return monthlyCounts;
+  }
+
   Future<List<LineChartBarData>> buildCumulativeChartData() async {
     final recipeData = await fetchMonthlyData('recipe');
     final recordData = await fetchMonthlyData('record');
+    // final sharedData = await fetchSharedData();
+    final scrapedData = await fetchMonthlyData('scraped_recipes');
+
+    print('scrapedData $scrapedData');
 
     final recipeSpots = calculateCumulativeData(recipeData);
     final recordSpots = calculateCumulativeData(recordData);
+    // final sharedSpots = calculateCumulativeData(sharedData);
+    final scrapSpots = calculateCumulativeData(scrapedData);
 
     return [
       LineChartBarData(
@@ -68,12 +105,32 @@ class _AdminDashboardUsageMetricsState
         belowBarData: BarAreaData(show: false),
         spots: recordSpots,
       ),
+      // LineChartBarData(
+      //   isCurved: true,
+      //   color: Colors.yellow,
+      //   barWidth: 4,
+      //   isStrokeCapRound: true,
+      //   dotData: const FlDotData(show: true),
+      //   belowBarData: BarAreaData(show: false),
+      //   spots: sharedSpots,
+      // ),
+      LineChartBarData(
+        isCurved: true,
+        color: Colors.cyan,
+        barWidth: 4,
+        isStrokeCapRound: true,
+        dotData: const FlDotData(show: true),
+        belowBarData: BarAreaData(show: false),
+        spots: scrapSpots,
+      ),
     ];
   }
 
   List<LineChartBarData> lineBarsDataFromFetchedData(Map<String, int> data) {
     final recipeCount = data['recipes']?.toDouble() ?? 0;
     final recordCount = data['records']?.toDouble() ?? 0;
+    final scrapedRecipeCount = data['scraped_recipes']?.toDouble() ?? 0;
+
 
     return [
       LineChartBarData(
@@ -102,17 +159,54 @@ class _AdminDashboardUsageMetricsState
           // FlSpot(5, recordCount * 0.5),
         ],
       ),
+      LineChartBarData(
+        isCurved: true,
+        color: Colors.yellow,
+        barWidth: 8,
+        isStrokeCapRound: true,
+        dotData: const FlDotData(show: false),
+        belowBarData: BarAreaData(show: false),
+        spots: [
+          FlSpot(1, scrapedRecipeCount), // 기록 갯수를 첫 번째 데이터에 반영
+          // FlSpot(3, recordCount * 0.7), // 예제 데이터 (변경 가능)
+          // FlSpot(5, recordCount * 0.5),
+        ],
+      ),
     ];
   }
 
+  int calculateTotal(Map<String, int> data) {
+    return data.values.fold(0, (sum, value) => sum + value);
+  }
+
+  Future<Map<String, int>> fetchAllTotals() async {
+    final recipeData = await fetchMonthlyData('recipe');
+    final recordData = await fetchMonthlyData('record');
+    final sharedData = await fetchSharedData();
+    final scrapedRecipeData = await fetchMonthlyData('scraped_recipes');
+
+    return {
+      'recipe': calculateTotal(recipeData),
+      'record': calculateTotal(recordData),
+      'shared': calculateTotal(sharedData),
+      'scraped': calculateTotal(scrapedRecipeData),
+    };
+  }
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
         appBar: AppBar(
           title: Text('어플 실적 현황'),
         ),
-        body: FutureBuilder<List<LineChartBarData>>(
-            future: buildCumulativeChartData(),
+        body: FutureBuilder<Map<String, dynamic>>(
+            future: Future.wait([
+              fetchAllTotals(), // Map<String, int> 반환
+              buildCumulativeChartData(), // List<LineChartBarData> 반환
+            ]).then((results) => {
+              'totals': results[0] as Map<String, int>, // 명시적 캐스팅
+              'chartData': results[1] as List<LineChartBarData>, // 명시적 캐스팅
+            }),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(child: CircularProgressIndicator());
@@ -121,7 +215,13 @@ class _AdminDashboardUsageMetricsState
                 return Center(child: Text('데이터를 불러오는 중 오류가 발생했습니다.'));
               }
 
-              final chartData = snapshot.data!;
+              final data = snapshot.data!;
+              final totals = data['totals'] as Map<String, int>;
+              final chartData = data['chartData'] as List<LineChartBarData>;
+
+              final recipeTotal = totals['recipe'] ?? 0;
+              final recordTotal = totals['record'] ?? 0;
+              final scrapedTotal = totals['scraped'] ?? 0;
 
               return Column(
                 children: [
@@ -212,9 +312,9 @@ class _AdminDashboardUsageMetricsState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        LegendItem(color: Colors.green, text: '레시피'),
-                        LegendItem(color: Colors.pink, text: '기록'),
-                        LegendItem(color: Colors.cyan, text: '공유'),
+                        LegendItem(color: Colors.green, text: '레시피', value: recipeTotal),
+                        LegendItem(color: Colors.pink, text: '기록', value: recordTotal),
+                        LegendItem(color: Colors.cyan, text: '스크랩', value: scrapedTotal),
                       ],
                     ),
                   ),
@@ -247,11 +347,13 @@ class _AdminDashboardUsageMetricsState
 class LegendItem extends StatelessWidget {
   final Color color;
   final String text;
+  final int value;
 
-  LegendItem({required this.color, required this.text});
+  LegendItem({required this.color, required this.text, required this.value});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Container(
@@ -263,7 +365,9 @@ class LegendItem extends StatelessWidget {
           ),
         ),
         SizedBox(width: 8),
-        Text(text, style: TextStyle(fontSize: 14)),
+        Text('$text: $value',
+            style: TextStyle(fontSize: 14,
+                color: theme.colorScheme.onSurface)),
       ],
     );
   }

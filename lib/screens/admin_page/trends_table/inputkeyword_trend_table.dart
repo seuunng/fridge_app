@@ -81,6 +81,7 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
@@ -94,7 +95,8 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
                   onTap: () => _sortBy(column['name'], column['state']),
                   child: Row(
                     children: [
-                      Text(column['name']),
+                      Text(column['name'],
+                          style: TextStyle(color: theme.colorScheme.onSurface)),
                       Icon(
                         column['state'] == SortState.ascending
                             ? Icons.arrow_upward
@@ -110,9 +112,12 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
             }).toList(),
             rows: searchTrends.map((row) {
               return DataRow(cells: [
-                DataCell(Text(row['순위'].toString())), // '순위' 필드 사용
-                DataCell(Text(row['키워드'].toString())), // '키워드' 필드 사용
-                DataCell(Text(row['입력횟수'].toString())), //  // '공유' 필드 사용
+                DataCell(Text(row['순위'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '순위' 필드 사용
+                DataCell(Text(row['키워드'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '키워드' 필드 사용
+                DataCell(Text(row['입력횟수'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), //  // '공유' 필드 사용
               ]);
             }).toList(),
           ),
