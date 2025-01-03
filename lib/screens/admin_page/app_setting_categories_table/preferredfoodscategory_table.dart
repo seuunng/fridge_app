@@ -39,15 +39,19 @@ class _PreferredfoodscategoryTableState
     super.initState();
     _loadFoodsData();
   }
-
+  final defaultCategories = {
+    '알러지': ['우유', '계란', '땅콩'],
+    '유제품': ['우유', '치즈', '요거트'],
+    '비건': ['육류', '해산물', '유제품', '계란', '꿀'],
+    '무오신채': ['마늘', '양파', '부추', '파', '달래'],
+    '설밀나튀': ['설탕', '밀가루', '튀김'],
+  };
   Future<void> _loadFoodsData() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     try {
       final snapshot = await FirebaseFirestore.instance
-          .collection('preferred_foods_categories')
-          .where('userId', isEqualTo: userId)
-          .get();
+          .collection('preferred_foods_categories').get();
 
       if (snapshot.docs.isEmpty) {
         print('Firestore 데이터가 없습니다.');
@@ -61,7 +65,7 @@ class _PreferredfoodscategoryTableState
       snapshot.docs.forEach((doc) {
         final data = PreferredFoodModel.fromFirestore(doc.data());
 
-        data.categoryName.forEach((category, foodList) {
+        data.category.forEach((category, foodList) {
           tempCategories.add(category); // 카테고리 추가
           tempItemsByCategory[category] = foodList;
 
@@ -89,7 +93,7 @@ class _PreferredfoodscategoryTableState
     try {
       final docRef = FirebaseFirestore.instance
           .collection('preferred_foods_categories')
-          .doc('9y0Rg5AnHEQHcCa3VO6J'); // 이 ID를 실제로 사용 중인 문서 ID로 변경
+          .doc(); // 이 ID를 실제로 사용 중인 문서 ID로 변경
 
       final docSnapshot = await docRef.get();
 
@@ -137,7 +141,7 @@ class _PreferredfoodscategoryTableState
     try {
       final docRef = FirebaseFirestore.instance
           .collection('preferred_foods_categories')
-          .doc('9y0Rg5AnHEQHcCa3VO6J'); // 실제 문서 ID로 변경
+          .doc(); // 실제 문서 ID로 변경
 
       final docSnapshot = await docRef.get();
 
@@ -192,7 +196,7 @@ class _PreferredfoodscategoryTableState
       try {
         final docRef = FirebaseFirestore.instance
             .collection('preferred_foods_categories')
-            .doc('9y0Rg5AnHEQHcCa3VO6J'); // 실제 문서 ID로 변경
+            .doc(); // 실제 문서 ID로 변경
 
         final docSnapshot = await docRef.get();
 

@@ -1,14 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PreferredFoodModel {
-  final Map<String, List<String>> categoryName;
+  final Map<String, List<String>> category;
   final String userId;
 
-  PreferredFoodModel({required this.categoryName, required this.userId});
+  PreferredFoodModel({required this.category, required this.userId});
 
   factory PreferredFoodModel.fromFirestore(Map<String, dynamic> data) {
     final rawCategory = data['category'] as Map<String, dynamic>? ?? {};
-    final categoryName = rawCategory.map((key, value) {
+    final category = rawCategory.map((key, value) {
       return MapEntry(
         key,
         (value as List<dynamic>)
@@ -21,11 +21,11 @@ class PreferredFoodModel {
 
     return PreferredFoodModel(
       userId: userId,
-      categoryName: categoryName,
+      category: category,
     );
   }
 
   Map<String, dynamic> toFirestore() {
-    return {'userId': userId, 'categoryName': categoryName};
+    return {'userId': userId, 'category': category};
   }
 }

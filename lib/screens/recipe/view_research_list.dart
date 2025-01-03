@@ -222,13 +222,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
       List<String> allPreferredItems =
           itemsByCategory.values.expand((list) => list).toList();
 
-      print('allPreferredItems ${allPreferredItems} ');
-
       setState(() {
         excludeKeywords = [...?excludeKeywords, ...allPreferredItems];
       });
-
-      print('excludeKeywords ${excludeKeywords} ');
 
       await fetchRecipes(
           keywords: keywords,

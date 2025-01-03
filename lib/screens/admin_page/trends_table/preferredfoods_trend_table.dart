@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/models/preferred_food_model.dart';
 
 enum SortState { none, ascending, descending }
 
@@ -11,27 +13,54 @@ class PreferredfoodsTrendTable extends StatefulWidget {
 class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
   List<Map<String, dynamic>> columns = [
     {'name': '순위', 'state': SortState.none},
-    {'name': '선호식품 카테고리', 'state': SortState.none},
+    {'name': '카테고리', 'state': SortState.none},
+    {'name': '식품명', 'state': SortState.none},
     {'name': '생성횟수', 'state': SortState.none},
   ];
 
-  List<Map<String, dynamic>> userData = [
-    {
-      '순위': 1,
-      '선호식품 카테고리': '뿌리식물',
-      '생성횟수': 10,
-    },
-    {
-      '순위': 2,
-      '선호식품 카테고리': '장에좋은',
-      '생성횟수': 6,
-    },
-    {
-      '순위': 3,
-      '선호식품 카테고리': '빨강',
-      '생성횟수': 2,
-    },
-  ];
+  List<Map<String, dynamic>> userData = [];
+
+  int rank = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFoodsData();
+  }
+
+  Future<void> _loadFoodsData() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('preferred_foods_categories')
+        .where('isDefault', isEqualTo: false) // 기본 카테고리 제외
+        .get();
+
+    List<Map<String, dynamic>> foods = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data(); // Firestore 문서 데이터를 가져옴
+
+      if (data.containsKey('category') && data['category'] is Map<String, dynamic>) {
+        Map<String, dynamic> categoryMap = data['category']; // 카테고리 필드 가져오기
+
+        categoryMap.forEach((categoryName, foodItems) {
+          if (foodItems is List<dynamic>) {
+            for (var food in foodItems) {
+              foods.add({
+                '순위': rank++, // Firestore 문서 ID
+                '카테고리': categoryName, // 카테고리명 (예: "채소")
+                '식품명': food.toString(), // 각 식품명 (예: "당근")
+                '생성횟수': data['생성횟수'] ?? 0, // 기본값 0
+              });
+            }
+          }
+        });
+      }
+    }
+
+    setState(() {
+      userData = foods;
+    });
+  }
 
   void _sortBy(String columnName, SortState currentState) {
     setState(() {
@@ -41,15 +70,15 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
           column['state'] = currentState == SortState.none
               ? SortState.ascending
               : (currentState == SortState.ascending
-                  ? SortState.descending
-                  : SortState.none);
+              ? SortState.descending
+              : SortState.none);
         } else {
           column['state'] = SortState.none;
         }
       }
 
       if (currentState == SortState.none) {
-        userData.sort((a, b) => a['순위'].compareTo(b['순위']));
+        userData.sort((a, b) => a['생성횟수'].compareTo(b['생성횟수']));
       } else {
         userData.sort((a, b) {
           int result;
@@ -82,8 +111,8 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
                         column['state'] == SortState.ascending
                             ? Icons.arrow_upward
                             : column['state'] == SortState.descending
-                                ? Icons.arrow_downward
-                                : Icons.sort,
+                            ? Icons.arrow_downward
+                            : Icons.sort,
                         size: 16,
                       ),
                     ],
@@ -95,7 +124,9 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
               return DataRow(cells: [
                 DataCell(Text(row['순위'].toString(),
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '순위' 필드 사용
-                DataCell(Text(row['선호식품 카테고리'].toString(),
+                DataCell(Text(row['카테고리'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '순위' 필드 사용
+                DataCell(Text(row['식품명'].toString(),
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '키워드' 필드 사용
                 DataCell(Text(row['생성횟수'].toString(),
                     style: TextStyle(color: theme.colorScheme.onSurface))), //  // '공유' 필드 사용

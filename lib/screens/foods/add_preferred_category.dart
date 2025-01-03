@@ -99,62 +99,42 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
     }
 
     try {
-      // 기존 카테고리 이름 가져오기
-      final oldCategoryName = widget.categoryName ?? "";
-
+      // 1️⃣ 기존에 동일한 카테고리가 존재하는지 확인
       final snapshot = await FirebaseFirestore.instance
           .collection('preferred_foods_categories')
           .where('userId', isEqualTo: userId)
-          .where('category.$oldCategoryName', isNotEqualTo: null)
+          .where('category', isEqualTo: newCategoryName) // 카테고리명이 같은 문서 조회
           .get();
 
       if (snapshot.docs.isNotEmpty) {
+        // 2️⃣ 이미 존재하는 카테고리가 있다면 업데이트 (아이템 추가)
         final docRef = snapshot.docs.first.reference;
+        final existingItems = List<String>.from(snapshot.docs.first.data()['items'] ?? []);
 
-        // 카테고리 이름 변경 및 아이템 업데이트
-        if (oldCategoryName.isNotEmpty && oldCategoryName != newCategoryName) {
-          // 기존 카테고리 이름 삭제 및 새 이름 추가
-          await docRef.update({
-            'category.$oldCategoryName': FieldValue.delete(),
-            'category.$newCategoryName': items,
-          });
-        } else {
-          // 기존 카테고리 이름이 동일한 경우 아이템만 업데이트
-          await docRef.update({
-            'category.$newCategoryName': items,
-          });
-        }
+        // 기존 아이템 리스트에 새 아이템 추가 (중복 방지)
+        final updatedItems = {...existingItems, ...items}.toList();
+
+        await docRef.update({'items': updatedItems});
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('카테고리가 저장되었습니다.')),
+          SnackBar(content: Text('기존 카테고리에 아이템이 추가되었습니다.')),
         );
       } else {
-        // 새 카테고리 추가
-        await FirebaseFirestore.instance
-            .collection('preferred_foods_categories')
-            .add({
+        // 3️⃣ 존재하지 않는다면 새로운 문서 생성
+        await FirebaseFirestore.instance.collection('preferred_foods_categories').add({
           'userId': userId,
-          'category': {
-            newCategoryName: items,
-          },
+          'category': {newCategoryName: items},
+          'isDefault': false,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('새 카테고리가 추가되었습니다.')),
+          SnackBar(content: Text('새로운 카테고리가 추가되었습니다.')),
         );
       }
-
-      // 상태 초기화 및 화면 종료
-      setState(() {
-        categoryController.clear();
-        itemController.clear();
-        items.clear();
-      });
-      Navigator.pop(context, true);
     } catch (e) {
       print('Error saving category: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 저장 중 오류가 발생했습니다.')),
+        SnackBar(content: Text('카테고리 저장 중 오류 발생.')),
       );
     }
   }
@@ -211,6 +191,7 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('카테고리 추가'),
@@ -234,6 +215,7 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
                       labelText: '카테고리 이름',
                       border: OutlineInputBorder(),
                     ),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                   ),
                   SizedBox(height: 16),
                   TextField(
@@ -259,6 +241,7 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
                               decoration: InputDecoration(
                                 border: OutlineInputBorder(),
                               ),
+                                style: TextStyle(color: theme.colorScheme.onSurface),
                               onSubmitted: (newValue) {
                                 setState(() {
                                   if (newValue.trim().isNotEmpty) {

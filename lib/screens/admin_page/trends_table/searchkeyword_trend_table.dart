@@ -12,6 +12,7 @@ class SearchkeywordTrendTable extends StatefulWidget {
 class _SearchkeywordTrendTableState extends State<SearchkeywordTrendTable> {
   List<Map<String, dynamic>> userData = [];
 
+  int rank = 1; // 순위를 1부터 시작
   @override
   void initState() {
     super.initState();
@@ -33,7 +34,6 @@ class _SearchkeywordTrendTableState extends State<SearchkeywordTrendTable> {
           .limit(10) // 상위 10개만 가져옴
           .get();
 
-      int rank = 1; // 순위를 1부터 시작
       return snapshot.docs.map((doc) {
         final data = doc.data();
         return {

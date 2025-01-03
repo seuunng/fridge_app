@@ -156,10 +156,10 @@ class _AddItemState extends State<AddItem> {
           final data = doc.data();
           final model = PreferredFoodModel.fromFirestore(data);
 
-          model.categoryName.forEach((key, value) {
+          model.category.forEach((key, value) {
             if (loadedData.containsKey(key)) {
               loadedData[key]!.addAll(value.map((item) => PreferredFoodModel(
-                    categoryName: {
+                    category: {
                       key: [item]
                     },
                     userId: model.userId,
@@ -167,7 +167,7 @@ class _AddItemState extends State<AddItem> {
             } else {
               loadedData[key] = value
                   .map((item) => PreferredFoodModel(
-                        categoryName: {
+                        category: {
                           key: [item]
                         },
                         userId: model.userId,
@@ -207,6 +207,7 @@ class _AddItemState extends State<AddItem> {
             .add({
           'userId': userId,
           'category': {category: items},
+          'isDefault': true,
         });
       }
 
@@ -366,7 +367,7 @@ class _AddItemState extends State<AddItem> {
       if (widget.sourcePage == 'preferred_foods_category') {
         itemsByPreferredCategory.forEach((category, categoryModels) {
           for (var categoryModel in categoryModels) {
-            categoryModel.categoryName.forEach((key, values) {
+            categoryModel.category.forEach((key, values) {
               for (var foodName in values) {
                 if (foodName.toLowerCase().contains(searchKeyword)) {
                   tempFilteredItems.add(
@@ -805,7 +806,7 @@ class _AddItemState extends State<AddItem> {
 
             final itemName = isPreferredCategory
                 ? (item as PreferredFoodModel)
-                        .categoryName[selectedCategory!]
+                        .category[selectedCategory!]
                         ?.join(", ") ??
                     ''
                 : (item as FoodsModel).foodsName;

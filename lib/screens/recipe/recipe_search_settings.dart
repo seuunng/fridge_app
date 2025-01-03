@@ -76,7 +76,7 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
           itemsByPreferredCategory = {};
 
           for (var categoryModel in categories) {
-            categoryModel.categoryName.forEach((categoryName, itemList) {
+            categoryModel.category.forEach((categoryName, itemList) {
               if (itemsByPreferredCategory.containsKey(categoryName)) {
                 itemsByPreferredCategory[categoryName]!.add(categoryModel);
               } else {
@@ -119,6 +119,7 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
             .add({
           'userId': userId,
           'category': {category: items},
+          'isDefault': true,
         });
       }
 
@@ -328,7 +329,7 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
     final theme = Theme.of(context);
 
     final uniqueCategories = itemsByPreferredCategory.values
-        .expand((models) => models.expand((model) => model.categoryName.keys))
+        .expand((models) => models.expand((model) => model.category.keys))
         .toSet()
         .toList();
 

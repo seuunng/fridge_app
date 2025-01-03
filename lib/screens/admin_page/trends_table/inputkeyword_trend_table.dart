@@ -11,6 +11,7 @@ class InputkeywordTrendTable extends StatefulWidget {
 class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
   List<Map<String, dynamic>> searchTrends = [];
 
+  int rank = 1; // 순위를 1부터 시작
   @override
   void initState() {
     super.initState();
@@ -34,7 +35,7 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
       return snapshot.docs.map((doc) {
         final data = doc.data();
         return {
-          '순위': snapshot.docs.indexOf(doc) + 1,
+          '순위': rank++,
           '키워드': data['keyword'],
           '입력횟수': data['count'],
         };
