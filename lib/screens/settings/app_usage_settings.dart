@@ -125,12 +125,18 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       builder: (BuildContext context) {
         String newCategory = '';
         return AlertDialog(
-          title: Text('$categoryType 추가'),
+          title: Text('$categoryType 추가',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+            ),
+          ),
           content: TextField(
             onChanged: (value) {
               newCategory = value;
             },
-            decoration: InputDecoration(hintText: '새로운 카테고리 입력'),
+            decoration: InputDecoration(hintText: '새로운 냉장고 이름 입력'),
           ),
           actions: [
             TextButton(
@@ -169,8 +175,20 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('냉장고 삭제'),
-          content: Text('$category를 삭제하시겠습니까?'),
+          title: Text('냉장고 삭제',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+            ),
+          ),
+          content: Text('$category를 삭제하시겠습니까?',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+            ),
+          ),
           actions: [
             TextButton(
               child: Text('취소'),

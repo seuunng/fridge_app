@@ -425,7 +425,13 @@ class _AccountInformationState extends State<AccountInformation> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('로그아웃을 진행할까요?'),
+          title: Text('로그아웃을 진행할까요?',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+            ),
+          ),
           actions: [
             TextButton(
               child: Text('취소'),

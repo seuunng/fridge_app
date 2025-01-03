@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/login_elevated_button.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'kakao_mobile_login.dart' if (dart.library.html) 'kakao_web_login.dart';
 import 'kakao_mobile_login.dart' as mobile;
 import 'kakao_web_login.dart' as web;
@@ -352,7 +353,20 @@ class _LoginPageState extends State<LoginPage> {
         .doc(userId)
         .set({'avatar': avatarPath}, SetOptions(merge: true));
   }
-
+  Future<void> _launchPrivacyPolicy() async {
+    final Uri url = Uri.parse(
+        'https://seuunng.github.io/food_for_later_privacy_policy/privacy-policy.html');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+  Future<void> _launchTermsOfService() async {
+    final Uri url = Uri.parse(
+        'https://seuunng.github.io/food_for_later_privacy_policy/terms-of-service.html');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -360,62 +374,100 @@ class _LoginPageState extends State<LoginPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: '이메일'),
+            Column(
+              children: [
+                TextField(
+                  controller: _emailController,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                  decoration: InputDecoration(labelText: '이메일'),
+                ),
+                TextField(
+                  controller: _passwordController,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                  decoration: InputDecoration(labelText: '비밀번호'),
+                  obscureText: true,
+                ),
+                SizedBox(height: 12),
+                BasicElevatedButton(
+                  onPressed: signInWithEmailAndPassword,
+                  iconTitle: Icons.login,
+                  buttonTitle: '로그인',
+                ),
+                TextButton(
+                  onPressed: registerWithEmailAndPassword,
+                  child: Text('회원가입'),
+                ),
+                Divider(),
+                SizedBox(height: 20),
+                LoginElevatedButton(
+                  buttonTitle: 'Google로 로그인',
+                  image: 'assets/images/google_logo.png',
+                  onPressed: () {
+                    if (kIsWeb) {
+                      signInWithGoogleWeb(); // 웹용 네이버 로그인
+                    } else {
+                      signInWithGoogle(); // 모바일용 네이버 로그인
+                    }
+                  },
+                ),
+                SizedBox(height: 12),
+                LoginElevatedButton(
+                  buttonTitle: 'Kakao Talk으로 로그인',
+                  image: 'assets/images/kakao_talk_logo.png',
+                  onPressed: () {
+                    if (kIsWeb) {
+                      web.signInWithKakao(); // 웹용 카카오 로그인
+                    } else {
+                      mobile.signInWithKakao(context); // 모바일용 카카오 로그인
+                    }
+                  },
+                ),
+                SizedBox(height: 12),
+                LoginElevatedButton(
+                  buttonTitle: 'Naver로 로그인',
+                  image: 'assets/images/naver_logo.png',
+                  onPressed: () {
+                    if (kIsWeb) {
+                      signInWithNaverWeb(); // 웹용 네이버 로그인
+                    } else {
+                      signInWithNaver(); // 모바일용 네이버 로그인
+                    }
+                  },
+                ),
+              ],
             ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(labelText: '비밀번호'),
-              obscureText: true,
-            ),
-            SizedBox(height: 12),
-            BasicElevatedButton(
-              onPressed: signInWithEmailAndPassword,
-              iconTitle: Icons.login,
-              buttonTitle: '로그인',
-            ),
-            TextButton(
-              onPressed: registerWithEmailAndPassword,
-              child: Text('회원가입'),
-            ),
-            Divider(),
-            SizedBox(height: 20),
-            LoginElevatedButton(
-              buttonTitle: 'Google로 로그인',
-              image: 'assets/images/google_logo.png',
-              onPressed: () {
-                if (kIsWeb) {
-                  signInWithGoogleWeb(); // 웹용 네이버 로그인
-                } else {
-                  signInWithGoogle(); // 모바일용 네이버 로그인
-                }
-              },
-            ),
-            SizedBox(height: 12),
-            LoginElevatedButton(
-              buttonTitle: 'Kakao Talk으로 로그인',
-              image: 'assets/images/kakao_talk_logo.png',
-              onPressed: () {
-                if (kIsWeb) {
-                  web.signInWithKakao(); // 웹용 카카오 로그인
-                } else {
-                  mobile.signInWithKakao(context); // 모바일용 카카오 로그인
-                }
-              },
-            ),
-            SizedBox(height: 12),
-            LoginElevatedButton(
-              buttonTitle: 'Naver로 로그인',
-              image: 'assets/images/naver_logo.png',
-              onPressed: () {
-                if (kIsWeb) {
-                  signInWithNaverWeb(); // 웹용 네이버 로그인
-                } else {
-                  signInWithNaver(); // 모바일용 네이버 로그인
-                }
-              },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: _launchPrivacyPolicy,
+                  child: Text('개인정보방침'),
+                ),
+                SizedBox(width: 8), // 버튼과 구분자 사이 여백 추가
+                Text(
+                  '|',
+                  style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black,
+                  ),
+                ),
+                SizedBox(width: 8),
+                TextButton(
+                  onPressed: _launchTermsOfService,
+                  child: Text('서비스약관'),
+                ),
+              ],
             ),
           ],
         ),
