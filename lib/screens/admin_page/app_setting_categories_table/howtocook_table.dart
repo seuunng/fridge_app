@@ -347,6 +347,7 @@ class _HowtocookTableState extends State<HowtocookTable> {
                           controller: _methodNameController,
                           keyboardType: TextInputType.text,
                           textAlign: TextAlign.center,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: '조리방법명',
                             hintStyle: TextStyle(

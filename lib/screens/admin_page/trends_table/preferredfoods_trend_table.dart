@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:food_for_later_new/models/preferred_food_model.dart';
 
 enum SortState { none, ascending, descending }
 

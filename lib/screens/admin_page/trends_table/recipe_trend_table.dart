@@ -65,21 +65,18 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
     final FirebaseFirestore db = FirebaseFirestore.instance;
 
     try {
-      // 스크랩 수
       final scrapedCount = await db
           .collection('scraped_recipes')
           .where('recipeId', isEqualTo: recipeId)
           .get()
           .then((snapshot) => snapshot.size);
 
-      // 좋아요 수
       final likedCount = await db
           .collection('liked_recipes')
           .where('recipeId', isEqualTo: recipeId)
           .get()
           .then((snapshot) => snapshot.size);
 
-      // 리뷰 수
       final reviewCount = await db
           .collection('recipe_reviews')
           .where('recipeId', isEqualTo: recipeId)
@@ -101,7 +98,6 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
     }
   }
 
-  // 각 열에 대한 정렬 상태를 관리하는 리스트
   List<Map<String, dynamic>> columns = [
     {'name': '순위', 'state': SortState.none},
     {'name': '제목', 'state': SortState.none},
@@ -117,7 +113,6 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
 
   void _sortBy(String columnName, SortState currentState) {
     setState(() {
-      // 열의 정렬 상태를 업데이트
       for (var column in columns) {
         if (column['name'] == columnName) {
           column['state'] = currentState == SortState.none
@@ -130,9 +125,7 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
         }
       }
 
-      // 정렬 수행
       if (currentState == SortState.none) {
-        // 정렬 없으면 원래 데이터 순서 유지
         userData.sort((a, b) => a['순위'].compareTo(b['순위']));
       } else {
         userData.sort((a, b) {

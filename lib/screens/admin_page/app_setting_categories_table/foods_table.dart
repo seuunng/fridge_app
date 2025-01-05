@@ -420,6 +420,7 @@ class _FoodsTableState extends State<FoodsTable> {
                           controller: _foodNameController,
                           keyboardType: TextInputType.text,
                           textAlign: TextAlign.center,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: '식품명',
                             hintStyle: TextStyle(
@@ -470,7 +471,7 @@ class _FoodsTableState extends State<FoodsTable> {
                           ),
                           style: TextStyle(
                             fontSize: 14, // 선택된 값의 글씨 크기
-                            color: Colors.black, // 선택된 값의 색상
+                            color: Colors.black, // 선택된 값의 색상style: theme.textTheme.bodyMedium,
                           ),
                           alignment: Alignment.bottomCenter,
                         ),
@@ -480,6 +481,7 @@ class _FoodsTableState extends State<FoodsTable> {
                           controller: _shelfLifeController,
                           textAlign: TextAlign.center,
                           keyboardType: TextInputType.number,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: '소비기한',
                             hintStyle: TextStyle(

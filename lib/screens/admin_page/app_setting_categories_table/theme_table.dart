@@ -298,6 +298,7 @@ class _ThemeTableState extends State<ThemeTable> {
                           controller: _themeNameController,
                           keyboardType: TextInputType.text,
                           textAlign: TextAlign.center,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: '테마명',
                             hintStyle: TextStyle(

@@ -126,10 +126,6 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
           'category': {newCategoryName: items},
           'isDefault': false,
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('새로운 카테고리가 추가되었습니다.')),
-        );
       }
     } catch (e) {
       print('Error saving category: $e');

@@ -190,13 +190,37 @@ class _AddItemState extends State<AddItem> {
 
   Future<void> _addDefaultPreferredCategories() async {
     try {
-      final defaultCategories = {
-        '알러지': ['우유', '계란', '땅콩'],
-        '유제품': ['우유', '치즈', '요거트'],
-        '비건': ['육류', '해산물', '유제품', '계란', '꿀'],
-        '무오신채': ['마늘', '양파', '부추', '파', '달래'],
-        '설밀나튀': ['설탕', '밀가루', '튀김'],
-      };
+      // 🔹 Firestore에서 `default_prefered_foods_categories` 데이터를 불러오기
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('default_prefered_foods_categories')
+          .get();
+
+      // 🔹 Firestore 데이터를 기반으로 `defaultCategories` 생성
+      Map<String, List<String>> defaultCategories = {};
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+
+        if (data.containsKey('category') && data['category'] is Map<String, dynamic>) {
+          Map<String, dynamic> categoryMap = Map<String, dynamic>.from(data['category']);
+
+          for (var entry in categoryMap.entries) {
+            String category = entry.key;
+            List<String> items = List<String>.from(entry.value);
+
+            if (!defaultCategories.containsKey(category)) {
+              defaultCategories[category] = items;
+            } else {
+              defaultCategories[category]!.addAll(items);
+            }
+          }
+        }
+      }
+
+      print('✅ Firestore에서 불러온 기본 카테고리: $defaultCategories');
+
+      // 🔹 `preferred_foods_categories`에 데이터 추가
+      final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
       for (var entry in defaultCategories.entries) {
         final category = entry.key;
@@ -210,15 +234,10 @@ class _AddItemState extends State<AddItem> {
           'isDefault': true,
         });
       }
-
-      _loadPreferredFoodsCategoriesFromFirestore();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 선호 카테고리가 추가되었습니다.')),
-      );
     } catch (e) {
-      print('Error adding default preferred categories: $e');
+      print('❌ Firestore에서 기본 카테고리 불러오는 중 오류 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 선호 카테고리를 추가하는 중 오류가 발생했습니다.')),
+        SnackBar(content: Text('기본 선호 카테고리를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.')),
       );
     }
   }
