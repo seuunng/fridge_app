@@ -461,10 +461,7 @@ class _PreferredfoodscategoryTableState
                             contentPadding:
                                 EdgeInsets.only(bottom: 13, left: 20),
                           ),
-                          style: TextStyle(
-                            fontSize: 14, // 선택된 값의 글씨 크기
-                            color: Colors.black, // 선택된 값의 색상
-                          ),
+                          style: theme.textTheme.bodyMedium,
                           alignment: Alignment.bottomCenter,
                         ),
                       ),

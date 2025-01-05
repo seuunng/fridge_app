@@ -105,6 +105,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
                   _isDropdownOpen = !_isDropdownOpen; // 드롭다운 열림/닫힘 토글
                 });
               },
+              style: theme.textTheme.bodyMedium,
             ),
           ],
         ),
