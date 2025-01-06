@@ -44,41 +44,35 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
   void _loadFoodsCategoriesFromFirestore() async {
     try {
       final snapshot =
-          await FirebaseFirestore.instance.collection('foods').get();
+          await FirebaseFirestore.instance.collection('default_foods').get();
       final categories = snapshot.docs.map((doc) {
         return FoodsModel.fromFirestore(doc);
       }).toList();
 
-      final Map<String, FoodsModel> uniqueCategoriesMap = {};
-      for (var category in categories) {
-        if (!uniqueCategoriesMap.containsKey(category.defaultCategory)) {
-          uniqueCategoriesMap[category.defaultCategory] = category;
-        }
-      }
-
-      final uniqueCategories = uniqueCategoriesMap.values.toList();
-
       setState(() {
-        foodsCategories = uniqueCategories;
+        foodsCategories = categories;
+
+        // ✅ 사용자가 선택한 카테고리를 자동으로 선택
         if (widget.categoryName != null && widget.categoryName!.isNotEmpty) {
           selectedFoodsCategory = foodsCategories.firstWhere(
-            (category) => category.defaultCategory == widget.categoryName,
+                (category) => category.defaultCategory == widget.categoryName,
             orElse: () => FoodsModel(
-              // 기본값을 설정
               id: 'unknown',
               foodsName: '',
               defaultCategory: '',
               defaultFridgeCategory: '',
               shoppingListCategory: '',
-              // registrationDate: DateTime.now(),
-              // expirationDate: 0,
               shelfLife: 0,
             ),
           );
+
+          // ✅ 기본값을 UI 입력 필드에 채우기
+          foodNameController.text = selectedFoodsCategory?.foodsName ?? '';
+          consumptionDays = selectedFoodsCategory?.shelfLife ?? 1;
         }
       });
     } catch (e) {
-      print("Error loading foods categories: $e");
+      print("Error loading default foods categories: $e");
     }
   }
 
@@ -105,6 +99,54 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
     setState(() {
       shoppingListCategories = categories;
     });
+  }
+
+  void _saveOrUpdateFood() async {
+    final userId = FirebaseFirestore.instance.collection('users').doc().id;
+
+    if (foodNameController.text.isNotEmpty &&
+        selectedFoodsCategory != null &&
+        selectedFridgeCategory != null &&
+        selectedShoppingListCategory != null) {
+      try {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('foods')
+            .where('foodsName', isEqualTo: foodNameController.text)
+            .where('userId', isEqualTo: userId)
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          final docId = querySnapshot.docs.first.id;
+          await FirebaseFirestore.instance.collection('foods').doc(docId).update({
+            'foodsName': foodNameController.text,
+            'defaultCategory': selectedFoodsCategory!.defaultCategory,
+            'defaultFridgeCategory': selectedFridgeCategory!.categoryName,
+            'shoppingListCategory': selectedShoppingListCategory!.categoryName,
+            'shelfLife': consumptionDays,
+            'userId': userId,
+          });
+        } else {
+          await FirebaseFirestore.instance.collection('foods').add({
+            'foodsName': foodNameController.text,
+            'defaultCategory': selectedFoodsCategory!.defaultCategory,
+            'defaultFridgeCategory': selectedFridgeCategory!.categoryName,
+            'shoppingListCategory': selectedShoppingListCategory!.categoryName,
+            'shelfLife': consumptionDays,
+            'userId': userId,
+          });
+        }
+
+        Navigator.pop(context, true);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('식품 추가/수정 중 오류 발생: $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('모든 필드를 입력해주세요.')),
+      );
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -151,6 +193,7 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                       hint: Text(
                         '카테고리 선택',
                         style: TextStyle(
+                          fontSize: 16,
                           color: theme.colorScheme.onSurface, // 레이블 텍스트 스타일
                         ),
                       ),
@@ -160,6 +203,7 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                           child: Text(
                             value.defaultCategory,
                             style: TextStyle(
+                              fontSize: 18,
                               color: theme.colorScheme.onSurface, // 레이블 텍스트 스타일
                             ),
                           ),
@@ -192,6 +236,7 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                       // border: OutlineInputBorder(),
                       hintText: '식품명을 입력하세요',
                       hintStyle: TextStyle(
+                        fontSize: 18,
                         color: theme.colorScheme.onSurface
                             .withOpacity(0.6), // 힌트 텍스트 스타일
                       ),
@@ -223,7 +268,9 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                       value: value,
                       child: Text(
                         value.categoryName,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        style: TextStyle(
+                            fontSize: 18,
+                            color: theme.colorScheme.onSurface),
                       ),
                     );
                   }).toList(),
@@ -284,7 +331,8 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                     ),
                     Text('$consumptionDays 일',
                         style: TextStyle(
-                            fontSize: 18, color: theme.colorScheme.onSurface)),
+                            fontSize: 18,
+                            color: theme.colorScheme.onSurface)),
                     IconButton(
                       icon: Icon(Icons.add),
                       onPressed: () {
@@ -328,39 +376,7 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
           width: double.infinity,
           child: NavbarButton(
             buttonTitle: '추가하기',
-            onPressed: () async {
-              if (foodNameController.text.isNotEmpty &&
-                  selectedFoodsCategory != null &&
-                  selectedFridgeCategory != null &&
-                  selectedShoppingListCategory != null) {
-                try {
-                  await FirebaseFirestore.instance.collection('foods').add({
-                    'foodsName': foodNameController.text, // 식품명
-                    'defaultCategory': selectedFoodsCategory?.defaultCategory ??
-                        '', // 선택된 카테고리
-                    'defaultFridgeCategory':
-                        selectedFridgeCategory?.categoryName ?? '', // 냉장고 카테고리
-                    'shoppingListCategory':
-                        selectedShoppingListCategory?.categoryName ??
-                            '', // 쇼핑 리스트 카테고리
-                    // 'expirationDate': expirationDays, // 유통기한
-                    'shelfLife': consumptionDays, // 품질유지기한
-                  });
-
-                  Navigator.pop(context, true);
-                } catch (e) {
-                  // 저장 중 에러 발생 시 알림 메시지 표시
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('식품 추가 중 오류가 발생했습니다: $e')),
-                  );
-                }
-              } else {
-                // 필수 입력 항목이 누락된 경우 경고 메시지 표시
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('모든 필드를 입력해주세요.')),
-                );
-              }
-            },
+            onPressed: () => _saveOrUpdateFood(),
           ),
         ),
       ),

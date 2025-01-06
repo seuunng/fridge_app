@@ -60,22 +60,27 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     _loadItemsInFridgeFromFirestore();
   }
 
-  void _loadCategoriesFromFirestore() async {
+  Future<Map<String, List<String>>> _fetchFoods() async {
+    Map<String, List<String>> categoryMap = {};
+    Set<String> userFoodNames = {}; // 사용자가 수정한 식품명을 저장
+
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('foods').get();
+      // ✅ 1. 사용자가 수정한 foods 데이터 가져오기
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('foods')
+          .where('userId', isEqualTo: userId)
+          .get();
 
-      final Map<String, List<String>> categoryMap = {};
-
-      for (var doc in snapshot.docs) {
+      for (var doc in userSnapshot.docs) {
         final data = doc.data();
-        final String? category = data['defaultCategory'] as String?;
-        final String? foodName = data['foodsName'] as String?;
+        final category = data['defaultCategory'] as String?;
+        final foodName = data['foodsName'] as String?;
 
-        if (category != null &&
-            foodName != null &&
-            category.isNotEmpty &&
-            foodName.isNotEmpty) {
+        if (category != null && foodName != null) {
+          userFoodNames.add(foodName); // 사용자 식품 저장
+
           if (categoryMap.containsKey(category)) {
             categoryMap[category]!.add(foodName);
           } else {
@@ -84,11 +89,41 @@ class _RecipeMainPageState extends State<RecipeMainPage>
         }
       }
 
-      final categories = categoryMap.keys.toList();
+      // ✅ 2. 기본 데이터(default_foods) 가져오기
+      final defaultSnapshot =
+      await FirebaseFirestore.instance.collection('default_foods').get();
+
+      for (var doc in defaultSnapshot.docs) {
+        final data = doc.data();
+        final category = data['defaultCategory'] as String?;
+        final foodName = data['foodsName'] as String?;
+
+        if (category != null && foodName != null) {
+          // ✅ 사용자가 수정한 데이터에 없는 경우만 추가
+          if (!userFoodNames.contains(foodName)) {
+            if (categoryMap.containsKey(category)) {
+              categoryMap[category]!.add(foodName);
+            } else {
+              categoryMap[category] = [foodName];
+            }
+          }
+        }
+      }
+
+      return categoryMap;
+    } catch (e) {
+      print("Error fetching foods: $e");
+      return {};
+    }
+  }
+
+  void _loadCategoriesFromFirestore() async {
+    try {
+      final categoryMap = await _fetchFoods(); // ✅ 사용자 + 기본 데이터 포함된 목록 가져오기
 
       setState(() {
-        this.categories = categories;
-        this.itemsByCategory = categoryMap; // 카테고리별 식품명 리스트
+        this.categories = categoryMap.keys.toList();
+        this.itemsByCategory = categoryMap;
       });
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');

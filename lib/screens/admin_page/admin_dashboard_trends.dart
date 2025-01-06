@@ -106,7 +106,7 @@ class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
                   RecipeTrendTable(),
                   BasicfoodsTrendTable(),
                   PreferredfoodsTrendTable(),
-                  InputkeywordTrendTable(),
+                  // InputkeywordTrendTable(),
                 ],
               ),
             ),

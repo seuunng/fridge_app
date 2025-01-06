@@ -86,31 +86,60 @@ class _AddItemState extends State<AddItem> {
     }
   }
 
+  Future<List<FoodsModel>> _fetchFoods() async {
+    List<FoodsModel> userFoods = [];
+    List<FoodsModel> defaultFoods = [];
+    Set<String> userFoodNames = {};
+
+    try {
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('foods')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      // 🔹 사용자가 수정한 식품 불러오기
+      for (var doc in userSnapshot.docs) {
+        final food = FoodsModel.fromFirestore(doc);
+        userFoods.add(food);
+        userFoodNames.add(food.foodsName); // 사용자 식품 이름 저장
+      }
+
+      final defaultSnapshot =
+      await FirebaseFirestore.instance.collection('default_foods').get();
+
+      // 🔹 기본 식품 목록 불러오기 (사용자가 수정하지 않은 것만 추가)
+      for (var doc in defaultSnapshot.docs) {
+        final food = FoodsModel.fromFirestore(doc);
+        if (!userFoodNames.contains(food.foodsName)) {
+          defaultFoods.add(food);
+        }
+      }
+
+      return [...userFoods, ...defaultFoods]; // 사용자 데이터 + 기본 데이터 결합
+    } catch (e) {
+      print("Error fetching foods: $e");
+      return [];
+    }
+  }
+
   void _loadCategoriesFromFirestore() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('foods').get();
-      final categories = snapshot.docs.map((doc) {
-        return FoodsModel.fromFirestore(doc);
-      }).toList();
+      final foods = await _fetchFoods(); // 사용자 및 기본 식품 불러오기
 
       setState(() {
         itemsByCategory = {};
 
-        for (var category in categories) {
+        for (var food in foods) {
           if (widget.sourcePage != 'update_foods_category') {
-            if (deletedItemNames.contains(category.foodsName)) {
+            if (deletedItemNames.contains(food.foodsName)) {
               continue;
             }
           }
 
-          if (itemsByCategory.containsKey(category.defaultCategory)) {
-            itemsByCategory[category.defaultCategory]!
-                .add(category); // 이미 있는 리스트에 추가
+          if (itemsByCategory.containsKey(food.defaultCategory)) {
+            itemsByCategory[food.defaultCategory]!.add(food);
           } else {
-            itemsByCategory[category.defaultCategory] = [
-              category
-            ]; // 새로운 리스트 생성
+            itemsByCategory[food.defaultCategory] = [food];
           }
         }
       });
@@ -416,6 +445,29 @@ class _AddItemState extends State<AddItem> {
     });
   }
 
+  void _saveSearchKeyword(String keyword) async {
+    final searchRef = FirebaseFirestore.instance.collection('search_keywords');
+
+    try {
+      final snapshot = await searchRef.doc(keyword).get();
+      if (snapshot.exists) {
+        // 기존 데이터가 있으면 검색 횟수를 증가
+        await searchRef.doc(keyword).update({
+          'count': FieldValue.increment(1),
+        });
+      } else {
+        // 새로운 검색어를 추가
+        await searchRef.doc(keyword).set({
+          'keyword': keyword,
+          'count': 1,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      print('검색어 저장 중 오류 발생: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -450,7 +502,8 @@ class _AddItemState extends State<AddItem> {
                   SizedBox(width: 10),
                   BasicElevatedButton(
                     onPressed: () {
-                      _searchItems(searchKeyword); // 검색 버튼 클릭 시 검색어 필터링
+                      _searchItems(searchKeyword);
+                      _saveSearchKeyword(searchKeyword);// 검색 버튼 클릭 시 검색어 필터링
                     },
                     iconTitle: Icons.search,
                     buttonTitle: '검색',

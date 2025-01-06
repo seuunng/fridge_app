@@ -104,18 +104,59 @@ class _AddRecipeState extends State<AddRecipe> {
     _loadDataFromFirestore();
   }
 
+  Future<List<String>> _fetchIngredients() async {
+    Set<String> userIngredients = {}; // 사용자가 추가한 재료
+    List<String> allIngredients = [];
+
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    try {
+      // ✅ 1. 사용자 정의 foods 데이터 가져오기
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('foods')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      for (var doc in userSnapshot.docs) {
+        final foodName = doc['foodsName'] as String?;
+        if (foodName != null) {
+          userIngredients.add(foodName);
+        }
+      }
+
+      // ✅ 2. 기본 식재료(default_foods) 가져오기
+      final defaultSnapshot =
+          await FirebaseFirestore.instance.collection('default_foods').get();
+
+      for (var doc in defaultSnapshot.docs) {
+        final foodName = doc['foodsName'] as String?;
+        if (foodName != null && !userIngredients.contains(foodName)) {
+          allIngredients.add(foodName);
+        }
+      }
+
+      // ✅ 3. 사용자 재료 + 기본 재료 합쳐서 반환
+      allIngredients.insertAll(0, userIngredients.toList()); // 사용자 데이터 우선
+      return allIngredients;
+    } catch (e) {
+      print("Error fetching ingredients: $e");
+      return [];
+    }
+  }
+
   Future<void> _loadDataFromFirestore() async {
     try {
-      final ingredientsSnapshot = await _db.collection('foods').get();
-      final List<String> ingredientsData = ingredientsSnapshot.docs
-          .map((doc) => (doc['foodsName'] as String))
-          .toList();
+      // ✅ 1. foods + default_foods 합친 데이터 가져오기
+      final ingredientsData = await _fetchIngredients();
+
+      // ✅ 2. 조리 방법 가져오기
       final methodsSnapshot =
           await _db.collection('recipe_method_categories').get();
       final List<String> methodsData = methodsSnapshot.docs
           .expand((doc) => (doc['method'] as List<dynamic>).cast<String>())
           .toList();
 
+      // ✅ 3. 테마 데이터 가져오기
       final themesSnapshot =
           await _db.collection('recipe_thema_categories').get();
       final List<String> themesData = themesSnapshot.docs
@@ -584,18 +625,17 @@ class _AddRecipeState extends State<AddRecipe> {
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: isSelected
                               ? theme.chipTheme.labelStyle!.color
-                              : theme.chipTheme.selectedColor, // 선택된 항목은 글씨 색을 흰색으로
+                              : theme.chipTheme
+                                  .selectedColor, // 선택된 항목은 글씨 색을 흰색으로
                         ),
                       ),
                       backgroundColor: isSelected
                           ? theme.chipTheme.selectedColor
                           : theme.chipTheme.backgroundColor,
                       padding: EdgeInsets.symmetric(
-                          horizontal: 4.0, vertical: 0.0
-                      ), // 글자와 테두리 사이의 여백 줄이기
+                          horizontal: 4.0, vertical: 0.0), // 글자와 테두리 사이의 여백 줄이기
                       labelPadding: EdgeInsets.symmetric(
-                          horizontal: 4.0
-                      ), // 글자와 칩 사이의 여백 줄이기
+                          horizontal: 4.0), // 글자와 칩 사이의 여백 줄이기
                     ),
                   ),
                 );
@@ -614,8 +654,8 @@ class _AddRecipeState extends State<AddRecipe> {
       children: selectedItems.map((item) {
         return Chip(
           label: Text(item,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.chipTheme.labelStyle!.color)),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.chipTheme.labelStyle!.color)),
           padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
           labelPadding: EdgeInsets.symmetric(horizontal: 1.0),
           deleteIcon: Icon(Icons.close),
@@ -715,18 +755,17 @@ class _AddRecipeState extends State<AddRecipe> {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: isSelected
                             ? theme.chipTheme.secondaryLabelStyle!.color
-                            : theme.chipTheme.labelStyle!.color, // 선택된 항목은 글씨 색을 흰색으로
+                            : theme.chipTheme.labelStyle!
+                                .color, // 선택된 항목은 글씨 색을 흰색으로
                       ),
                     ),
                     backgroundColor: isSelected
                         ? theme.chipTheme.selectedColor
                         : theme.chipTheme.backgroundColor,
                     padding: EdgeInsets.symmetric(
-                        horizontal: 4.0, vertical: 0.0
-                    ), // 글자와 테두리 사이의 여백 줄이기
+                        horizontal: 4.0, vertical: 0.0), // 글자와 테두리 사이의 여백 줄이기
                     labelPadding: EdgeInsets.symmetric(
-                        horizontal: 4.0
-                    ), // 글자와 칩 사이의 여백 줄이기
+                        horizontal: 4.0), // 글자와 칩 사이의 여백 줄이기
                   ),
                 ),
               );

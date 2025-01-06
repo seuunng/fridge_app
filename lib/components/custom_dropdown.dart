@@ -54,6 +54,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
                         children: [
                           Text(item,
                               style: TextStyle(
+                                  fontSize: 16,
                                   color: theme.colorScheme.onSurface)),
                           if (_isDropdownOpen) ...[
                             Flexible(

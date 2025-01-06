@@ -415,7 +415,7 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                     selectedFridgeCategory?.categoryName ?? '',
                 'shoppingListCategory':
                     selectedShoppingListCategory?.categoryName ?? '',
-                'expirationDate': expirationDays,
+                // 'expirationDate': expirationDays,
                 'shelfLife': consumptionDays,
               };
 

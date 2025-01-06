@@ -53,7 +53,7 @@ class _FoodsTableState extends State<FoodsTable> {
   }
 
   Future<void> _loadFoodsData() async {
-    final snapshot = await FirebaseFirestore.instance.collection('foods').get();
+    final snapshot = await FirebaseFirestore.instance.collection('default_foods').get();
 
     List<Map<String, dynamic>> foods = [];
 
@@ -77,7 +77,7 @@ class _FoodsTableState extends State<FoodsTable> {
   }
 
   Future<void> _loadDefaultFoodsCategories() async {
-    final snapshot = await FirebaseFirestore.instance.collection('foods').get();
+    final snapshot = await FirebaseFirestore.instance.collection('default_foods').get();
 
     final categories = snapshot.docs
         .map((doc) => doc.data()['defaultCategory'] as String?)
@@ -117,7 +117,7 @@ class _FoodsTableState extends State<FoodsTable> {
         'defaultCategory': _selectedCategory,
         'defaultFridgeCategory': _selectedFridgeCategory,
         'shoppingListCategory': _selectedShoppingListCategory,
-        'expirationDate': _expirationDateController.text,
+        // 'expirationDate': _expirationDateController.text,
         'shelfLife': _shelfLifeController.text,
       });
     } catch (e) {
@@ -273,7 +273,7 @@ class _FoodsTableState extends State<FoodsTable> {
   void _clearFields() {
     _foodNameController.clear();
     _shelfLifeController.clear();
-    _expirationDateController.clear();
+    // _expirationDateController.clear();
     setState(() {
       _selectedCategory = null;
       _selectedFridgeCategory = null;

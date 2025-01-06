@@ -38,11 +38,15 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final recipeId = doc.id;
+        final userId = data['userID']; // userId 가져오기
         final stats = await fetchRecipeStats(recipeId);
+        final userDetails = await fetchUserDetails(userId); // 닉네임, 이메일 가져오기
+
         trends.add({
           '순위': rank++,
           '제목': data['recipeName'] ?? 'N/A',
-          '닉네임': data['userID'] ?? 'N/A',
+          '작성자': userDetails['nickname'] ?? 'N/A', // users 컬렉션에서 가져옴
+          '이메일': userDetails['email'] ?? 'N/A', // users 컬렉션에서 가져옴
           '작성일':
               (data['date'] as Timestamp?)?.toDate().toString().split(' ')[0] ??
                   '알 수 없음',
@@ -98,18 +102,42 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
     }
   }
 
+  Future<Map<String, String>> fetchUserDetails(String userId) async {
+    try {
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userSnapshot.exists) {
+        final userData = userSnapshot.data()!;
+        return {
+          'nickname': userData['nickname'] ?? 'N/A',
+          'email': userData['email'] ?? 'N/A',
+        };
+      } else {
+        return {'nickname': 'N/A', 'email': 'N/A'};
+      }
+    } catch (e) {
+      print('유저 정보를 가져오는 중 오류 발생: $e');
+      return {'nickname': 'N/A', 'email': 'N/A'};
+    }
+  }
+
   List<Map<String, dynamic>> columns = [
     {'name': '순위', 'state': SortState.none},
     {'name': '제목', 'state': SortState.none},
-    {'name': '닉네임', 'state': SortState.none},
-    {'name': '작성일', 'state': SortState.none},
     {'name': '조회수', 'state': SortState.none},
     {'name': '스크랩', 'state': SortState.none},
     {'name': '좋아요', 'state': SortState.none},
     {'name': '리뷰', 'state': SortState.none},
     {'name': '공유', 'state': SortState.none},
     {'name': '별점', 'state': SortState.none},
+    {'name': '작성일', 'state': SortState.none},
+    {'name': '작성자', 'state': SortState.none},
+    {'name': '이메일', 'state': SortState.none},
   ];
+
 
   void _sortBy(String columnName, SortState currentState) {
     setState(() {
@@ -174,10 +202,6 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '순위' 필드 사용
                 DataCell(Text(row['제목'].toString(),
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '제목' 필드 사용
-                DataCell(Text(row['닉네임'].toString(),
-                    style: TextStyle(color: theme.colorScheme.onSurface))), // '닉네임' 필드 사용
-                DataCell(Text(row['작성일'].toString(),
-                    style: TextStyle(color: theme.colorScheme.onSurface))), // '작성일' 필드 사용
                 DataCell(Text(row['조회수'].toString(),
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '조회수' 필드 사용
                 DataCell(Text(row['스크랩'].toString(),
@@ -190,6 +214,12 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '공유' 필드 사용
                 DataCell(Text(row['별점'].toString(),
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '공유' 필드 사용
+                DataCell(Text(row['작성일'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '작성일' 필드 사용
+                DataCell(Text(row['작성자'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '닉네임' 필드 사용
+                DataCell(Text(row['이메일'].toString(),
+                    style: TextStyle(color: theme.colorScheme.onSurface))), // '닉네임' 필드 사용
               ]);
             }).toList(),
           ),

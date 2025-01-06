@@ -276,6 +276,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
         });
         return;
       }
+      final ingredientToCategory = await _loadIngredientCategoriesFromFirestore();
 
       final cleanedKeywords =
           keywords?.where((keyword) => keyword.trim().isNotEmpty).toList() ??
@@ -308,6 +309,19 @@ class _ViewResearchListState extends State<ViewResearchList> {
         for (var snapshot in querySnapshots) {
           keywordResults.addAll(snapshot.docs);
         }
+
+        // ✅ foods + default_foods 에 포함된 레시피 검색
+        final ingredientKeywords =
+        cleanedKeywords.where((k) => ingredientToCategory.containsKey(k)).toList();
+
+        if (ingredientKeywords.isNotEmpty) {
+          final querySnapshot = await _db
+              .collection('recipe')
+              .where('foods', arrayContainsAny: ingredientKeywords)
+              .get();
+          keywordResults.addAll(querySnapshot.docs);
+        }
+
         // 레시피 제목 검색
         final allRecipes = await _db.collection('recipe').get();
         titleResults = allRecipes.docs.where((doc) {
@@ -342,25 +356,18 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
       // 키워드 결과 (모두 포함)
       for (var doc in [...keywordResults, ...titleResults]) {
-        List<String> foods = List<String>.from(doc['foods'] ?? []);
-        List<String> methods = List<String>.from(doc['methods'] ?? []);
-        List<String> themes = List<String>.from(doc['themes'] ?? []);
-        final recipeName = doc['recipeName'] as String? ?? '';
-
-        for (var doc in [...keywordResults, ...titleResults]) {
-          if (!processedIds.contains(doc.id)) {
-            processedIds.add(doc.id);
-            combinedResults.add(doc);
-          }
+        if (!processedIds.contains(doc.id)) {
+          processedIds.add(doc.id);
+          combinedResults.add(doc);
         }
+      }
 
-        // topIngredients 결과 추가
-        for (var doc in topIngredientResults) {
-          if (!processedIds.contains(doc.id)) {
-            processedIds.add(doc.id);
-            combinedResults.add(doc);
-          }
+      for (var doc in topIngredientResults) {
+        if (!processedIds.contains(doc.id)) {
+          processedIds.add(doc.id);
+          combinedResults.add(doc);
         }
+      }
 
         // 제외 키워드 필터링
         if (filterExcluded &&
@@ -379,7 +386,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
                   RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
               .toList();
         });
-      }
     } catch (e) {
       print('Error fetching recipes: $e');
     }
@@ -401,17 +407,53 @@ class _ViewResearchListState extends State<ViewResearchList> {
     }).toList();
   }
 
+  Future<Map<String, String>> _fetchIngredients() async {
+    Set<String> userIngredients = {}; // 사용자가 추가한 재료
+    Map<String, String> ingredientToCategory = {};
+
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    try {
+      // ✅ 1. 사용자 정의 foods 데이터 가져오기
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('foods')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      for (var doc in userSnapshot.docs) {
+        final foodName = doc['foodsName'] as String?;
+        final category = doc['defaultCategory'] as String?;
+        if (foodName != null) {
+          userIngredients.add(foodName);
+          if (category != null) {
+            ingredientToCategory[foodName] = category;
+          }
+        }
+      }
+
+      // ✅ 2. 기본 식재료(default_foods) 가져오기
+      final defaultSnapshot =
+      await FirebaseFirestore.instance.collection('default_foods').get();
+
+      for (var doc in defaultSnapshot.docs) {
+        final foodName = doc['foodsName'] as String?;
+        final category = doc['defaultCategory'] as String?;
+        if (foodName != null && !userIngredients.contains(foodName)) {
+          ingredientToCategory[foodName] = category ?? "기타";
+        }
+      }
+
+      return ingredientToCategory;
+    } catch (e) {
+      print("Error fetching ingredients: $e");
+      return {};
+    }
+  }
+
+
   Future<Map<String, String>> _loadIngredientCategoriesFromFirestore() async {
     try {
-      QuerySnapshot snapshot =
-          await FirebaseFirestore.instance.collection('foods').get();
-      Map<String, String> ingredientToCategory = {};
-      for (var doc in snapshot.docs) {
-        String foodsName = doc['foodsName'];
-        String defaultCategory = doc['defaultCategory'];
-        ingredientToCategory[foodsName] = defaultCategory;
-      }
-      return ingredientToCategory; // 재료-카테고리 맵 반환
+      return await _fetchIngredients();
     } catch (e) {
       print("Error loading ingredient categories: $e");
       return {};
