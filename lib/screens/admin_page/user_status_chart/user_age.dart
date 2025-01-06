@@ -1,67 +1,128 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class UserAge extends StatefulWidget {
+
   UserAge({super.key});
-  final Color leftBarColor = Colors.blue;
-  final Color rightBarColor = Colors.red;
-  final Color avgColor = Colors.orange;
+
   @override
   State<StatefulWidget> createState() => UserAgeState();
 }
 
 class UserAgeState extends State<UserAge> {
   final double width = 7;
-
-  late List<BarChartGroupData> rawBarGroups;
-  late List<BarChartGroupData> showingBarGroups;
-
-  int touchedGroupIndex = -1;
+  List<BarChartGroupData> showingBarGroups = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    final barGroup1 = makeGroupData(0, 5, 12);
-    final barGroup2 = makeGroupData(1, 16, 12);
-    final barGroup3 = makeGroupData(2, 18, 5);
-    final barGroup4 = makeGroupData(3, 20, 16);
-    final barGroup5 = makeGroupData(4, 17, 6);
-    final barGroup6 = makeGroupData(5, 19, 1.5);
-    final barGroup7 = makeGroupData(6, 10, 1.5);
+    _loadChartData();
+  }
 
-    final items = [
-      barGroup1,
-      barGroup2,
-      barGroup3,
-      barGroup4,
-      barGroup5,
-      barGroup6,
-      barGroup7,
-    ];
+  Future<void> _loadChartData() async {
+    final data = await fetchUserAgeGenderData();
+    setState(() {
+      showingBarGroups = convertToChartData(data);
+      isLoading = false;
+    });
+  }
 
-    rawBarGroups = items;
+  Future<Map<String, Map<String, int>>> fetchUserAgeGenderData() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance.collection('users').get();
+      final int currentYear = DateTime.now().year;
 
-    showingBarGroups = rawBarGroups;
+      Map<String, Map<String, int>> ageGenderData = {
+        "10대 이하": {"M": 0, "F": 0},
+        "20대": {"M": 0, "F": 0},
+        "30대": {"M": 0, "F": 0},
+        "40대": {"M": 0, "F": 0},
+        "50대": {"M": 0, "F": 0},
+        "60대": {"M": 0, "F": 0},
+        "70대 이상": {"M": 0, "F": 0},
+      };
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        if (data.containsKey('birthYear') && data.containsKey('gender')) {
+          int birthYear = int.tryParse(data['birthYear']) ?? currentYear;
+          String gender = data['gender'];
+          int age = currentYear - birthYear;
+
+          String ageGroup;
+          if (age < 20) {
+            ageGroup = "10대 이하";
+          } else if (age < 30) {
+            ageGroup = "20대";
+          } else if (age < 40) {
+            ageGroup = "30대";
+          } else if (age < 50) {
+            ageGroup = "40대";
+          } else if (age < 60) {
+            ageGroup = "50대";
+          } else if (age < 70) {
+            ageGroup = "60대";
+          } else {
+            ageGroup = "70대 이상";
+          }
+
+          if (ageGenderData.containsKey(ageGroup) &&
+              (gender == "M" || gender == "F")) {
+            ageGenderData[ageGroup]![gender] = ageGenderData[ageGroup]![gender]! + 1;
+          }
+        }
+      }
+
+      return ageGenderData;
+    } catch (e) {
+      print("❌ Firestore 데이터 가져오기 오류: $e");
+      return {};
+    }
+  }
+
+  List<BarChartGroupData> convertToChartData(Map<String, Map<String, int>> data) {
+    List<BarChartGroupData> barGroups = [];
+    int index = 0;
+
+    data.forEach((ageGroup, genderData) {
+      double maleCount = genderData["M"]?.toDouble() ?? 0;
+      double femaleCount = genderData["F"]?.toDouble() ?? 0;
+
+      barGroups.add(
+        BarChartGroupData(
+          x: index,
+          barsSpace: 16,
+          barRods: [
+            BarChartRodData(toY: maleCount, color: Colors.blue, width: 7),
+            BarChartRodData(toY: femaleCount, color: Colors.red, width: 7),
+          ],
+        ),
+      );
+      index++;
+    });
+
+    return barGroups;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return isLoading
+        ? Center(child: CircularProgressIndicator())
+        : Padding(
       padding: const EdgeInsets.only(left: 12.0, right: 12.0),
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: double.infinity, // 부모 컨테이너의 가로를 채움
-          maxHeight: 300, // 최대 세로 크기
-        ),
+        constraints: BoxConstraints(maxWidth: double.infinity, maxHeight: 300),
         decoration: BoxDecoration(
-          color: Colors.white, // 배경색 설정
+          color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.5),
               spreadRadius: 5,
               blurRadius: 7,
-              offset: Offset(0, 3), // 그림자 위치
+              offset: Offset(0, 3),
             ),
           ],
         ),
@@ -73,62 +134,14 @@ class UserAgeState extends State<UserAge> {
               child: BarChart(
                 BarChartData(
                   maxY: 20,
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: ((group) {
-                        return Colors.grey;
-                      }),
-                      getTooltipItem: (a, b, c, d) => null,
-                    ),
-                    touchCallback: (FlTouchEvent event, response) {
-                      if (response == null || response.spot == null) {
-                        setState(() {
-                          touchedGroupIndex = -1;
-                          showingBarGroups = List.of(rawBarGroups);
-                        });
-                        return;
-                      }
-
-                      touchedGroupIndex = response.spot!.touchedBarGroupIndex;
-
-                      setState(() {
-                        if (!event.isInterestedForInteractions) {
-                          touchedGroupIndex = -1;
-                          showingBarGroups = List.of(rawBarGroups);
-                          return;
-                        }
-                        showingBarGroups = List.of(rawBarGroups);
-                        if (touchedGroupIndex != -1) {
-                          var sum = 0.0;
-                          for (final rod
-                              in showingBarGroups[touchedGroupIndex].barRods) {
-                            sum += rod.toY;
-                          }
-                          final avg = sum /
-                              showingBarGroups[touchedGroupIndex]
-                                  .barRods
-                                  .length;
-
-                          showingBarGroups[touchedGroupIndex] =
-                              showingBarGroups[touchedGroupIndex].copyWith(
-                            barRods: showingBarGroups[touchedGroupIndex]
-                                .barRods
-                                .map((rod) {
-                              return rod.copyWith(
-                                  toY: avg, color: widget.avgColor);
-                            }).toList(),
-                          );
-                        }
-                      });
-                    },
-                  ),
                   titlesData: FlTitlesData(
-                    show: true,
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        interval: 5,
+                        getTitlesWidget: leftTitles,
+                      ),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -137,145 +150,48 @@ class UserAgeState extends State<UserAge> {
                         reservedSize: 42,
                       ),
                     ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: false,
-                        reservedSize: 28,
-                        interval: 1,
-                        getTitlesWidget: leftTitles,
-                      ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false), // ✅ 상단 범례 제거
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false), // ✅ 오른쪽 범례 제거
                     ),
                   ),
-                  borderData: FlBorderData(
-                    show: false,
-                  ),
+                  borderData: FlBorderData(show: false),
                   barGroups: showingBarGroups,
                   gridData: const FlGridData(show: false),
                 ),
               ),
             ),
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
           ],
         ),
       ),
     );
   }
 
-  Widget leftTitles(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Color(0xff7589a2),
-      fontWeight: FontWeight.bold,
-      fontSize: 14,
+  Widget bottomTitles(double value, TitleMeta meta) {
+    final titles = <String>["10대 이하", "20대", "30대", "40대", "50대", "60대", "70대 이상"];
+
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      space: 16,
+      child: Text(
+        titles[value.toInt()],
+        style: const TextStyle(
+          color: Color(0xff7589a2),
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
     );
-    String text;
-    if (value == 0) {
-      text = '1K';
-    } else if (value == 10) {
-      text = '5K';
-    } else if (value == 19) {
-      text = '10K';
-    } else {
-      return Container();
-    }
+  }
+
+  Widget leftTitles(double value, TitleMeta meta) {
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 0,
-      child: Text(text, style: style),
-    );
-  }
-
-  Widget bottomTitles(double value, TitleMeta meta) {
-    final titles = <String>[
-      '10대 이하',
-      '20대',
-      '30대',
-      '40대',
-      '50대',
-      '60대',
-      '70대 이상'
-    ];
-
-    final Widget text = Text(
-      titles[value.toInt()],
-      style: const TextStyle(
-        color: Color(0xff7589a2),
-        fontWeight: FontWeight.bold,
-        fontSize: 14,
-      ),
-    );
-
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 16, //margin top
-      child: text,
-    );
-  }
-
-  BarChartGroupData makeGroupData(int x, double y1, double y2) {
-    return BarChartGroupData(
-      barsSpace: 16,
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y1,
-          color: widget.leftBarColor,
-          width: width,
-        ),
-        BarChartRodData(
-          toY: y2,
-          color: widget.rightBarColor,
-          width: width,
-        ),
-      ],
-    );
-  }
-
-  Widget makeTransactionsIcon() {
-    const width = 4.5;
-    const space = 3.5;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: width,
-          height: 10,
-          color: Colors.white.withOpacity(0.4),
-        ),
-        const SizedBox(
-          width: space,
-        ),
-        Container(
-          width: width,
-          height: 28,
-          color: Colors.white.withOpacity(0.8),
-        ),
-        const SizedBox(
-          width: space,
-        ),
-        Container(
-          width: width,
-          height: 42,
-          color: Colors.white.withOpacity(1),
-        ),
-        const SizedBox(
-          width: space,
-        ),
-        Container(
-          width: width,
-          height: 28,
-          color: Colors.white.withOpacity(0.8),
-        ),
-        const SizedBox(
-          width: space,
-        ),
-        Container(
-          width: width,
-          height: 10,
-          color: Colors.white.withOpacity(0.4),
-        ),
-      ],
+      child: Text("${value.toInt()}", style: TextStyle(fontSize: 12)),
     );
   }
 }
