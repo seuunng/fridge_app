@@ -39,8 +39,9 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     super.initState();
     _loadItemsFromFirestore(userId);
     _loadCategoriesFromFirestore();
-    _loadFridgeCategoriesFromFirestore(userId);
-    _loadSelectedFridge();
+    _loadFridgeCategoriesFromFirestore(userId).then((_) {
+      _loadSelectedFridge(); // 🔹 냉장고 목록을 불러온 후 기본값 설정
+    });
 
     setState(() {
       showCheckBoxes = false;
@@ -69,51 +70,53 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
   void _loadItemsFromFirestore(String userId) async {
     try {
+      // 🔹 Firestore에서 default_foods 데이터 가져오기
       final foodsSnapshot = await FirebaseFirestore.instance
-          .collection('foods') // Foods 컬렉션에서 데이터 불러오기
+          .collection('default_foods')
           .get();
 
       final List<FoodsModel> foodsList = foodsSnapshot.docs
           .map((doc) => FoodsModel.fromFirestore(doc))
           .toList();
 
+      // 🔹 Firestore에서 쇼핑 목록 가져오기 (현재 유저의 데이터만 필터링)
       final snapshot = await FirebaseFirestore.instance
           .collection('shopping_items')
-          .where('userId', isEqualTo: userId) // 현재 유저의 아이템만 가져옴
+          .where('userId', isEqualTo: userId)
           .get();
 
       List<Map<String, dynamic>> allItems = [];
 
       for (var doc in snapshot.docs) {
-        final data = doc.data(); // 각 문서 출력
+        final data = doc.data();
 
-        final itemName =
-            data['items']?.toString() ?? 'Unknown Item'; // items 필드 추출
+        final itemName = data['items']?.toString() ?? 'Unknown Item';
         final isChecked = data['isChecked'] ?? false;
 
+        // 🔹 foodsList에서 해당 아이템 찾기
         final matchingFood = foodsList.firstWhere(
-          (food) => food.foodsName == itemName,
+              (food) => food.foodsName == itemName,
           orElse: () => FoodsModel(
             id: 'unknown',
             foodsName: itemName,
             defaultCategory: '기타',
             defaultFridgeCategory: '기타',
-            shoppingListCategory: '기타',
-            // registrationDate: DateTime.now(),
-            // expirationDate: 0,
+            shoppingListCategory: '기타', // 🔹 쇼핑 카테고리가 없으면 "기타" 처리
             shelfLife: 0,
           ),
         );
 
         allItems.add({
-          'category': matchingFood.shoppingListCategory,
+          'category': matchingFood.shoppingListCategory, // 🔹 쇼핑 카테고리
           'itemName': itemName,
           'isChecked': isChecked,
         });
       }
 
+      // 🔹 쇼핑 카테고리 기준으로 그룹화
       setState(() {
-        itemLists = _groupItemsByCategory(allItems); // 카테고리별로 아이템을 그룹화
+        itemLists = _groupItemsByShoppingCategory(allItems);
+
         allItems.forEach((item) {
           final category = item['category'];
           final itemName = item['itemName'];
@@ -124,14 +127,14 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
             if (itemIndex != -1) {
               checkedItems[category] ??= List<bool>.filled(
                   itemLists[category]!.length, false,
-                  growable: true); // 수정!
+                  growable: true);
               strikeThroughItems[category] ??= List<bool>.filled(
                   itemLists[category]!.length, false,
-                  growable: true); // 수정!
+                  growable: true);
 
               if (isChecked) {
                 checkedItems[category]![itemIndex] = true;
-                strikeThroughItems[category]![itemIndex] = true; // 취소선도 설정
+                strikeThroughItems[category]![itemIndex] = true;
               }
             }
           }
@@ -142,12 +145,13 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     }
   }
 
-  Map<String, List<String>> _groupItemsByCategory(
+  Map<String, List<String>> _groupItemsByShoppingCategory(
       List<Map<String, dynamic>> items) {
+    Map<String, List<String>> groupedItems = {};
+
     for (var item in items) {
-      final category =
-          item['category']!; // FoodsModel에서 가져온 shoppingListCategory
-      final itemName = item['itemName']!;
+      final category = item['category'] ?? '기타'; // 카테고리가 없으면 "기타"
+      final itemName = item['itemName'];
 
       if (groupedItems.containsKey(category)) {
         groupedItems[category]!.add(itemName);
@@ -172,7 +176,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     });
   }
 
-  void _loadFridgeCategoriesFromFirestore(String userId) async {
+  Future<void> _loadFridgeCategoriesFromFirestore(String userId) async {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('fridges')
@@ -225,13 +229,22 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   void _loadSelectedFridge() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
-    setState(() {
-      selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
-    });
 
-    if (selectedFridge != null) {
-      selected_fridgeId = await fetchFridgeId(selectedFridge!);
+    String? savedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+
+    // 🔹 Firestore에서 해당 냉장고 ID 가져오기
+    String? fridgeId = await fetchFridgeId(savedFridge);
+
+// 🔹 fridgeName 리스트가 비어있지 않다면 기본값 설정
+    if (fridgeName.isNotEmpty && !fridgeName.contains(savedFridge)) {
+      savedFridge = fridgeName.first; // 🔹 리스트의 첫 번째 냉장고를 기본값으로 설정
+      fridgeId = await fetchFridgeId(savedFridge);
     }
+
+    setState(() {
+      selectedFridge = savedFridge;
+      selected_fridgeId = fridgeId; // 🔹 ID 업데이트
+    });
   }
 
   Future<String?> fetchFridgeId(String fridgeName) async {
@@ -330,19 +343,38 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           if (checkedItems[category]![index]) {
             String itemName = categoryItems[index];
 
-            final matchingFood = await FirebaseFirestore.instance
+            // 🔹 1. `foods` 컬렉션에서 검색
+            final matchingFoodSnapshot = await FirebaseFirestore.instance
                 .collection('foods')
                 .where('foodsName', isEqualTo: itemName)
                 .get();
-            if (matchingFood.docs.isEmpty) {
+
+            Map<String, dynamic>? foodData;
+
+            if (matchingFoodSnapshot.docs.isNotEmpty) {
+              // `foods` 컬렉션에서 찾음
+              foodData = matchingFoodSnapshot.docs.first.data();
+            } else {
+              // 🔹 2. `default_foods`에서 검색
+              final defaultFoodsSnapshot = await FirebaseFirestore.instance
+                  .collection('default_foods')
+                  .where('foodsName', isEqualTo: itemName)
+                  .get();
+
+              if (defaultFoodsSnapshot.docs.isNotEmpty) {
+                foodData = defaultFoodsSnapshot.docs.first.data();
+              }
+            }
+
+            if (foodData == null) {
               print("일치하는 음식이 없습니다: $itemName");
               continue;
             }
 
-            final foodData = matchingFood.docs.first.data();
             final fridgeCategoryId =
-                foodData['defaultFridgeCategory']; // fridgeCategoryId 설정
+                foodData['defaultFridgeCategory'] ?? '기타'; // 냉장고 카테고리
 
+            // 🔹 3. 냉장고에 이미 있는지 확인
             final existingItem = await FirebaseFirestore.instance
                 .collection('fridge_items')
                 .where('items', isEqualTo: itemName.trim().toLowerCase())
@@ -354,15 +386,17 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                 SnackBar(content: Text('"$itemName"이(가) 이미 냉장고에 존재합니다.')),
               );
             } else {
+              // 🔹 4. 냉장고에 추가
               await FirebaseFirestore.instance.collection('fridge_items').add({
                 'items': itemName,
-                'FridgeId': fridgeId, // 선택된 냉장고
+                'FridgeId': fridgeId,
                 'fridgeCategoryId': fridgeCategoryId,
                 'userId': userId,
                 'registrationDate': Timestamp.fromDate(DateTime.now()),
               });
             }
 
+            // 🔹 5. 장보기 목록에서 삭제
             final snapshot = await FirebaseFirestore.instance
                 .collection('shopping_items')
                 .where('items', isEqualTo: itemName)
@@ -380,6 +414,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
             itemsToRemove.add(index);
           }
         }
+
         setState(() {
           for (int i = itemsToRemove.length - 1; i >= 0; i--) {
             int removeIndex = itemsToRemove[i];
@@ -397,6 +432,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       );
     }
   }
+
 
   void _updateIsCheckedInFirestore(String itemName, bool isChecked) async {
     try {
@@ -521,10 +557,14 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                                 TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(), // 반복문을 통해 DropdownMenuItem 생성
-                    onChanged: (value) {
+                    onChanged: (value) async {
+                      String? fridgeId = await fetchFridgeId(value!); // 🔹 새 ID 가져오기
                       setState(() {
-                        selectedFridge = value!;
+                        selectedFridge = value;
+                        selected_fridgeId = fridgeId; // 🔹 변경된 냉장고 ID 저장
                       });
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                      await prefs.setString('selectedFridge', value); // 🔹 새 냉장고 저장
                     },
                     decoration: InputDecoration(
                       labelText: '냉장고 선택',
@@ -573,7 +613,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                     children: [
                       Expanded(
                         child: NavbarButton(
-                          buttonTitle: '냉장고로 이동',
+                          buttonTitle: '${fridgeName?? "선택된 냉장고"} 로 이동',
                           onPressed: () {
                             _addItemsToFridge();
                             Navigator.push(

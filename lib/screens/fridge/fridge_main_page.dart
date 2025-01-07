@@ -43,10 +43,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
   void initState() {
     super.initState();
 
-    _loadSelectedFridge();
-    _loadCategoriesFromFirestore();
-    _loadFridgeNameFromFirestore();
-    _loadCategoriesAndFridgeData();
+    _initializeData();
 
     _controller = AnimationController(
       vsync: this,
@@ -86,6 +83,14 @@ class FridgeMainPageState extends State<FridgeMainPage>
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
+  Future<void> _initializeData() async {
+    await _loadCategoriesFromFirestore();
+    await _loadFridgeNameFromFirestore();
+    await _loadSelectedFridge(); // 🔹 `selected_fridgeId`를 가져온 후 실행
+    if (selected_fridgeId != null) {
+      await _loadFridgeCategoriesFromFirestore(selected_fridgeId!); // ✅ 냉장고 ID가 설정된 후 아이템 불러오기
+    }
+  }
   void _loadCategoriesAndFridgeData() async {
     await _loadCategoriesFromFirestore();
   }
@@ -112,7 +117,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
   Future<void> _loadFridgeCategoriesFromFirestore(String? fridgeId) async {
     final fridgeId = selected_fridgeId;
-    print(fridgeId );
+
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('fridge_items')
@@ -146,10 +151,25 @@ class FridgeMainPageState extends State<FridgeMainPage>
               .collection('foods')
               .where('foodsName', isEqualTo: itemName)
               .get();
+          Map<String, dynamic>? foodsData;
+
+          if (foodsSnapshot.docs.isNotEmpty) {
+            foodsData = foodsSnapshot.docs.first.data();
+          } else {
+            // ✅ 2. `foods`에 없으면 `default_foods`에서 찾기
+            final defaultFoodsSnapshot = await FirebaseFirestore.instance
+                .collection('default_foods')
+                .where('foodsName', isEqualTo: itemName)
+                .get();
+
+            if (defaultFoodsSnapshot.docs.isNotEmpty) {
+              foodsData = defaultFoodsSnapshot.docs.first.data();
+            }
+          }
 
           if (!mounted) return;
-          if (foodsSnapshot.docs.isNotEmpty) {
-            final foodsData = foodsSnapshot.docs.first.data();
+
+          if (foodsData != null) {
             int shelfLife = foodsData['shelfLife'] ?? 0;
 
             int index = storageSections.indexWhere(
@@ -181,7 +201,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     }
   }
 
-  void _loadSelectedFridge() async {
+  Future<void>  _loadSelectedFridge() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
@@ -630,16 +650,31 @@ class FridgeMainPageState extends State<FridgeMainPage>
                               isEqualTo: currentItem) // 현재 아이템과 일치하는지 확인
                           .get();
 
-                      if (foodsSnapshot.docs.isNotEmpty) {
-                        final foodsData = foodsSnapshot.docs.first.data();
+                      Map<String, dynamic>? foodData;
 
+                      if (foodsSnapshot.docs.isNotEmpty) {
+                        // 🔹 사용자가 수정한 foods 데이터 우선 사용
+                        foodData = foodsSnapshot.docs.first.data();
+                      } else {
+                        // 🔹 foods에 데이터가 없으면 default_foods에서 검색
+                        final defaultFoodsSnapshot = await FirebaseFirestore.instance
+                            .collection('default_foods')
+                            .where('foodsName', isEqualTo: currentItem)
+                            .get();
+
+                        if (defaultFoodsSnapshot.docs.isNotEmpty) {
+                          foodData = defaultFoodsSnapshot.docs.first.data();
+                        }
+                      }
+
+                      if (foodData != null) {
                         String defaultCategory =
-                            foodsData['defaultCategory'] ?? '기타';
+                            foodData['defaultCategory'] ?? '기타';
                         String defaultFridgeCategory =
-                            foodsData['defaultFridgeCategory'] ?? '기타';
+                            foodData['defaultFridgeCategory'] ?? '기타';
                         String shoppingListCategory =
-                            foodsData['shoppingListCategory'] ?? '기타';
-                        int shelfLife = foodsData['shelfLife'] ?? 0;
+                            foodData['shoppingListCategory'] ?? '기타';
+                        int shelfLife = foodData['shelfLife'] ?? 0;
                         DateTime registrationDate =
                             items[index]['registrationDate'] ?? DateTime.now();
 
