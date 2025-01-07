@@ -33,7 +33,7 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
         .where('isDefault', isEqualTo: false) // 기본 카테고리 제외
         .get();
 
-    List<Map<String, dynamic>> foods = [];
+    Map<String, Map<String, dynamic>> foodMap = {};
 
     for (var doc in snapshot.docs) {
       final data = doc.data(); // Firestore 문서 데이터를 가져옴
@@ -44,18 +44,33 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
         categoryMap.forEach((categoryName, foodItems) {
           if (foodItems is List<dynamic>) {
             for (var food in foodItems) {
-              foods.add({
-                '순위': rank++, // Firestore 문서 ID
-                '카테고리': categoryName, // 카테고리명 (예: "채소")
-                '식품명': food.toString(), // 각 식품명 (예: "당근")
-                '생성횟수': data['생성횟수'] ?? 0, // 기본값 0
-              });
+              String foodName = food.toString();
+              if (foodMap.containsKey(foodName)) {
+                // 동일한 식품명이 이미 존재하면 생성횟수 증가
+                foodMap[foodName]!['생성횟수'] += 1;
+              } else {
+                // 새로 추가
+                foodMap[foodName] = {
+                  '순위': rank++, // 나중에 순위 할당
+                  '카테고리': categoryName,
+                  '식품명': foodName,
+                  '생성횟수': 1, // 최초 추가 시 1부터 시작
+                };
+              }
             }
           }
         });
       }
     }
 
+    // 리스트 변환 및 정렬
+    List<Map<String, dynamic>> foods = foodMap.values.toList();
+    foods.sort((a, b) => b['생성횟수'].compareTo(a['생성횟수'])); // 생성횟수 기준 내림차순 정렬
+
+    // 순위 재설정
+    for (int i = 0; i < foods.length; i++) {
+      foods[i]['순위'] = i + 1;
+    }
     setState(() {
       userData = foods;
     });

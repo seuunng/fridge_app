@@ -246,8 +246,6 @@ class _AddItemState extends State<AddItem> {
         }
       }
 
-      print('✅ Firestore에서 불러온 기본 카테고리: $defaultCategories');
-
       // 🔹 `preferred_foods_categories`에 데이터 추가
       final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
@@ -901,22 +899,35 @@ class _AddItemState extends State<AddItem> {
                   : null,
               onDoubleTap: () async {
                 try {
+                  // 🔹 Firestore에서 `foods` 컬렉션에서 먼저 검색
                   final foodsSnapshot = await FirebaseFirestore.instance
                       .collection('foods')
-                      .where('foodsName',
-                          isEqualTo: itemName) // 현재 아이템과 일치하는지 확인
+                      .where('foodsName', isEqualTo: itemName)
                       .get();
 
-                  if (foodsSnapshot.docs.isNotEmpty) {
-                    final foodsData = foodsSnapshot.docs.first.data();
+                  Map<String, dynamic>? foodData;
 
-                    String defaultCategory =
-                        foodsData['defaultCategory'] ?? '기타';
-                    String defaultFridgeCategory =
-                        foodsData['defaultFridgeCategory'] ?? '기타';
-                    String shoppingListCategory =
-                        foodsData['shoppingListCategory'] ?? '기타';
-                    int shelfLife = foodsData['shelfLife'] ?? 0;
+                  if (foodsSnapshot.docs.isNotEmpty) {
+                    // 🔹 사용자가 수정한 foods 데이터 우선 사용
+                    foodData = foodsSnapshot.docs.first.data();
+                  } else {
+                    // 🔹 foods에 데이터가 없으면 default_foods에서 검색
+                    final defaultFoodsSnapshot = await FirebaseFirestore.instance
+                        .collection('default_foods')
+                        .where('foodsName', isEqualTo: itemName)
+                        .get();
+
+                    if (defaultFoodsSnapshot.docs.isNotEmpty) {
+                      foodData = defaultFoodsSnapshot.docs.first.data();
+                    }
+                  }
+
+                  if (foodData != null) {
+                    // 🔹 데이터가 존재하는 경우 상세보기 페이지로 이동
+                    String defaultCategory = foodData['defaultCategory'] ?? '기타';
+                    String defaultFridgeCategory = foodData['defaultFridgeCategory'] ?? '기타';
+                    String shoppingListCategory = foodData['shoppingListCategory'] ?? '기타';
+                    int shelfLife = foodData['shelfLife'] ?? 0;
 
                     Navigator.push(
                       context,
@@ -927,8 +938,7 @@ class _AddItemState extends State<AddItem> {
                           fridgeCategory: defaultFridgeCategory,
                           shoppingListCategory: shoppingListCategory,
                           consumptionDays: shelfLife,
-                          registrationDate:
-                              DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                          registrationDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
                         ),
                       ),
                     );

@@ -13,7 +13,7 @@ class AdminDashboardTrends extends StatefulWidget {
 class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
   PageController _pageController = PageController();
   int _currentPage = 0; // 현재 페이지 상태
-  final int _totalPages = 5; // 총 페이지 수
+  final int _totalPages = 4; // 총 페이지 수
 
   void _goToNextTable() {
     if (_currentPage == _totalPages - 1) {
@@ -59,8 +59,6 @@ class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
         return '기본 식품 추가';
       case 3:
         return '선호 식품 추가';
-      case 4:
-        return '많이 언급된 키워드';
       default:
         return '트렌드';
     }

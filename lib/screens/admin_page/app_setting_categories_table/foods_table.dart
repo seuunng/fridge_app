@@ -300,9 +300,9 @@ class _FoodsTableState extends State<FoodsTable> {
                 columnWidths: const {
                   0: FixedColumnWidth(40), // 체크박스 열 크기
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(120),
-                  3: FixedColumnWidth(100),
-                  4: FixedColumnWidth(120),
+                  2: FixedColumnWidth(150),
+                  3: FixedColumnWidth(150),
+                  4: FixedColumnWidth(150),
                   5: FixedColumnWidth(80),
                   6: FixedColumnWidth(180),
                   7: FixedColumnWidth(80),
@@ -363,9 +363,9 @@ class _FoodsTableState extends State<FoodsTable> {
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(120),
-                  3: FixedColumnWidth(100),
-                  4: FixedColumnWidth(120),
+                  2: FixedColumnWidth(150),
+                  3: FixedColumnWidth(150),
+                  4: FixedColumnWidth(150),
                   5: FixedColumnWidth(80),
                   // 6: FixedColumnWidth(80),
                   6: FixedColumnWidth(180),
@@ -583,9 +583,9 @@ class _FoodsTableState extends State<FoodsTable> {
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(120),
-                  3: FixedColumnWidth(100),
-                  4: FixedColumnWidth(120),
+                  2: FixedColumnWidth(150),
+                  3: FixedColumnWidth(150),
+                  4: FixedColumnWidth(150),
                   5: FixedColumnWidth(80),
                   // 6: FixedColumnWidth(80),
                   6: FixedColumnWidth(180),

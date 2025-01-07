@@ -99,7 +99,6 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
     }
 
     try {
-      // 1️⃣ 기존에 동일한 카테고리가 존재하는지 확인
       final snapshot = await FirebaseFirestore.instance
           .collection('preferred_foods_categories')
           .where('userId', isEqualTo: userId)
@@ -107,7 +106,6 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
           .get();
 
       if (snapshot.docs.isNotEmpty) {
-        // 2️⃣ 이미 존재하는 카테고리가 있다면 업데이트 (아이템 추가)
         final docRef = snapshot.docs.first.reference;
         final existingItems = List<String>.from(snapshot.docs.first.data()['items'] ?? []);
 
@@ -120,13 +118,14 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
           SnackBar(content: Text('기존 카테고리에 아이템이 추가되었습니다.')),
         );
       } else {
-        // 3️⃣ 존재하지 않는다면 새로운 문서 생성
         await FirebaseFirestore.instance.collection('preferred_foods_categories').add({
           'userId': userId,
           'category': {newCategoryName: items},
           'isDefault': false,
         });
       }
+
+      Navigator.pop(context, true);
     } catch (e) {
       print('Error saving category: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -146,7 +145,6 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
     }
 
     try {
-      // Firestore에서 해당 카테고리 찾기
       final snapshot = await FirebaseFirestore.instance
           .collection('preferred_foods_categories')
           .where('userId', isEqualTo: userId)
@@ -220,6 +218,7 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
                       labelText: '아이템 추가',
                       border: OutlineInputBorder(),
                     ),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                     onSubmitted: (_) => _addItem(),
                   ),
                   SizedBox(height: 16),

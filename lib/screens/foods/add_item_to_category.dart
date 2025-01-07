@@ -67,7 +67,7 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
           );
 
           // ✅ 기본값을 UI 입력 필드에 채우기
-          foodNameController.text = selectedFoodsCategory?.foodsName ?? '';
+          foodNameController.text = '';
           consumptionDays = selectedFoodsCategory?.shelfLife ?? 1;
         }
       });
@@ -245,6 +245,7 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                         vertical: 8.0, // 텍스트 필드 내부 상하 여백 조절
                       ),
                     ),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                   ),
                 ),
               ],
@@ -293,14 +294,15 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                   value: selectedShoppingListCategory,
                   hint: Text('카테고리 선택',
                       style: TextStyle(
-                          fontSize: 18,
                           color: theme.colorScheme.onSurface.withOpacity(0.6))),
                   items: shoppingListCategories.map((ShoppingCategory value) {
                     return DropdownMenuItem<ShoppingCategory>(
                       value: value,
                       child: Text(
                         value.categoryName,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        style: TextStyle(
+                            fontSize: 18,
+                            color: theme.colorScheme.onSurface),
                       ),
                     );
                   }).toList(),

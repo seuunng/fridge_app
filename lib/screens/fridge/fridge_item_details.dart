@@ -43,11 +43,9 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
   int expirationDays = 1;
   int consumptionDays = 1;
 
-  // 입력 필드 컨트롤러
   TextEditingController foodNameController = TextEditingController();
   TextEditingController dateController = TextEditingController(); // 등록일 컨트롤러
 
-  // 현재 날짜
   DateTime currentDate = DateTime.now();
   FocusNode _focusNode = FocusNode();
 
@@ -74,22 +72,31 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
     super.dispose();
   }
 
-// 기본식품 카테고리
   void _loadFoodsCategoriesFromFirestore() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('foods').get();
-      final categories = snapshot.docs.map((doc) {
+      final foodsSnapshot = await FirebaseFirestore.instance.collection('foods').get();
+      final userFoods = foodsSnapshot.docs.map((doc) {
+        return FoodsModel.fromFirestore(doc);
+      }).toList();
+
+      final defaultFoodsSnapshot = await FirebaseFirestore.instance.collection('default_foods').get();
+      final defaultFoods = defaultFoodsSnapshot.docs.map((doc) {
         return FoodsModel.fromFirestore(doc);
       }).toList();
 
       final Map<String, FoodsModel> uniqueCategoriesMap = {};
-      for (var category in categories) {
+      for (var category in userFoods) {
+        uniqueCategoriesMap[category.defaultCategory] = category;
+      }
+
+      // 2️⃣ 기본 default_foods 데이터 추가 (사용자 데이터에 없는 경우만)
+      for (var category in defaultFoods) {
         if (!uniqueCategoriesMap.containsKey(category.defaultCategory)) {
           uniqueCategoriesMap[category.defaultCategory] = category;
         }
       }
 
+      // 🔹 중복 제거된 리스트 변환
       final uniqueCategories = uniqueCategoriesMap.values.toList();
 
       setState(() {
@@ -420,14 +427,12 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
               };
 
               try {
-                // foods 컬렉션에서 foodsName이 일치하는 문서를 찾아 업데이트
                 final snapshot = await FirebaseFirestore.instance
                     .collection('foods')
                     .where('foodsName', isEqualTo: widget.foodsName)
                     .get();
 
                 if (snapshot.docs.isNotEmpty) {
-                  // 문서가 존재할 경우 업데이트
                   final docId = snapshot.docs.first.id; // 첫 번째 문서의 ID를 가져옴
 
                   await FirebaseFirestore.instance
@@ -435,7 +440,6 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                       .doc(docId)
                       .update(updatedData);
                 } else {
-                  // 문서를 찾지 못한 경우
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('해당 데이터를 찾을 수 없습니다.')),
                   );
