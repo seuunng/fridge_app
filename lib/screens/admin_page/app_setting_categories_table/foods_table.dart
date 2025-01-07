@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
+import 'package:food_for_later_new/screens/admin_page/app_setting_categories_table/CSV_uploader.dart';
 
 enum SortState { none, ascending, descending }
 
@@ -18,8 +19,8 @@ class _FoodsTableState extends State<FoodsTable> {
     {'name': '카테고리', 'state': SortState.none},
     {'name': '식품명', 'state': SortState.none},
     {'name': '냉장고카테고리', 'state': SortState.none},
-    {'name': '소비기한', 'state': SortState.none},
     {'name': '장보기카테고리', 'state': SortState.none},
+    {'name': '소비기한', 'state': SortState.none},
     {'name': '변동', 'state': SortState.none}
   ];
 
@@ -46,14 +47,16 @@ class _FoodsTableState extends State<FoodsTable> {
   @override
   void initState() {
     super.initState();
-    _loadFoodsData();
-    _loadDefaultFoodsCategories();
-    _loadShoppingCategories();
-    // addSampleFood();
+    Future.delayed(Duration.zero, () {
+      _loadFoodsData();
+      _loadDefaultFoodsCategories();
+      _loadShoppingCategories();
+    });
   }
 
   Future<void> _loadFoodsData() async {
-    final snapshot = await FirebaseFirestore.instance.collection('default_foods').get();
+    final snapshot =
+        await FirebaseFirestore.instance.collection('default_foods').get();
 
     List<Map<String, dynamic>> foods = [];
 
@@ -69,15 +72,18 @@ class _FoodsTableState extends State<FoodsTable> {
         '장보기카테고리': food.shoppingListCategory,
         '소비기한': food.shelfLife,
       });
+    });
+    if (mounted) {
       setState(() {
         userData = foods;
         originalData = List.from(foods);
       });
-    });
+    }
   }
 
   Future<void> _loadDefaultFoodsCategories() async {
-    final snapshot = await FirebaseFirestore.instance.collection('default_foods').get();
+    final snapshot =
+        await FirebaseFirestore.instance.collection('default_foods').get();
 
     final categories = snapshot.docs
         .map((doc) => doc.data()['defaultCategory'] as String?)
@@ -214,7 +220,7 @@ class _FoodsTableState extends State<FoodsTable> {
     if (shouldDelete == true) {
       try {
         final snapshot = await FirebaseFirestore.instance
-            .collection('foods')
+            .collection('defalut_foods')
             .doc(selectedFood['documentId']);
 
         await snapshot.delete(); // 문서 삭제
@@ -300,10 +306,10 @@ class _FoodsTableState extends State<FoodsTable> {
                 columnWidths: const {
                   0: FixedColumnWidth(40), // 체크박스 열 크기
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(150),
+                  2: FixedColumnWidth(200),
                   3: FixedColumnWidth(150),
                   4: FixedColumnWidth(150),
-                  5: FixedColumnWidth(80),
+                  5: FixedColumnWidth(150),
                   6: FixedColumnWidth(180),
                   7: FixedColumnWidth(80),
                 },
@@ -323,7 +329,8 @@ class _FoodsTableState extends State<FoodsTable> {
                                   column['name'] == '변동'
                               ? Center(
                                   child: Text(column['name'],
-                                      style: TextStyle(color: theme.colorScheme.onSurface)),
+                                      style: TextStyle(
+                                          color: theme.colorScheme.onSurface)),
                                 )
                               : GestureDetector(
                                   onTap: () =>
@@ -334,7 +341,9 @@ class _FoodsTableState extends State<FoodsTable> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(column['name'],
-                                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                                            style: TextStyle(
+                                                color: theme
+                                                    .colorScheme.onSurface)),
                                         Icon(
                                           column['state'] == SortState.ascending
                                               ? Icons.arrow_upward
@@ -363,11 +372,10 @@ class _FoodsTableState extends State<FoodsTable> {
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(150),
+                  2: FixedColumnWidth(200),
                   3: FixedColumnWidth(150),
                   4: FixedColumnWidth(150),
-                  5: FixedColumnWidth(80),
-                  // 6: FixedColumnWidth(80),
+                  5: FixedColumnWidth(150),
                   6: FixedColumnWidth(180),
                   7: FixedColumnWidth(100),
                 },
@@ -383,8 +391,10 @@ class _FoodsTableState extends State<FoodsTable> {
                       TableCell(child: SizedBox.shrink()),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text('no',
-                              style: TextStyle(color: theme.colorScheme.onSurface)))),
+                          child: Center(
+                              child: Text('no',
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)))),
                       TableCell(
                         child: DropdownButtonFormField<String>(
                           value: _selectedCategory,
@@ -454,7 +464,8 @@ class _FoodsTableState extends State<FoodsTable> {
                             return DropdownMenuItem<String>(
                               value: category,
                               child: Text(category,
-                                  style: TextStyle(color: theme.colorScheme.onSurface)),
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)),
                             );
                           }).toList(),
                           decoration: InputDecoration(
@@ -466,7 +477,6 @@ class _FoodsTableState extends State<FoodsTable> {
                             contentPadding:
                                 EdgeInsets.only(bottom: 13, left: 20),
                           ),
-
                           style: theme.textTheme.bodyMedium,
                           alignment: Alignment.bottomCenter,
                         ),
@@ -513,7 +523,8 @@ class _FoodsTableState extends State<FoodsTable> {
                             return DropdownMenuItem<String>(
                               value: category,
                               child: Text(category,
-                                  style: TextStyle(color: theme.colorScheme.onSurface)),
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)),
                             );
                           }).toList(),
                           decoration: InputDecoration(
@@ -583,11 +594,10 @@ class _FoodsTableState extends State<FoodsTable> {
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(150),
+                  2: FixedColumnWidth(200),
                   3: FixedColumnWidth(150),
                   4: FixedColumnWidth(150),
-                  5: FixedColumnWidth(80),
-                  // 6: FixedColumnWidth(80),
+                  5: FixedColumnWidth(150),
                   6: FixedColumnWidth(180),
                   7: FixedColumnWidth(100),
                 },
@@ -614,32 +624,44 @@ class _FoodsTableState extends State<FoodsTable> {
                           verticalAlignment: TableCellVerticalAlignment.middle,
                           child: Container(
                               height: 40,
-                              child:
-                                  Center(child: Text(row['연번'].toString(),
-                                      style: TextStyle(color: theme.colorScheme.onSurface))))),
+                              child: Center(
+                                  child: Text(row['연번'].toString(),
+                                      style: TextStyle(
+                                          color:
+                                              theme.colorScheme.onSurface))))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['카테고리'],
-                              style: TextStyle(color: theme.colorScheme.onSurface)))),
+                          child: Center(
+                              child: Text(row['카테고리'],
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['식품명'],
-                              style: TextStyle(color: theme.colorScheme.onSurface)))),
+                          child: Center(
+                              child: Text(row['식품명'],
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['냉장고카테고리'],
-                              style: TextStyle(color: theme.colorScheme.onSurface)))),
+                          child: Center(
+                              child: Text(row['냉장고카테고리'],
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)))),
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['소비기한'].toString(),
-                              style: TextStyle(color: theme.colorScheme.onSurface)))),
+                          child: Center(
+                              child: Text(row['장보기카테고리'],
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)))),
+                      TableCell(
+                          verticalAlignment: TableCellVerticalAlignment.middle,
+                          child: Center(
+                              child: Text(row['소비기한'].toString(),
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)))),
                       // TableCell(
                       //     verticalAlignment: TableCellVerticalAlignment.middle,
                       //     child: Center(child: Text(row['유통기한'].toString()))),
-                      TableCell(
-                          verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Center(child: Text(row['장보기카테고리'],
-                              style: TextStyle(color: theme.colorScheme.onSurface)))),
                       TableCell(
                         verticalAlignment: TableCellVerticalAlignment.middle,
                         child: SizedBox(
@@ -660,17 +682,25 @@ class _FoodsTableState extends State<FoodsTable> {
                 height: 20,
               ),
               // 선택한 행 삭제 버튼
-              BasicElevatedButton(
-                onPressed: selectedRows.isNotEmpty
-                    ? () {
-                        // 선택된 모든 행 삭제
-                        for (int index in selectedRows) {
-                          _deleteSelectedRows(index);
-                        }
-                      }
-                    : null,
-                iconTitle: Icons.delete,
-                buttonTitle: '선택한 항목 삭제',
+              Row(
+                children: [
+                  BasicElevatedButton(
+                    onPressed: selectedRows.isNotEmpty
+                        ? () {
+                            // 선택된 모든 행 삭제
+                            for (int index in selectedRows) {
+                              _deleteSelectedRows(index);
+                            }
+                          }
+                        : null,
+                    iconTitle: Icons.delete,
+                    buttonTitle: '선택한 항목 삭제',
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  CSVUploader(),
+                ],
               ),
               SizedBox(
                 height: 20,

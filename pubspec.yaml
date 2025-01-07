@@ -46,6 +46,8 @@ dependencies:
   webview_flutter: ^4.0.1
   flutter_naver_login: ^2.0.0
   flutter_inappwebview: ^6.0.0-beta.25
+  file_picker: ^5.2.5  # 최신 버전 확인 필요
+  csv: ^5.0.2  # 최신 버전 확인 필요
   #  firebase_messaging: ^14.5.0  # 푸시 알림
   #  firebase_analytics: ^10.8.0  # 사용자 분석
 

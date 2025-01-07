@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/screens/admin_page/app_setting_categories_table/foods_table.dart';
 import 'package:food_for_later_new/screens/admin_page/app_setting_categories_table/theme_table.dart';
@@ -30,13 +31,18 @@ class _AdminAppSettingsManagementState
             tabs: myTabs,
           ),
         ),
-        body: TabBarView(
-          children: [
-            SingleChildScrollView(child: FoodsTable()),
-            SingleChildScrollView(child: ThemeTable()),
-            SingleChildScrollView(child: HowtocookTable()),
-            SingleChildScrollView(child: PreferredfoodscategoryTable()),
-          ],
+        body: FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance.collection('default_foods').get(),
+          builder: (context, snapshot) {
+            return TabBarView(
+              children: [
+                SingleChildScrollView(child: FoodsTable()),
+                SingleChildScrollView(child: ThemeTable()),
+                SingleChildScrollView(child: HowtocookTable()),
+                SingleChildScrollView(child: PreferredfoodscategoryTable()),
+              ],
+            );
+          }
         ),
       ),
     );
