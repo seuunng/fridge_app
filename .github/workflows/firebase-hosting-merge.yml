@@ -18,8 +18,18 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.16.0  # 최신 안정 버전으로 변경
+          flutter-version: 3.27.1   # 최신 안정 버전으로 변경
           channel: stable
+
+      - name: Verify Flutter Version
+        run: flutter doctor -v  # ✅ 실행 로그에서 Dart 버전 확인
+
+      - name: Upgrade Flutter & Dart
+        run: |
+          flutter upgrade
+          flutter --version
+          dart --version
+          flutter pub cache repair
 
       # 3. Flutter 의존성 설치
       - name: Install dependencies
