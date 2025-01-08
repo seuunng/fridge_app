@@ -43,14 +43,33 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
 
   void _loadFoodsCategoriesFromFirestore() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('default_foods').get();
-      final categories = snapshot.docs.map((doc) {
+      final foodsSnapshot = await FirebaseFirestore.instance.collection('foods').get();
+      final userFoods = foodsSnapshot.docs.map((doc) {
         return FoodsModel.fromFirestore(doc);
       }).toList();
 
+      final defaultFoodsSnapshot = await FirebaseFirestore.instance.collection('default_foods').get();
+      final defaultFoods = defaultFoodsSnapshot.docs.map((doc) {
+        return FoodsModel.fromFirestore(doc);
+      }).toList();
+
+      final Map<String, FoodsModel> uniqueCategoriesMap = {};
+      for (var category in userFoods) {
+        uniqueCategoriesMap[category.defaultCategory] = category;
+      }
+
+      // 2️⃣ 기본 default_foods 데이터 추가 (사용자 데이터에 없는 경우만)
+      for (var category in defaultFoods) {
+        if (!uniqueCategoriesMap.containsKey(category.defaultCategory)) {
+          uniqueCategoriesMap[category.defaultCategory] = category;
+        }
+      }
+
+      // 🔹 중복 제거된 리스트 변환
+      final uniqueCategories = uniqueCategoriesMap.values.toList();
+
       setState(() {
-        foodsCategories = categories;
+        foodsCategories = uniqueCategories;
 
         // ✅ 사용자가 선택한 카테고리를 자동으로 선택
         if (widget.categoryName != null && widget.categoryName!.isNotEmpty) {
@@ -190,20 +209,13 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                       value: foodsCategories.contains(selectedFoodsCategory)
                           ? selectedFoodsCategory
                           : null,
-                      hint: Text(
-                        '카테고리 선택',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: theme.colorScheme.onSurface, // 레이블 텍스트 스타일
-                        ),
-                      ),
+                      hint: Text('카테고리 선택'),
                       items: foodsCategories.map((FoodsModel value) {
                         return DropdownMenuItem<FoodsModel>(
                           value: value,
                           child: Text(
                             value.defaultCategory,
                             style: TextStyle(
-                              fontSize: 18,
                               color: theme.colorScheme.onSurface, // 레이블 텍스트 스타일
                             ),
                           ),
@@ -232,13 +244,13 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                   width: 200, // 원하는 크기로 설정
                   child: TextField(
                     controller: foodNameController,
+                    textAlign: TextAlign.center, // 텍스트를 가운데 정렬
                     decoration: InputDecoration(
                       // border: OutlineInputBorder(),
                       hintText: '식품명을 입력하세요',
                       hintStyle: TextStyle(
-                        fontSize: 18,
-                        color: theme.colorScheme.onSurface
-                            .withOpacity(0.6), // 힌트 텍스트 스타일
+                          color: Colors.grey, // 힌트 텍스트 색상
+                          fontStyle: FontStyle.italic,
                       ),
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 8.0, // 텍스트 필드 내부 좌우 여백 조절
@@ -259,18 +271,13 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                 Spacer(),
                 DropdownButton<FridgeCategory>(
                   value: selectedFridgeCategory,
-                  hint: Text(
-                    '카테고리 선택',
-                    style: TextStyle(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6)),
-                  ),
+                  hint: Text('카테고리 선택'),
                   items: fridgeCategories.map((FridgeCategory value) {
                     return DropdownMenuItem<FridgeCategory>(
                       value: value,
                       child: Text(
                         value.categoryName,
                         style: TextStyle(
-                            fontSize: 18,
                             color: theme.colorScheme.onSurface),
                       ),
                     );
@@ -301,7 +308,6 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                       child: Text(
                         value.categoryName,
                         style: TextStyle(
-                            fontSize: 18,
                             color: theme.colorScheme.onSurface),
                       ),
                     );

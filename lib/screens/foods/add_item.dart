@@ -497,15 +497,6 @@ class _AddItemState extends State<AddItem> {
                       },
                     ),
                   ),
-                  SizedBox(width: 10),
-                  BasicElevatedButton(
-                    onPressed: () {
-                      _searchItems(searchKeyword);
-                      _saveSearchKeyword(searchKeyword);// 검색 버튼 클릭 시 검색어 필터링
-                    },
-                    iconTitle: Icons.search,
-                    buttonTitle: '검색',
-                  ),
                 ],
               ),
             ),

@@ -240,6 +240,7 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                     child: TextField(
                       controller: foodNameController
                         ..text = widget.foodsName ?? '',
+                      textAlign: TextAlign.center, // 텍스트를 가운데 정렬
                       // textAlign: TextAlign.,
                       focusNode: _focusNode,
                       style: TextStyle(
