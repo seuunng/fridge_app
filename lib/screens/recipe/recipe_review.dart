@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/screens/recipe/add_recipe_review.dart';
 import 'package:food_for_later_new/screens/recipe/full_screen_image_view.dart';
-import 'package:food_for_later_new/screens/recipe/report_an_issue.dart';
+import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
 import 'package:intl/intl.dart';
 
 class RecipeReview extends StatefulWidget {
@@ -330,7 +330,7 @@ class _RecipeReviewState extends State<RecipeReview> {
                                           context,
                                           MaterialPageRoute(
                                               builder: (context) =>
-                                                  ReportAnIssue(
+                                                  FeedbackSubmission(
                                                     postNo: recipeReviews[index]
                                                         ['reviewId'],
                                                     postType: '리뷰',

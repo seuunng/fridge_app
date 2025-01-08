@@ -5,10 +5,10 @@ import 'package:food_for_later_new/screens/recipe/add_recipe.dart';
 import 'package:food_for_later_new/screens/recipe/add_recipe_review.dart';
 import 'package:food_for_later_new/screens/recipe/full_screen_image_view.dart';
 import 'package:food_for_later_new/screens/recipe/recipe_review.dart';
-import 'package:food_for_later_new/screens/recipe/report_an_issue.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:food_for_later_new/screens/recipe/share_options.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
 
 class ReadRecipe extends StatefulWidget {
   final String recipeId;
@@ -620,7 +620,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => ReportAnIssue(
+                                  builder: (context) => FeedbackSubmission(
                                         postNo: widget.recipeId,
                                         postType: '레시피',
                                       )));

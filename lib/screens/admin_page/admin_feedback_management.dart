@@ -14,11 +14,12 @@ class AdminFeedbackManagement extends StatefulWidget {
 class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
   String searchQuery = '';
 
-  SortState _numberSortState = SortState.none;
-  SortState _titleSortState = SortState.none;
-  SortState _authorSortState = SortState.none;
-  SortState _resultSortState = SortState.none;
   SortState _dateSortState = SortState.none;
+  SortState _categorySortState = SortState.none;
+  SortState _feedbackTypeSortState = SortState.none;
+  SortState _authorSortState = SortState.none;
+  SortState _confirmationSortState = SortState.none;
+  SortState _statusSortState = SortState.none;
 
   List<Map<String, dynamic>> feedbackData = [];
   late List<Map<String, dynamic>> originalData;
@@ -34,43 +35,37 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
     try {
       final snapshot =
           await FirebaseFirestore.instance.collection('feedback').get();
-
+      // 🔹 users 컬렉션에서 모든 사용자 정보 가져오기 (닉네임 조회)
+      final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
+      Map<String, String> userMap = {
+        for (var doc in usersSnapshot.docs) doc.id: doc.data().containsKey('nickname') ? doc['nickname'] : '사용자 없음'
+      };
       setState(() {
-        feedbackData = snapshot.docs.asMap().entries.map((entry) {
-          final index = entry.key; // 인덱스를 사용하여 연번 설정
-          final doc = entry.value;
-
+        feedbackData = snapshot.docs.map((doc) {
+          String userId = doc.data().containsKey('author') ? doc['author'] : '알 수 없음';
           return {
             'id': doc.id,
-            '연번': (index + 1).toString(), // 연번 추가
-            'title': doc.data().containsKey('title') ? doc['title'] : '제목 없음',
-            'content':
-                doc.data().containsKey('content') ? doc['content'] : '내용 없음',
-            'author':
-                doc.data().containsKey('author') ? doc['author'] : '작성자 없음',
-            'authorEmail': doc.data().containsKey('authorEmail')
-                ? doc['authorEmail']
-                : '이메일 없음',
-            'status': doc.data().containsKey('status') ? doc['status'] : 'NEW',
             'timestamp': (doc.data().containsKey('timestamp') &&
                     doc['timestamp'] is Timestamp)
                 ? (doc['timestamp'] as Timestamp).toDate()
-                : DateTime.now(), // timestamp 처리
-            'postType':
-                doc.data().containsKey('postType') ? doc['postType'] : '내용 없음',
-            'postNo':
-                doc.data().containsKey('postNo') ? doc['postNo'] : '내용 없음',
-            'confirmationNote':
-            doc.data().containsKey('confirmationNote') ? doc['confirmationNote'] : '',
-
+                : DateTime.now(),
+            'category':
+                doc.data().containsKey('category') ? doc['category'] : '기타',
+            'feedbackType': doc.data().containsKey('feedbackType')
+                ? doc['feedbackType']
+                : '기타',
+            'author': userMap[userId] ??'작성자 없음',
+            'confirmationNote': doc.data().containsKey('confirmationNote')
+                ? doc['confirmationNote']
+                : '확인되지 않음',
+            'status': doc.data().containsKey('status') ? doc['status'] : '미처리',
           };
-          
         }).toList();
 
-        originalData = List.from(feedbackData); // 원본 데이터 복사
+        originalData = List.from(feedbackData);
       });
     } catch (e) {
-      print('Error loading fridge items: $e');
+      print('Error loading feedback data: $e');
     }
   }
 
@@ -79,93 +74,17 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
     return formatter.format(dateTime);
   }
 
-  void _sortByTitle() {
+  void _sortByField(String field, SortState sortState) {
     setState(() {
-      if (_titleSortState == SortState.none) {
-        feedbackData.sort((a, b) => a['title']!.compareTo(b['title']!));
-        _titleSortState = SortState.ascending;
-      } else if (_titleSortState == SortState.ascending) {
-        feedbackData.sort((a, b) => b['title']!.compareTo(a['title']!));
-        _titleSortState = SortState.descending;
+      if (sortState == SortState.none) {
+        feedbackData.sort((a, b) => a[field].compareTo(b[field]));
+        sortState = SortState.ascending;
+      } else if (sortState == SortState.ascending) {
+        feedbackData.sort((a, b) => b[field].compareTo(a[field]));
+        sortState = SortState.descending;
       } else {
         feedbackData = List.from(originalData);
-        _titleSortState = SortState.none;
-      }
-    });
-  }
-
-  void _sortByNumber() {
-    setState(() {
-      if (_numberSortState == SortState.none) {
-        feedbackData.sort((a, b) => a['연번']!.compareTo(b['연번']!));
-        _numberSortState = SortState.ascending;
-      } else if (_numberSortState == SortState.ascending) {
-        feedbackData.sort((a, b) => b['연번']!.compareTo(a['연번']!));
-        _numberSortState = SortState.descending;
-      } else {
-        feedbackData = List.from(originalData);
-        _numberSortState = SortState.none;
-      }
-    });
-  }
-
-  void _sortByAuthor() {
-    setState(() {
-      if (_authorSortState == SortState.none) {
-        feedbackData.sort((a, b) => a['author']!.compareTo(b['author']!));
-        _authorSortState = SortState.ascending;
-      } else if (_authorSortState == SortState.ascending) {
-        feedbackData.sort((a, b) => b['author']!.compareTo(a['author']!));
-        _authorSortState = SortState.descending;
-      } else {
-        feedbackData = List.from(originalData);
-        _authorSortState = SortState.none;
-      }
-    });
-  }
-
-  void _sortByResult() {
-    setState(() {
-      if (_resultSortState == SortState.none) {
-        feedbackData.sort((a, b) => a['status']!.compareTo(b['status']!));
-        _resultSortState = SortState.ascending;
-      } else if (_resultSortState == SortState.ascending) {
-        feedbackData.sort((a, b) => b['status']!.compareTo(a['status']!));
-        _resultSortState = SortState.descending;
-      } else {
-        feedbackData = List.from(originalData);
-        _resultSortState = SortState.none;
-      }
-    });
-  }
-
-  void _sortByDate() {
-    setState(() {
-      if (_dateSortState == SortState.none) {
-        feedbackData.sort((a, b) {
-          DateTime? dateA = a['timestamp'];
-          DateTime? dateB = b['timestamp'];
-
-          if (dateA == null && dateB == null) return 0; // 둘 다 null이면 같음
-          if (dateA == null) return 1; // dateA가 null이면 뒤로 보냄
-          if (dateB == null) return -1; // dateB가 null이면 앞으로 보냄
-          return dateA.compareTo(dateB); // 날짜 비교
-        });
-        _dateSortState = SortState.ascending;
-      } else if (_dateSortState == SortState.ascending) {
-        feedbackData.sort((a, b) {
-          DateTime? dateA = a['timestamp'];
-          DateTime? dateB = b['timestamp'];
-
-          if (dateA == null && dateB == null) return 0;
-          if (dateA == null) return 1;
-          if (dateB == null) return -1;
-          return dateB.compareTo(dateA); // 내림차순 정렬
-        });
-        _dateSortState = SortState.descending;
-      } else {
-        feedbackData = List.from(originalData);
-        _dateSortState = SortState.none;
+        sortState = SortState.none;
       }
     });
   }
@@ -175,7 +94,7 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
     final theme = Theme.of(context);
     List<Map<String, dynamic>> filteredData = feedbackData
         .where((row) =>
-            (row['title']?.toLowerCase() ?? '')
+            (row['category']?.toLowerCase() ?? '')
                 .contains(searchQuery.toLowerCase()) ||
             (row['author']?.toLowerCase() ?? '')
                 .contains(searchQuery.toLowerCase()))
@@ -185,186 +104,137 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
       appBar: AppBar(
         title: Text('의견 및 신고 처리하기'),
       ),
-      body: Column(children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: '검색어를 입력하세요',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: '검색어를 입력하세요',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (query) {
+                setState(() {
+                  searchQuery = query;
+                });
+              },
             ),
-            onChanged: (query) {
-              setState(() {
-                searchQuery = query;
-              });
-            },
           ),
-        ),
-        Expanded(
+          Expanded(
             child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal, // 가로 스크롤 가능하게 설정
-          child: DataTable(
-              columns: [
-                DataColumn(
-                  label: GestureDetector(
-                    onTap: _sortByNumber, // 제목을 누르면 정렬 상태 변경
-                    child: Row(
-                      children: [
-                        Text('연번',
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
-                        Icon(
-                          _numberSortState == SortState.descending
-                              ? Icons.arrow_upward
-                              : _numberSortState == SortState.ascending
-                                  ? Icons.arrow_downward
-                                  : Icons.sort,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: GestureDetector(
-                    onTap: _sortByDate, // 제목을 누르면 정렬 상태 변경
-                    child: Row(
-                      children: [
-                        Text('날짜',
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
-                        Icon(
-                          _dateSortState == SortState.descending
-                              ? Icons.arrow_upward
-                              : _dateSortState == SortState.ascending
-                                  ? Icons.arrow_downward
-                                  : Icons.sort,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: GestureDetector(
-                    onTap: _sortByTitle, // 제목을 누르면 정렬 상태 변경
-                    child: Row(
-                      children: [
-                        Text('제목',
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
-                        Icon(
-                          _titleSortState == SortState.descending
-                              ? Icons.arrow_upward
-                              : _titleSortState == SortState.ascending
-                                  ? Icons.arrow_downward
-                                  : Icons.sort,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: GestureDetector(
-                    onTap: _sortByAuthor, // 제목을 누르면 정렬 상태 변경
-                    child: Row(
-                      children: [
-                        Text('작성자',
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
-                        Icon(
-                          _authorSortState == SortState.descending
-                              ? Icons.arrow_upward
-                              : _authorSortState == SortState.ascending
-                                  ? Icons.arrow_downward
-                                  : Icons.sort,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                DataColumn(
-                  label: GestureDetector(
-                    onTap: _sortByResult, // 제목을 누르면 정렬 상태 변경
-                    child: Row(
-                      children: [
-                        Text('처리결과',
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
-                        Icon(
-                          _resultSortState == SortState.descending
-                              ? Icons.arrow_upward
-                              : _resultSortState == SortState.ascending
-                                  ? Icons.arrow_downward
-                                  : Icons.sort,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              rows: feedbackData.map((row) {
-                return DataRow(cells: [
-                  DataCell(
-                    Container(
-                      width: 10,
-                      child: Text(row['연번'].toString() ?? 'N/A',
-                          style: TextStyle(color: theme.colorScheme.onSurface)),
-                    ),
-                  ),
-                  DataCell(Text(_formatDate(row['timestamp']) ?? 'N/A',
-                      style: TextStyle(color: theme.colorScheme.onSurface))),
-                  DataCell(
-                    GestureDetector(
-                      onTap: () async {
-                        if (row['title'] != null) {
+              scrollDirection: Axis.horizontal, // 가로 스크롤 가능하게 설정
+              child: DataTable(
+                columns: [
+                  _buildSortableColumn('날짜', 'timestamp', _dateSortState),
+                  _buildSortableColumn(
+                      '구분', 'feedbackType', _feedbackTypeSortState),
+                  _buildSortableColumn('항목', 'category', _categorySortState),
+                  _buildSortableColumn('작성자', 'author', _authorSortState),
+                  _buildSortableColumn(
+                      '확인사항', 'confirmationNote', _confirmationSortState),
+                  _buildSortableColumn('처리결과', 'status', _statusSortState),
+                ],
+                rows: filteredData.map((row) {
+                  return DataRow(cells: [
+                    DataCell(Text(_formatDate(row['timestamp']),
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                    DataCell(Text(row['feedbackType'],
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                    DataCell(
+                      GestureDetector(
+                        onTap: () async {
                           final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => FeedbackDetailPage(
-                                        feedbackId: row['id'], // 피드백 문서의 ID 전달
-                                        title: row['title'] ?? '제목 없음',
-                                        content: row['content'] ?? '내용 없음',
-                                        author: row['author'] ?? '작성자 없음',
-                                        authorEmail:
-                                            row['authorEmail'] ?? '이메일 없음',
-                                        createdDate: row['timestamp'] ??
-                                            DateTime
-                                                .now(),
-                                        statusOptions: ['처리 중', '완료', '보류'],
-                                        postType: row['postType'] ?? '내용 없음',
-                                        postNo: row['postNo'] ?? '내용 없음',
-                                        selectedStatus:
-                                            row['status'] ?? '내용 없음',
-                                        confirmationNote:
-                                            row['confirmationNote'] ??
-                                                '내용 없음', // 확인사항
-                                      )));
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FeedbackDetailPage(
+                                feedbackId: row['id'],
+                                content: '',
+                                author: row['author'],
+                                authorEmail: '',
+                                createdDate: row['timestamp'],
+                                statusOptions: ['미처리', '처리 중', '완료'],
+                                postType: row['feedbackType'],
+                                postNo: '',
+                                confirmationNote: row['confirmationNote'],
+                                selectedStatus: row['status'],
+                                  feedbackType: row['feedbackType']
+                              ),
+                            ),
+                          );
                           if (result == true) {
                             _loadFeedbackDataFromFirestore();
                           }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('제목 또는 내용이 없습니다.')),
-                          );
-                        }
-                      },
-                      child: Text(
-                        row['title'] ?? '제목 없음',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
+                        },
+                        child: Text(
+                          row['category'],
+                          style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  DataCell(Text(row['author'].toString() ?? 'N/A',
-                      style: TextStyle(color: theme.colorScheme.onSurface))),
-                  DataCell(Text(row['status'].toString() ?? 'NEW',
-                      style: TextStyle(color: theme.colorScheme.onSurface))),
-                ]);
-              }).toList()),
-        ))
-      ]),
+                    DataCell(Text(row['author'],
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                    DataCell(Text(row['confirmationNote'],
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                    DataCell(Text(row['status'],
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                  ]);
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  void _navigateToDetail(Map<String, dynamic> feedbackData) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FeedbackDetailPage(
+          feedbackId: feedbackData['id'],
+          content: '',
+          author: feedbackData['author'],
+          authorEmail: '',
+          createdDate: feedbackData['timestamp'],
+          statusOptions: ['미처리', '처리 중', '완료'],
+          postType: feedbackData['feedbackType'],
+          postNo: '',
+          confirmationNote: feedbackData['confirmationNote'],
+          selectedStatus: feedbackData['status'],
+            feedbackType: feedbackData['feedbackType']
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _loadFeedbackDataFromFirestore();
+    }
+  }
+  DataColumn _buildSortableColumn(
+      String title, String field, SortState sortState) {
+    final theme = Theme.of(context);
+    return DataColumn(
+      label: GestureDetector(
+        onTap: () => _sortByField(field, sortState),
+        child: Row(
+          children: [
+            Text(title,
+                style: TextStyle(color: theme.colorScheme.onSurface)),
+            Icon(
+              sortState == SortState.descending
+                  ? Icons.arrow_upward
+                  : sortState == SortState.ascending
+                      ? Icons.arrow_downward
+                      : Icons.sort,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

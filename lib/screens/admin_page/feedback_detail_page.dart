@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 class FeedbackDetailPage extends StatefulWidget {
   final String feedbackId; // Firestore에서 해당 피드백 문서 ID
-  final String title;
   final String content;
   final String author;
   final String authorEmail;
@@ -15,10 +14,10 @@ class FeedbackDetailPage extends StatefulWidget {
   final String postNo;
   final String confirmationNote;
   final String selectedStatus;
+  final String feedbackType;
 
   FeedbackDetailPage({
     required this.feedbackId, // feedback 문서 ID를 받아서 업데이트에 사용
-    required this.title,
     required this.author,
     required this.authorEmail,
     required this.content,
@@ -28,6 +27,7 @@ class FeedbackDetailPage extends StatefulWidget {
     required this.postNo,
     required this.confirmationNote,
     required this.selectedStatus,
+    required this.feedbackType,
   });
 
   @override
@@ -145,14 +145,17 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  widget.title,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                ),
-              ],
-            ),
+            // Row(
+            //   children: [
+            //     Text(
+            //       // widget.title,
+            //       // style: TextStyle(
+            //       //     fontSize: 18,
+            //       //     fontWeight: FontWeight.bold,
+            //       //     color: theme.colorScheme.onSurface),
+            //     // ),
+            //   ],
+            // ),
             SizedBox(height: 10),
             Row(
               children: [
@@ -185,7 +188,9 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
                 Spacer(),
                 Text(
                   '게시물유형',
-                  style: TextStyle(fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface),
                 ),
                 SizedBox(width: 10),
                 Text(
@@ -204,7 +209,10 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
             Divider(),
             Text(
               '확인사항',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface),
             ),
             TextField(
               controller: _confirmationController, // Controller를 사용하여 초기 값 설정
