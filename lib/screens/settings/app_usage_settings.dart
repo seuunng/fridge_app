@@ -120,6 +120,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       );
       return;
     }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -170,6 +171,12 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   // 선택된 냉장고 삭제 함수
   void _deleteCategory(
       String category, List<String> categories, String categoryType) {
+    if (categories.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('최소 한 개의 냉장고는 필요합니다.')),
+      );
+      return;
+    }
     final fridgeRef = FirebaseFirestore.instance.collection('fridges');
     showDialog(
       context: context,
@@ -200,6 +207,13 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                 child: Text('삭제'),
                 onPressed: () async {
                   try {
+                    if (_categories_fridge.length <= 1) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('최소 한 개의 냉장고는 필요합니다.')),
+                      );
+                      Navigator.pop(context);
+                      return;
+                    }
                     // 해당 냉장고 이름과 일치하는 문서를 찾음
                     final snapshot = await fridgeRef
                         .where('FridgeName', isEqualTo: category)

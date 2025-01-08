@@ -86,7 +86,12 @@ class _CustomDropdownState extends State<CustomDropdown> {
                       children: [
                         Icon(Icons.add, color: Colors.blue),
                         SizedBox(width: 8),
-                        Text('새 항목 추가'),
+                        Text('새항목 추가',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: theme.colorScheme.onSurface
+                            )
+                        ),
                       ],
                     ),
                   ),

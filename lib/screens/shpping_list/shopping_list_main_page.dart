@@ -33,7 +33,9 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   Map<String, List<String>> groupedItems = {};
 
   bool showCheckBoxes = false;
-
+  List<String> predefinedCategoryOrder = [
+    '과일/채소', '정육/수산', '유제품/간편식', '양념/오일', '과자/간식', '가공식품', '음료/주류', '쌀/잡곡/견과류', '기타'
+  ];
   @override
   void initState() {
     super.initState();
@@ -159,7 +161,23 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
         groupedItems[category] = [itemName];
       }
     }
-    return groupedItems;
+
+    // 🔹 카테고리 순서를 미리 정의된 순서에 맞게 정렬
+    Map<String, List<String>> sortedGroupedItems = {};
+    for (var category in predefinedCategoryOrder) {
+      if (groupedItems.containsKey(category)) {
+        sortedGroupedItems[category] = groupedItems[category]!;
+      }
+    }
+
+    // 🔹 정의된 순서에 없는 나머지 카테고리 추가
+    for (var category in groupedItems.keys) {
+      if (!sortedGroupedItems.containsKey(category)) {
+        sortedGroupedItems[category] = groupedItems[category]!;
+      }
+    }
+
+    return sortedGroupedItems;
   }
 
   Future<void> _loadCategoriesFromFirestore() async {
