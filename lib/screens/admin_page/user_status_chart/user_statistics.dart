@@ -13,6 +13,7 @@ class UserStatistics extends StatefulWidget {
 class _UserStatisticsState extends State<UserStatistics> {
   final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   List<FlSpot> _userStats = [];
+  List<FlSpot> _dormantStats = [];
   List<Color> gradientColors = [
     Colors.cyan,
     Colors.blue,
@@ -27,6 +28,7 @@ class _UserStatisticsState extends State<UserStatistics> {
   Future<void> _fetchUserStats() async {
     final snapshot = await FirebaseFirestore.instance.collection('users').get();
     Map<String, int> dateCount = {};
+    Map<String, int> dormantCount = {}; // 🔴 휴면 계정 카운트 추가
 
     DateTime now = DateTime.now();
     DateTime oneYearAgo = DateTime(now.year - 1, now.month);
@@ -37,34 +39,58 @@ class _UserStatisticsState extends State<UserStatistics> {
           ? signUpDateRaw.toDate()
           : DateTime.parse(signUpDateRaw.toString());
 
+      final List<dynamic> openSessions = doc.data()['openSessions'] ?? [];
+      DateTime? lastAccessDate;
+
+      if (openSessions.isNotEmpty) {
+        lastAccessDate = openSessions
+            .map((session) => session['endTime'] as Timestamp?)
+            .where((timestamp) => timestamp != null) // null 제거
+            .map((timestamp) => timestamp!.toDate()) // DateTime 변환
+            .reduce((a, b) => a.isAfter(b) ? a : b); // 최신 날짜 찾기
+      }
+
+      final bool isDormant = lastAccessDate == null ||
+          now.difference(lastAccessDate).inDays > 90; // 🔥 휴면 계정 조건
+
       if (signUpDate.isAfter(oneYearAgo) && signUpDate.isBefore(now)) {
         final dateKey = DateFormat('yyyy-MM').format(signUpDate);
 
-        if (dateCount.containsKey(dateKey)) {
-          dateCount[dateKey] = dateCount[dateKey]! + 1;
-        } else {
-          dateCount[dateKey] = 1;
+        dateCount[dateKey] = (dateCount[dateKey] ?? 0) + 1;
+
+        if (isDormant) {
+          dormantCount[dateKey] = (dormantCount[dateKey] ?? 0) + 1;
         }
       }
     }
 
+    // **누락된 월 보완**
     Map<String, int> completeDateCount = {};
+    Map<String, int> completeDormantCount = {}; // 🔴 휴면 계정 카운트도 보완
+
     for (int i = 11; i >= 0; i--) {
       DateTime month = DateTime(now.year, now.month - i, 1);
       String dateKey = DateFormat('yyyy-MM').format(month);
       completeDateCount[dateKey] = dateCount[dateKey] ?? 0;
+      completeDormantCount[dateKey] = dormantCount[dateKey] ?? 0; // 휴면 계정 추가
     }
 
     List<FlSpot> spots = [];
+    List<FlSpot> dormantSpots = []; // 🔴 휴면 계정 Spot 추가
     int cumulativeCount = 0;
+    int cumulativeDormantCount = 0; // 🔴 누적 휴면 계정 추가
 
     completeDateCount.entries.toList().asMap().forEach((index, entry) {
-      cumulativeCount += entry.value; // 누적 합계 계산
+      cumulativeCount += entry.value;
+      cumulativeDormantCount += completeDormantCount[entry.key] ?? 0; // 휴면 계정 누적
+
       spots.add(FlSpot(index.toDouble(), cumulativeCount.toDouble()));
+      dormantSpots.add(FlSpot(index.toDouble(), cumulativeDormantCount.toDouble())); // 🔴 휴면 계정 추가
     });
 
     setState(() {
       _userStats = spots;
+      _dormantStats = dormantSpots; // 🔴 휴면 계정 그래프 데이터 저장
     });
   }
 
@@ -97,8 +123,7 @@ class _UserStatisticsState extends State<UserStatistics> {
               maxX: _userStats.isNotEmpty ? _userStats.length.toDouble() : 12,
               minY: 0,
               maxY: (_userStats.isNotEmpty
-                  ? _userStats.map((e) => e.y).reduce((a, b) => a > b ? a : b) +
-                      5
+                  ? _userStats.map((e) => e.y).reduce((a, b) => a > b ? a : b) + 5
                   : 10),
               gridData: FlGridData(
                 show: false,
@@ -158,7 +183,32 @@ class _UserStatisticsState extends State<UserStatistics> {
                     },
                   ),
                 ),
-
+                LineChartBarData(
+                  spots: _dormantStats,
+                  isCurved: true,
+                  gradient: LinearGradient(
+                    colors: [Colors.red, Colors.deepOrange],
+                  ),
+                  barWidth: 4,
+                  isStrokeCapRound: true,
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      colors: [Colors.red.withOpacity(0.3), Colors.deepOrange.withOpacity(0.3)],
+                    ),
+                  ),
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 6,
+                        color: Colors.white,
+                        strokeWidth: 2,
+                        strokeColor: Colors.red,
+                      );
+                    },
+                  ),
+                ),
               ],
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(

@@ -20,6 +20,7 @@ class _UserTableState extends State<UserTable> {
 
   Future<void> fetchUserData() async {
     final snapshot = await FirebaseFirestore.instance.collection('users').get();
+    final now = DateTime.now(); // 현재 시간
 
     final futures = snapshot.docs.asMap().entries.map((entry) async {
       final index = entry.key + 1; // 1부터 시작하는 연번
@@ -30,6 +31,21 @@ class _UserTableState extends State<UserTable> {
           : DateTime.parse(signUpDateRaw.toString());
       final formattedDate = DateFormat('yyyy-MM-dd').format(signUpDate);
       final userId = entry.value.id;
+      // 🔹 마지막 접속 날짜 가져오기
+      final List<dynamic> openSessions = data['openSessions'] ?? [];
+      DateTime? lastAccessDate;
+
+      if (openSessions.isNotEmpty) {
+        lastAccessDate = openSessions
+            .map((session) => session['endTime'] as Timestamp?)
+            .where((timestamp) => timestamp != null) // null 제거
+            .map((timestamp) => timestamp!.toDate()) // DateTime 변환
+            .reduce((a, b) => a.isAfter(b) ? a : b); // 최신 날짜 찾기
+      }
+
+      // 🔥 3개월(90일) 이상 미접속 → 휴면 계정으로 분류
+      final bool isDormant = lastAccessDate == null ||
+          now.difference(lastAccessDate).inDays > 90;
 
       final recipeCount = await FirebaseFirestore.instance
           .collection('recipe')
@@ -50,7 +66,6 @@ class _UserTableState extends State<UserTable> {
           .then((snapshot) => snapshot.size);
 
       // 앱 접속 횟수 및 사용 시간 데이터 (가정된 필드명 예시)
-      final List<dynamic> openSessions = data['openSessions'] ?? [];
       final openCount = openSessions.length; // 접속 횟수는 세션의 개수로 계산
       final totalUsageTime = openSessions.fold<int>(0, (sum, session) {
         if (session['startTime'] == null || session['endTime'] == null) {
@@ -67,12 +82,15 @@ class _UserTableState extends State<UserTable> {
         '연번': index,
         '이메일': data['email'] ?? '',
         '닉네임': data['nickname'] ?? '',
+        '성별': data['gender'] ?? '',
+        '출생연도': data['birthYear'] ?? '',
         '가입일': formattedDate,
         '접속횟수': openCount,
         '사용시간(h)': totalUsageHours,
         '레시피': recipeCount,
         '기록': recordCount,
         '스크랩': scrapCount,
+        '계정상태': isDormant ? '휴면 계정' : '활성',
       };
     }).toList();
 
@@ -87,13 +105,14 @@ class _UserTableState extends State<UserTable> {
     {'name': '이메일', 'state': SortState.none},
     {'name': '닉네임', 'state': SortState.none},
     {'name': '가입일', 'state': SortState.none},
-    // {'name': '성별', 'state': SortState.none},
-    // {'name': '생년월일', 'state': SortState.none},
+    {'name': '성별', 'state': SortState.none},
+    {'name': '생년월일', 'state': SortState.none},
     {'name': '접속횟수', 'state': SortState.none},
     {'name': '사용시간(h)', 'state': SortState.none},
     {'name': '레시피', 'state': SortState.none},
     {'name': '기록', 'state': SortState.none},
     {'name': '스크랩', 'state': SortState.none},
+    {'name': '계정상태', 'state': SortState.none}, // 🔥 계정 상태 추가
   ];
 
   void _sortBy(String columnName, SortState currentState) {
