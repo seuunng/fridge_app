@@ -10,119 +10,106 @@ class AdminDashboardUsageMetrics extends StatefulWidget {
 
 class _AdminDashboardUsageMetricsState
     extends State<AdminDashboardUsageMetrics> {
-  final bool isShowingMainData = true;
-  String selectedPeriod = '전체';
+  Future<Map<String, Map<String, int>>> fetchMonthlyData() async {
+    final collections = [
+      'recipe',
+      'record',
+      'scraped_recipes',
+      'recipe_reviews'
+    ];
+    final Map<String, Map<String, int>> allData = {};
 
-  Future<Map<String, int>> fetchMonthlyData(String collectionName) async {
-    final collection = FirebaseFirestore.instance.collection(collectionName);
-    final querySnapshot = await collection.get();
+    for (var collectionName in collections) {
+      final collection = FirebaseFirestore.instance.collection(collectionName);
+      final querySnapshot = await collection.get();
 
-    final Map<String, int> monthlyCounts = {};
+      final Map<String, int> monthlyCounts = {};
 
-    for (var doc in querySnapshot.docs) {
-      // 필드 확인
-      final createdAt = (doc.data().containsKey('date'))
-          ? (doc['date'] as Timestamp?)?.toDate()
-          : null;
-      final scrapedAt = (doc.data().containsKey('scrapedAt'))
-          ? (doc['scrapedAt'] as Timestamp?)?.toDate()
-          : null;
+      for (var doc in querySnapshot.docs) {
+        DateTime? timestamp;
 
-      // 사용할 필드 선택
-      final timestamp = createdAt ?? scrapedAt;
+        // 🔥 Firestore에서 timestamp 필드 가져오기
+        if (collectionName == 'recipe_reviews' &&
+            doc.data().containsKey('timestamp')) {
+          final timestampRaw = doc['timestamp'];
+          if (timestampRaw is Timestamp) {
+            timestamp = timestampRaw.toDate();
+          }
+        } else {
+          final createdAt = doc.data().containsKey('date')
+              ? (doc['date'] as Timestamp?)?.toDate()
+              : null;
+          final scrapedAt = doc.data().containsKey('scrapedAt')
+              ? (doc['scrapedAt'] as Timestamp?)?.toDate()
+              : null;
+          timestamp = createdAt ?? scrapedAt;
+        }
 
-      if (timestamp != null) {
-        final monthKey =
-            '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}';
-        monthlyCounts[monthKey] = (monthlyCounts[monthKey] ?? 0) + 1;
+        // 🔥 timestamp가 null이 아닌 경우만 처리
+        if (timestamp != null) {
+          final monthKey =
+              '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}';
+          monthlyCounts[monthKey] = (monthlyCounts[monthKey] ?? 0) + 1;
+        }
       }
+
+      allData[collectionName] = monthlyCounts;
     }
 
-    return monthlyCounts;
+    return allData;
   }
 
-
-  List<FlSpot> calculateCumulativeData(Map<String, int> monthlyData) {
-    int cumulativeCount = 0;
-
-    return List.generate(12, (monthIndex) {
-      final monthKey = '2024-${(monthIndex + 1).toString().padLeft(2, '0')}';
-      cumulativeCount += monthlyData[monthKey] ?? 0;
-
-      return FlSpot((monthIndex + 1).toDouble(), cumulativeCount.toDouble());
-    });
-  }
-
-  Future<Map<String, int>> fetchSharedData() async {
-    final collection = FirebaseFirestore.instance.collection('recipe');
-    final querySnapshot = await collection.get();
-
-    final Map<String, int> monthlyCounts = {};
-
-    for (var doc in querySnapshot.docs) {
-      if (!doc.data().containsKey('sharedCount')) continue; // sharedCount 필드가 없으면 건너뛰기
-      final createdAt = (doc['date'] as Timestamp?)?.toDate();
-      if (createdAt != null) {
-        final monthKey =
-            '${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}';
-        final Map<String, num> monthlyCounts = {};
-        monthlyCounts[monthKey] =
-            (monthlyCounts[monthKey] ?? 0) + (doc['sharedCount'] ?? 0);
-      }
+  Future<List<LineChartBarData>> buildCumulativeChartData(
+      Map<String, Map<String, int>> allData) async {
+    List<FlSpot> calculateCumulativeData(Map<String, int> monthlyData) {
+      int cumulativeCount = 0;
+      return List.generate(12, (monthIndex) {
+        final monthKey = '2024-${(monthIndex + 1).toString().padLeft(2, '0')}';
+        cumulativeCount += monthlyData[monthKey] ?? 0;
+        return FlSpot((monthIndex + 1).toDouble(), cumulativeCount.toDouble());
+      });
     }
-    return monthlyCounts;
-  }
 
-  Future<List<LineChartBarData>> buildCumulativeChartData() async {
-    final recipeData = await fetchMonthlyData('recipe');
-    final recordData = await fetchMonthlyData('record');
-    // final sharedData = await fetchSharedData();
-    final scrapedData = await fetchMonthlyData('scraped_recipes');
-
-    print('scrapedData $scrapedData');
-
-    final recipeSpots = calculateCumulativeData(recipeData);
-    final recordSpots = calculateCumulativeData(recordData);
-    // final sharedSpots = calculateCumulativeData(sharedData);
-    final scrapSpots = calculateCumulativeData(scrapedData);
+    final recipeSpots = calculateCumulativeData(allData['recipe'] ?? {});
+    final recordSpots = calculateCumulativeData(allData['record'] ?? {});
+    final scrapSpots =
+        calculateCumulativeData(allData['scraped_recipes'] ?? {});
+    final reviewSpots =
+        calculateCumulativeData(allData['recipe_reviews'] ?? {});
 
     return [
       LineChartBarData(
-        isCurved: true,
-        color: Colors.green,
-        barWidth: 4,
-        isStrokeCapRound: true,
-        dotData: const FlDotData(show: true),
-        belowBarData: BarAreaData(show: false),
-        spots: recipeSpots,
-      ),
+          isCurved: true,
+          color: Colors.green,
+          barWidth: 4,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: true),
+          belowBarData: BarAreaData(show: false),
+          spots: recipeSpots),
       LineChartBarData(
-        isCurved: true,
-        color: Colors.pink,
-        barWidth: 4,
-        isStrokeCapRound: true,
-        dotData: const FlDotData(show: true),
-        belowBarData: BarAreaData(show: false),
-        spots: recordSpots,
-      ),
-      // LineChartBarData(
-      //   isCurved: true,
-      //   color: Colors.yellow,
-      //   barWidth: 4,
-      //   isStrokeCapRound: true,
-      //   dotData: const FlDotData(show: true),
-      //   belowBarData: BarAreaData(show: false),
-      //   spots: sharedSpots,
-      // ),
+          isCurved: true,
+          color: Colors.pink,
+          barWidth: 4,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: true),
+          belowBarData: BarAreaData(show: false),
+          spots: recordSpots),
       LineChartBarData(
-        isCurved: true,
-        color: Colors.cyan,
-        barWidth: 4,
-        isStrokeCapRound: true,
-        dotData: const FlDotData(show: true),
-        belowBarData: BarAreaData(show: false),
-        spots: scrapSpots,
-      ),
+          isCurved: true,
+          color: Colors.yellow,
+          barWidth: 4,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: true),
+          belowBarData: BarAreaData(show: false),
+          spots: reviewSpots),
+      LineChartBarData(
+          isCurved: true,
+          color: Colors.cyan,
+          barWidth: 4,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: true),
+          belowBarData: BarAreaData(show: false),
+          spots: scrapSpots),
     ];
   }
 
@@ -130,7 +117,6 @@ class _AdminDashboardUsageMetricsState
     final recipeCount = data['recipes']?.toDouble() ?? 0;
     final recordCount = data['records']?.toDouble() ?? 0;
     final scrapedRecipeCount = data['scraped_recipes']?.toDouble() ?? 0;
-
 
     return [
       LineChartBarData(
@@ -180,18 +166,16 @@ class _AdminDashboardUsageMetricsState
   }
 
   Future<Map<String, int>> fetchAllTotals() async {
-    final recipeData = await fetchMonthlyData('recipe');
-    final recordData = await fetchMonthlyData('record');
-    final sharedData = await fetchSharedData();
-    final scrapedRecipeData = await fetchMonthlyData('scraped_recipes');
+    final allData = await fetchMonthlyData(); // ✅ 전체 데이터를 한 번에 가져옴
 
     return {
-      'recipe': calculateTotal(recipeData),
-      'record': calculateTotal(recordData),
-      'shared': calculateTotal(sharedData),
-      'scraped': calculateTotal(scrapedRecipeData),
+      'recipe': calculateTotal(allData['recipe'] ?? {}),
+      'record': calculateTotal(allData['record'] ?? {}),
+      'scraped': calculateTotal(allData['scraped_recipes'] ?? {}),
+      'review': calculateTotal(allData['recipe_reviews'] ?? {}),
     };
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -200,13 +184,15 @@ class _AdminDashboardUsageMetricsState
           title: Text('어플 실적 현황'),
         ),
         body: FutureBuilder<Map<String, dynamic>>(
-            future: Future.wait([
-              fetchAllTotals(), // Map<String, int> 반환
-              buildCumulativeChartData(), // List<LineChartBarData> 반환
-            ]).then((results) => {
-              'totals': results[0] as Map<String, int>, // 명시적 캐스팅
-              'chartData': results[1] as List<LineChartBarData>, // 명시적 캐스팅
-            }),
+            future: fetchMonthlyData().then((allData) => {
+                  'allData': allData,
+                  'totals': {
+                    'recipe': calculateTotal(allData['recipe'] ?? {}),
+                    'record': calculateTotal(allData['record'] ?? {}),
+                    'scraped': calculateTotal(allData['scraped_recipes'] ?? {}),
+                    'review': calculateTotal(allData['recipe_reviews'] ?? {}),
+                  }
+                }),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(child: CircularProgressIndicator());
@@ -215,31 +201,43 @@ class _AdminDashboardUsageMetricsState
                 return Center(child: Text('데이터를 불러오는 중 오류가 발생했습니다.'));
               }
 
-              final data = snapshot.data!;
-              final totals = data['totals'] as Map<String, int>;
-              final chartData = data['chartData'] as List<LineChartBarData>;
+              final allData =
+                  snapshot.data!['allData'] as Map<String, Map<String, int>>;
+              final totals = {
+                'recipe': calculateTotal(allData['recipe'] ?? {}),
+                'record': calculateTotal(allData['record'] ?? {}),
+                'scraped': calculateTotal(allData['scraped_recipes'] ?? {}),
+                'review': calculateTotal(allData['recipe_reviews'] ?? {}),
+              };
 
-              final recipeTotal = totals['recipe'] ?? 0;
-              final recordTotal = totals['record'] ?? 0;
-              final scrapedTotal = totals['scraped'] ?? 0;
+              return ListView(children: [
+                // Padding(
+                //     padding: const EdgeInsets.all(8.0),
+                //     child: Row(
+                //       mainAxisAlignment: MainAxisAlignment.spaceAround,
+                //       children: [
+                //         _buildRadioButton('전체'),
+                //         _buildRadioButton('1년'),
+                //         _buildRadioButton('6개월'),
+                //         _buildRadioButton('3개월'),
+                //       ],
+                //     )),
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: FutureBuilder<List<LineChartBarData>>(
+                    future: buildCumulativeChartData(allData), // ✅ 데이터 전달
+                    builder: (context, chartSnapshot) {
+                      if (chartSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (chartSnapshot.hasError) {
+                        return Center(
+                            child: Text('그래프 데이터를 불러오는 중 오류가 발생했습니다.'));
+                      }
 
-              return Column(
-                children: [
-                  // Padding(
-                  //     padding: const EdgeInsets.all(8.0),
-                  //     child: Row(
-                  //       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  //       children: [
-                  //         _buildRadioButton('전체'),
-                  //         _buildRadioButton('1년'),
-                  //         _buildRadioButton('6개월'),
-                  //         _buildRadioButton('3개월'),
-                  //       ],
-                  //     )),
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Container(
-                      child: Container(
+                      final chartData = chartSnapshot.data!;
+                      return Container(
                         margin: const EdgeInsets.all(20.0),
                         padding: const EdgeInsets.all(20.0),
                         constraints: BoxConstraints(
@@ -258,91 +256,163 @@ class _AdminDashboardUsageMetricsState
                             ),
                           ],
                         ),
-                        child: LineChart(
-                          LineChartData(
-                            lineBarsData: chartData,
-                            clipData: FlClipData.none(),
-                            // clipData: FlClipData.all(),
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  // reservedSize: 20,
-                                  reservedSize: 30,
-                                  getTitlesWidget: (value, meta) {
-                                    // value는 X축의 플롯 위치, 정수값만 처리
-                                    if (value % 1 == 0 &&
-                                        value >= 1 &&
-                                        value <= 12) {
-                                      return SideTitleWidget(
-                                        axisSide: meta.axisSide,
-                                        child: Text('${value.toInt()}월',
-                                            style: TextStyle(fontSize: 12)),
-                                      );
-                                    }
+                        child: LineChart(LineChartData(
+                          lineBarsData: chartData,
+                          clipData: FlClipData.none(),
+                          // clipData: FlClipData.all(),
+                          titlesData: FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                // reservedSize: 20,
+                                reservedSize: 30,
+                                getTitlesWidget: (value, meta) {
+                                  // value는 X축의 플롯 위치, 정수값만 처리
+                                  if (value % 1 == 0 &&
+                                      value >= 1 &&
+                                      value <= 12) {
                                     return SideTitleWidget(
                                       axisSide: meta.axisSide,
-                                      child: Text(''), // 잘못된 값은 빈 문자열 처리
+                                      child: Text('${value.toInt()}월',
+                                          style: TextStyle(fontSize: 12)),
                                     );
-                                  },
-                                ),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles:
-                                    SideTitles(showTitles: false), // 상단 숫자 제거
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
+                                  }
+                                  return SideTitleWidget(
+                                    axisSide: meta.axisSide,
+                                    child: Text(''), // 잘못된 값은 빈 문자열 처리
+                                  );
+                                },
                               ),
                             ),
-                            borderData: FlBorderData(show: false),
-                            gridData: const FlGridData(show: false),
+                            topTitles: AxisTitles(
+                              sideTitles:
+                                  SideTitles(showTitles: false), // 상단 숫자 제거
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
                           ),
-                        ),
+                          borderData: FlBorderData(show: false),
+                          gridData: const FlGridData(show: false),
+                        )),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 20),
+                // 범례를 표시하는 Row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      LegendItem(
+                          color: Colors.green,
+                          text: '레시피',
+                          value: totals['recipe'] ?? 0),
+                      LegendItem(
+                          color: Colors.cyan,
+                          text: '스크랩',
+                          value: totals['scraped'] ?? 0),
+                      LegendItem(
+                          color: Colors.yellow,
+                          text: '리뷰',
+                          value: totals['review'] ?? 0),
+                      LegendItem(
+                          color: Colors.pink,
+                          text: '기록',
+                          value: totals['record'] ?? 0),
+                    ],
+                  ),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal, // 가로 스크롤 추가
+                  child: DataTable(
+                    columns: [
+                      DataColumn(label: Text('항목', style: TextStyle(color: theme.colorScheme.onSurface))),
+                      ...List.generate(12, (index) =>
+                          DataColumn(label: Text('${index + 1}월', style: TextStyle(color: theme.colorScheme.onSurface)))),
+                      DataColumn(label: Text('합계', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
+                    ],
+                    rows: [
+                      DataRow(cells: [
+                        DataCell(Text('레시피', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
+                          List.generate(12, (index) {
+                            String monthKey = '2024-${(index + 1).toString().padLeft(2, '0')}';
+                            return DataCell(Text('${allData['recipe']?[monthKey] ?? 0}', style: TextStyle(color: theme.colorScheme.onSurface)));
+                          }) +
+                          [DataCell(Text('${totals['recipe']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
                       ),
-                    ),
+                      DataRow(cells: [
+                        DataCell(Text('기록', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
+                          List.generate(12, (index) {
+                            String monthKey = '2024-${(index + 1).toString().padLeft(2, '0')}';
+                            return DataCell(Text('${allData['record']?[monthKey] ?? 0}', style: TextStyle(color: theme.colorScheme.onSurface)));
+                          }) +
+                          [DataCell(Text('${totals['record']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
+                      ),
+                      DataRow(cells: [
+                        DataCell(Text('리뷰', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
+                          List.generate(12, (index) {
+                            String monthKey = '2024-${(index + 1).toString().padLeft(2, '0')}';
+                            return DataCell(Text('${allData['recipe_reviews']?[monthKey] ?? 0}', style: TextStyle(color: theme.colorScheme.onSurface)));
+                          }) +
+                          [DataCell(Text('${totals['review']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
+                      ),
+                      DataRow(cells: [
+                        DataCell(Text('스크랩', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
+                          List.generate(12, (index) {
+                            String monthKey = '2024-${(index + 1).toString().padLeft(2, '0')}';
+                            return DataCell(Text('${allData['scraped_recipes']?[monthKey] ?? 0}', style: TextStyle(color: theme.colorScheme.onSurface)));
+                          }) +
+                          [DataCell(Text('${totals['scraped']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
+                      ),
+                      // 📌 **합계 행 추가**
+                      DataRow(cells: [
+                        DataCell(Text('합계', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
+                          List.generate(12, (index) {
+                            String monthKey = '2024-${(index + 1).toString().padLeft(2, '0')}';
+                            return DataCell(Text(
+                              '${(allData['recipe']?[monthKey] ?? 0) + (allData['record']?[monthKey] ?? 0) +
+                                  (allData['recipe_reviews']?[monthKey] ?? 0) + (allData['scraped_recipes']?[monthKey] ?? 0)}',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                            ));
+                          }) +
+                          [DataCell(Text(
+                            '${totals.values.reduce((a, b) => a + b)}', // ✅ 모든 총합
+                            style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                          ))]
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 20),
-                  // 범례를 표시하는 Row
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        LegendItem(color: Colors.green, text: '레시피', value: recipeTotal),
-                        LegendItem(color: Colors.pink, text: '기록', value: recordTotal),
-                        LegendItem(color: Colors.cyan, text: '스크랩', value: scrapedTotal),
-                      ],
-                    ),
-                  ),
-                ],
-              );
+                ),
+              ]);
             }));
   }
+}
 
 // 라디오 버튼을 생성하는 함수
-  Widget _buildRadioButton(String period) {
-    return Row(
-      children: [
-        Radio<String>(
-          value: period,
-          groupValue: selectedPeriod,
-          onChanged: (value) {
-            setState(() {
-              selectedPeriod = value!;
-              // 선택된 기간에 따라 차트 데이터를 변경할 수 있음
-              // sampleData1 또는 sampleData2를 조정하는 로직을 여기에 추가
-            });
-          },
-        ),
-        Text(period),
-      ],
-    );
-  }
-}
+//   Widget _buildRadioButton(String period) {
+//     return Row(
+//       children: [
+//         Radio<String>(
+//           value: period,
+//           groupValue: selectedPeriod,
+//           onChanged: (value) {
+//             setState(() {
+//               selectedPeriod = value!;
+//               // 선택된 기간에 따라 차트 데이터를 변경할 수 있음
+//               // sampleData1 또는 sampleData2를 조정하는 로직을 여기에 추가
+//             });
+//           },
+//         ),
+//         Text(period),
+//       ],
+//     );
+//   }
 
 class LegendItem extends StatelessWidget {
   final Color color;
@@ -366,8 +436,7 @@ class LegendItem extends StatelessWidget {
         ),
         SizedBox(width: 8),
         Text('$text: $value',
-            style: TextStyle(fontSize: 14,
-                color: theme.colorScheme.onSurface)),
+            style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface)),
       ],
     );
   }

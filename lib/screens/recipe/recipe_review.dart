@@ -239,6 +239,7 @@ class _RecipeReviewState extends State<RecipeReview> {
   }
 
   Widget _buildReviewsSection() {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -303,12 +304,12 @@ class _RecipeReviewState extends State<RecipeReview> {
                                   children: [
                                     Text(
                                       nickname,
-                                      style: TextStyle(fontSize: 12),
+                                        style: TextStyle(color: theme.colorScheme.onSurface)
                                     ),
                                     SizedBox(width: 4),
                                     Text(
                                       formattedDate,
-                                      style: TextStyle(fontSize: 12),
+                                        style: TextStyle(color: theme.colorScheme.onSurface)
                                     ),
                                     _buildRatingStars(rating)
                                   ],
@@ -344,7 +345,8 @@ class _RecipeReviewState extends State<RecipeReview> {
                                 if (isAuthor)
                                   Row(
                                     children: [
-                                      Text('|'),
+                                      Text('|',
+                                          style: TextStyle(color: theme.colorScheme.onSurface)),
                                       TextButton(
                                         onPressed: () {
                                           Navigator.push(
@@ -366,7 +368,7 @@ class _RecipeReviewState extends State<RecipeReview> {
                                               MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text('수정',
-                                            style: TextStyle(fontSize: 12)),
+                                            style: TextStyle(color: theme.colorScheme.onSurface)),
                                       ),
                                       TextButton(
                                         onPressed: () =>
@@ -378,7 +380,7 @@ class _RecipeReviewState extends State<RecipeReview> {
                                               MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text('삭제',
-                                            style: TextStyle(fontSize: 12)),
+                                            style: TextStyle(color: theme.colorScheme.onSurface)),
                                       ),
                                       SizedBox(width: 5),
                                     ],
@@ -388,7 +390,7 @@ class _RecipeReviewState extends State<RecipeReview> {
                             SizedBox(height: 10),
                             Text(
                               recipeReviews[index]['content']!,
-                              style: TextStyle(fontSize: 14),
+                                style: TextStyle(color: theme.colorScheme.onSurface)
                             ),
                             SizedBox(height: 10),
                             Wrap(
