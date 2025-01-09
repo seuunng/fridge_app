@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/components/dashed_divider.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -15,6 +16,8 @@ class FeedbackDetailPage extends StatefulWidget {
   final String confirmationNote;
   final String selectedStatus;
   final String feedbackType;
+  final String category;
+
 
   FeedbackDetailPage({
     required this.feedbackId, // feedback 문서 ID를 받아서 업데이트에 사용
@@ -28,6 +31,7 @@ class FeedbackDetailPage extends StatefulWidget {
     required this.confirmationNote,
     required this.selectedStatus,
     required this.feedbackType,
+    required this.category,
   });
 
   @override
@@ -40,6 +44,8 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
   late TextEditingController
       _confirmationController; // TextEditingController 선언
   Map<String, dynamic>? reportedContent; // 신고된 레시피나 리뷰 데이터
+  String reportedNickname = '알 수 없음';
+  String reportedEmail = '알 수 없음';
 
   @override
   void initState() {
@@ -48,7 +54,11 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
     selectedStatus = widget.selectedStatus;
     _confirmationController =
         TextEditingController(text: widget.confirmationNote);
-    _loadReportedContent();
+    _loadReportedContent().then((_) {
+      if (reportedContent != null) { // 🔹 reportedContent가 null이 아닐 때만 실행
+        _fetchUserInfo();
+      }
+    });
   }
 
   @override
@@ -64,6 +74,40 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
     });
   }
 
+  /// Firestore에서 사용자 정보 가져오기
+  Future<void> _fetchUserInfo() async {
+    if (reportedContent == null) {
+      print('🚨 reportedContent가 아직 null입니다.');
+      return;
+    }
+
+    String? userId;
+    if (widget.postType == '리뷰') {
+      userId = reportedContent?['userId'];
+    } else {
+      userId = reportedContent?['userID'];
+    }
+
+    if (userId == null || userId.isEmpty) {
+      print('🚨 userId가 null 또는 빈 값입니다.');
+      return;
+    }
+
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          reportedNickname = userDoc['nickname'] ?? '알 수 없음';
+          reportedEmail = userDoc['email'] ?? '알 수 없음';
+        });
+      }
+    } catch (e) {
+      print('사용자 정보를 가져오는 중 오류 발생: $e');
+    }
+  }
   Future<void> _sendEmail(String email) async {
     final String subject = Uri.encodeComponent('의견 처리 안내');
     final String body = Uri.encodeComponent(
@@ -125,7 +169,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
       } else {
         return null;
       }
-
+print(snapshot.data());
       return snapshot.data();
     } catch (e) {
       print('Error fetching reported content: $e');
@@ -140,120 +184,144 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
       appBar: AppBar(
         title: Text('의견 상세보기'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Row(
-            //   children: [
-            //     Text(
-            //       // widget.title,
-            //       // style: TextStyle(
-            //       //     fontSize: 18,
-            //       //     fontWeight: FontWeight.bold,
-            //       //     color: theme.colorScheme.onSurface),
-            //     // ),
-            //   ],
-            // ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Spacer(),
-                Text(widget.createdDate.toLocal().toString().split(' ')[0],
-                    style: TextStyle(color: theme.colorScheme.onSurface)),
-                SizedBox(width: 10),
-                Text(widget.author,
-                    style: TextStyle(color: theme.colorScheme.onSurface)),
-              ],
-            ),
-            Row(
-              children: [
-                Spacer(),
-                GestureDetector(
-                  onTap: () {
-                    _sendEmail(widget.authorEmail); // 이메일 보내기 함수 호출
-                  },
-                  child: Text(
-                    widget.authorEmail,
-                    style: TextStyle(
-                      color: Colors.blue,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Row(
+              //   children: [
+              //     Text(
+              //       // widget.title,
+              //       // style: TextStyle(
+              //       //     fontSize: 18,
+              //       //     fontWeight: FontWeight.bold,
+              //       //     color: theme.colorScheme.onSurface),
+              //     // ),
+              //   ],
+              // ),
+              SizedBox(height: 10),
+              Row(
+                children: [
+                  Spacer(),
+                  Text(widget.createdDate.toLocal().toString().split(' ')[0],
+                      style: TextStyle(color: theme.colorScheme.onSurface)),
+                  SizedBox(width: 10),
+                  Text(widget.author,
+                      style: TextStyle(color: theme.colorScheme.onSurface)),
+                ],
+              ),
+              Row(
+                children: [
+                  Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      _sendEmail(widget.authorEmail); // 이메일 보내기 함수 호출
+                    },
+                    child: Text(
+                      widget.authorEmail,
+                      style: TextStyle(
+                        color: Colors.blue,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Spacer(),
-                Text(
-                  '게시물유형',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.onSurface),
-                ),
-                SizedBox(width: 10),
-                Text(
-                  widget.postType.toString(),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Text(widget.content,
-                style: TextStyle(color: theme.colorScheme.onSurface)),
-            Divider(),
-            SizedBox(height: 20),
-            if (reportedContent != null) _buildReportedContentWidget(),
-            SizedBox(height: 10),
-            if (reportedContent != null) _buildNavigateButton(),
-            Divider(),
-            Text(
-              '확인사항',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface),
-            ),
-            TextField(
-              controller: _confirmationController, // Controller를 사용하여 초기 값 설정
-              onChanged: (value) {
-                setState(() {
-                  confirmationNote = value; // 확인사항 업데이트
-                });
-              },
-            ),
-            SizedBox(height: 20),
-            Row(
-              children: [
-                Text(
-                  '처리 결과',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Spacer(),
-                DropdownButton<String>(
-                  value: widget.statusOptions.contains(selectedStatus)
-                      ? selectedStatus
-                      : null, // selectedStatus가 statusOptions에 있는지 확인
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        selectedStatus = newValue;
-                      });
-                    }
-                  },
-                  items: widget.statusOptions
-                      .toSet()
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value,
-                          style: TextStyle(color: theme.colorScheme.onSurface)),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+              Row(
+                children: [
+                  Spacer(),
+                  Text(
+                    '신고 유형',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: theme.colorScheme.onSurface),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    '${widget.feedbackType} ${widget.category}'
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    '게시물 유형',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: theme.colorScheme.onSurface),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                      '${widget.postType}'
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              Text(
+                '의견',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ),
+              SizedBox(height: 10),
+              Text(widget.content,
+                  style: TextStyle(color: theme.colorScheme.onSurface)),
+              SizedBox(height: 10),
+              if (reportedContent != null) DashedDivider(),
+              if (reportedContent != null) SizedBox(height: 10),
+              if (reportedContent != null) _buildReportedContentWidget(),
+              if (reportedContent != null) SizedBox(height: 10),
+              if (reportedContent != null) _buildNavigateButton(),
+              SizedBox(height: 20),
+              Divider(),
+              Text(
+                '확인사항',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _confirmationController, // Controller를 사용하여 초기 값 설정
+                onChanged: (value) {
+                  setState(() {
+                    confirmationNote = value; // 확인사항 업데이트
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Text(
+                    '처리 결과',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Spacer(),
+                  DropdownButton<String>(
+                    value: widget.statusOptions.contains(selectedStatus)
+                        ? selectedStatus
+                        : null, // selectedStatus가 statusOptions에 있는지 확인
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedStatus = newValue;
+                        });
+                      }
+                    },
+                    items: widget.statusOptions
+                        .toSet()
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value,
+                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: Padding(
@@ -272,10 +340,25 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('신고된 레시피 원본 내용',
+          SizedBox(height: 10),
+          Text('신고 대상',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          Text('해당 레시피 작성자: ${reportedContent?['userId'] ?? '알 수 없음'}'),
-          Text('레시피 이름: ${reportedContent?['recipeName'] ?? '알 수 없음'}'),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Text('신고 레시피 작성자: ',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              Text('${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})'),
+            ],
+          ),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Text('레시피 이름: ',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              Text('${reportedContent?['recipeName'] ?? '알 수 없음'}'),
+            ],
+          ),
 
           // 레시피의 기타 정보들...
         ],
@@ -285,10 +368,27 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('신고된 리뷰 원본 내용',
+          SizedBox(height: 10),
+          Text('신고 대상',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          Text('해당 리뷰 작성자: ${reportedContent?['userId'] ?? '알 수 없음'}'),
-          Text('${reportedContent?['content'] ?? '없음'}'),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Text('해당 리뷰 작성자: ',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)
+              ),
+              Text('${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})'),
+            ],
+          ),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Text('해당 리뷰 내용: ',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)
+              ),
+              Text('${reportedContent?['content'] ?? '없음'}'),
+            ],
+          ),
           // 리뷰의 기타 정보들...
         ],
       );

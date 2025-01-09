@@ -37,8 +37,12 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
           await FirebaseFirestore.instance.collection('feedback').get();
       // 🔹 users 컬렉션에서 모든 사용자 정보 가져오기 (닉네임 조회)
       final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
-      Map<String, String> userMap = {
-        for (var doc in usersSnapshot.docs) doc.id: doc.data().containsKey('nickname') ? doc['nickname'] : '사용자 없음'
+      Map<String, Map<String, String>> userMap = {
+        for (var doc in usersSnapshot.docs)
+          doc.id: {
+            'nickname': doc.data().containsKey('nickname') ? doc['nickname'] : '사용자 없음',
+            'email': doc.data().containsKey('email') ? doc['email'] : '이메일 없음'
+          }
       };
       setState(() {
         feedbackData = snapshot.docs.map((doc) {
@@ -49,16 +53,22 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                     doc['timestamp'] is Timestamp)
                 ? (doc['timestamp'] as Timestamp).toDate()
                 : DateTime.now(),
+            'postNo':
+            doc.data().containsKey('postNo') ? doc['postNo'] : '기타',
+            'postType':
+            doc.data().containsKey('postType') ? doc['postType'] : '기타',
             'category':
                 doc.data().containsKey('category') ? doc['category'] : '기타',
             'feedbackType': doc.data().containsKey('feedbackType')
                 ? doc['feedbackType']
                 : '기타',
-            'author': userMap[userId] ??'작성자 없음',
+            'author': userMap[userId]?['nickname'] ?? '작성자 없음', // 닉네임 조회
+            'authorEmail': userMap[userId]?['email'] ?? '이메일 없음', // 이메일 조회
             'confirmationNote': doc.data().containsKey('confirmationNote')
                 ? doc['confirmationNote']
                 : '확인되지 않음',
             'status': doc.data().containsKey('status') ? doc['status'] : '미처리',
+            'content': doc.data().containsKey('content') ? doc['content'] : '내용이 없습니다.',
           };
         }).toList();
 
@@ -104,7 +114,7 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
       appBar: AppBar(
         title: Text('의견 및 신고 처리하기'),
       ),
-      body: Column(
+      body: ListView(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -121,99 +131,75 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
               },
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal, // 가로 스크롤 가능하게 설정
-              child: DataTable(
-                columns: [
-                  _buildSortableColumn('날짜', 'timestamp', _dateSortState),
-                  _buildSortableColumn(
-                      '구분', 'feedbackType', _feedbackTypeSortState),
-                  _buildSortableColumn('항목', 'category', _categorySortState),
-                  _buildSortableColumn('작성자', 'author', _authorSortState),
-                  _buildSortableColumn(
-                      '확인사항', 'confirmationNote', _confirmationSortState),
-                  _buildSortableColumn('처리결과', 'status', _statusSortState),
-                ],
-                rows: filteredData.map((row) {
-                  return DataRow(cells: [
-                    DataCell(Text(_formatDate(row['timestamp']),
-                        style: TextStyle(color: theme.colorScheme.onSurface))),
-                    DataCell(Text(row['feedbackType'],
-                        style: TextStyle(color: theme.colorScheme.onSurface))),
-                    DataCell(
-                      GestureDetector(
-                        onTap: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FeedbackDetailPage(
-                                feedbackId: row['id'],
-                                content: '',
-                                author: row['author'],
-                                authorEmail: '',
-                                createdDate: row['timestamp'],
-                                statusOptions: ['미처리', '처리 중', '완료'],
-                                postType: row['feedbackType'],
-                                postNo: '',
-                                confirmationNote: row['confirmationNote'],
-                                selectedStatus: row['status'],
-                                  feedbackType: row['feedbackType']
-                              ),
+          SingleChildScrollView(
+            scrollDirection: Axis.vertical, // 세로 스크롤 추가
+            child: DataTable(
+              columns: [
+                _buildSortableColumn('날짜', 'timestamp', _dateSortState),
+                _buildSortableColumn(
+                    '구분', 'feedbackType', _feedbackTypeSortState),
+                _buildSortableColumn('항목', 'category', _categorySortState),
+                _buildSortableColumn('작성자', 'author', _authorSortState),
+                _buildSortableColumn(
+                    '확인사항', 'confirmationNote', _confirmationSortState),
+                _buildSortableColumn('처리결과', 'status', _statusSortState),
+              ],
+              rows: filteredData.map((row) {
+                return DataRow(cells: [
+                  DataCell(Text(_formatDate(row['timestamp']),
+                      style: TextStyle(color: theme.colorScheme.onSurface))),
+                  DataCell(Text(row['feedbackType'],
+                      style: TextStyle(color: theme.colorScheme.onSurface))),
+                  DataCell(Text(row['category'],
+                      style: TextStyle(color: theme.colorScheme.onSurface)),
+                  ),
+                  DataCell(Text(row['author'],
+                      style: TextStyle(color: theme.colorScheme.onSurface))),
+                  DataCell(
+                    GestureDetector(
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FeedbackDetailPage(
+                              feedbackId: row['id'] ?? '', // 기본값 처리
+                              content: row['content'] ?? '내용 없음', // 기본값 추가
+                              author: row['author'] ?? '작성자 없음',
+                              authorEmail: row['authorEmail'] ?? '이메일 없음', // 기본값 추가
+                              createdDate: row['timestamp'] ?? DateTime.now(),
+                              statusOptions: ['미처리', '처리 중', '완료'],
+                              confirmationNote: row['confirmationNote'] ?? '확인되지 않음',
+                              selectedStatus: row['status'] ?? '미처리',
+                              postNo: row['postNo'] ?? '', // 기본값 추가
+                              postType: row['postType'] ?? '기타',
+                              feedbackType: row['feedbackType'] ?? '기타',
+                              category: row['category'] ?? '기타',
                             ),
-                          );
-                          if (result == true) {
-                            _loadFeedbackDataFromFirestore();
-                          }
-                        },
-                        child: Text(
-                          row['category'],
-                          style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
                           ),
+                        );
+                        if (result == true) {
+                          _loadFeedbackDataFromFirestore();
+                        }
+                      },
+                      child: Text(
+                        row['confirmationNote'],
+                        style: TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
                         ),
                       ),
-                    ),
-                    DataCell(Text(row['author'],
-                        style: TextStyle(color: theme.colorScheme.onSurface))),
-                    DataCell(Text(row['confirmationNote'],
-                        style: TextStyle(color: theme.colorScheme.onSurface))),
-                    DataCell(Text(row['status'],
-                        style: TextStyle(color: theme.colorScheme.onSurface))),
-                  ]);
-                }).toList(),
-              ),
+                    ),),
+                  DataCell(Text(row['status'],
+                      style: TextStyle(color: theme.colorScheme.onSurface))),
+                ]);
+              }).toList(),
             ),
           ),
         ],
       ),
     );
   }
-  void _navigateToDetail(Map<String, dynamic> feedbackData) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FeedbackDetailPage(
-          feedbackId: feedbackData['id'],
-          content: '',
-          author: feedbackData['author'],
-          authorEmail: '',
-          createdDate: feedbackData['timestamp'],
-          statusOptions: ['미처리', '처리 중', '완료'],
-          postType: feedbackData['feedbackType'],
-          postNo: '',
-          confirmationNote: feedbackData['confirmationNote'],
-          selectedStatus: feedbackData['status'],
-            feedbackType: feedbackData['feedbackType']
-        ),
-      ),
-    );
 
-    if (result == true) {
-      _loadFeedbackDataFromFirestore();
-    }
-  }
   DataColumn _buildSortableColumn(
       String title, String field, SortState sortState) {
     final theme = Theme.of(context);
