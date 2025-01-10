@@ -9,6 +9,7 @@ import 'package:food_for_later_new/models/preferred_food_model.dart';
 import 'package:food_for_later_new/screens/foods/add_item_to_category.dart';
 import 'package:food_for_later_new/screens/foods/add_preferred_category.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_item_details.dart';
+import 'package:food_for_later_new/services/preferred_foods_service.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -218,55 +219,10 @@ class _AddItemState extends State<AddItem> {
   }
 
   Future<void> _addDefaultPreferredCategories() async {
-    try {
-      // 🔹 Firestore에서 `default_prefered_foods_categories` 데이터를 불러오기
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('default_prefered_foods_categories')
-          .get();
-
-      // 🔹 Firestore 데이터를 기반으로 `defaultCategories` 생성
-      Map<String, List<String>> defaultCategories = {};
-
-      for (var doc in querySnapshot.docs) {
-        final data = doc.data();
-
-        if (data.containsKey('category') && data['category'] is Map<String, dynamic>) {
-          Map<String, dynamic> categoryMap = Map<String, dynamic>.from(data['category']);
-
-          for (var entry in categoryMap.entries) {
-            String category = entry.key;
-            List<String> items = List<String>.from(entry.value);
-
-            if (!defaultCategories.containsKey(category)) {
-              defaultCategories[category] = items;
-            } else {
-              defaultCategories[category]!.addAll(items);
-            }
-          }
-        }
-      }
-
-      // 🔹 `preferred_foods_categories`에 데이터 추가
-      final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
-      for (var entry in defaultCategories.entries) {
-        final category = entry.key;
-        final items = entry.value;
-
-        await FirebaseFirestore.instance
-            .collection('preferred_foods_categories')
-            .add({
-          'userId': userId,
-          'category': {category: items},
-          'isDefault': true,
-        });
-      }
-    } catch (e) {
-      print('❌ Firestore에서 기본 카테고리 불러오는 중 오류 발생: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 선호 카테고리를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.')),
-      );
-    }
+    await PreferredFoodsService.addDefaultPreferredCategories(
+      context,
+      _loadPreferredFoodsCategoriesFromFirestore,
+    );
   }
 
   Future<void> _addItemsToFridge() async {

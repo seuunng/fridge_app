@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/record_model.dart';
+import 'package:food_for_later_new/services/record_category_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -139,42 +140,7 @@ class _CreateRecordState extends State<CreateRecord> {
   }
 
   Future<void> _createDefaultCategories() async {
-    try {
-      final current = DateTime.now();
-      final defaultCategories = [
-        {
-          'zone': '식사',
-          'units': ['아침', '점심', '저녁'],
-          'color': '#BBDEFB',
-          'isDeleted': false
-        },
-        {
-          'zone': '간식',
-          'units': ['간식'],
-          'color': '#FFC1CC',
-          'isDeleted': false
-        },
-      ];
-
-      for (var category in defaultCategories) {
-        await FirebaseFirestore.instance.collection('record_categories').add({
-          'userId': userId,
-          'zone': category['zone'],
-          'units': category['units'],
-          'color': category['color'],
-          'createdAt': current.toIso8601String(),
-          'isDeleted': category['isDeleted'],
-          'isDefault': true
-        });
-      }
-
-      _loadCategories(); // 새로 생성한 기본 카테고리 로드
-    } catch (e) {
-      print('기본 카테고리 생성 중 오류 발생: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 카테고리 생성 중 오류가 발생했습니다.')),
-      );
-    }
+    await RecordCategoryService.createDefaultCategories(userId, context, _loadCategories);
   }
 
   //수정모드일때 데이터를 받아옴

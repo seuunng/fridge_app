@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
+import 'package:food_for_later_new/screens/settings/scraped_recipe_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -504,49 +505,15 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
 
   void _toggleScraped(String recipeId) async {
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
-    try {
-      QuerySnapshot<Map<String, dynamic>> existingScrapedRecipes =
-          await FirebaseFirestore.instance
-              .collection('scraped_recipes')
-              .where('recipeId', isEqualTo: recipeId)
-              .where('userId', isEqualTo: userId)
-              .get();
-
-      if (existingScrapedRecipes.docs.isEmpty) {
-        await FirebaseFirestore.instance.collection('scraped_recipes').add({
-          'userId': userId,
-          'recipeId': recipeId,
-          'isScraped': true,
-          'scrapedGroupName': '기본함',
-          'scrapedAt': FieldValue.serverTimestamp(),
-        });
-
+    bool newState = await ScrapedRecipeService.toggleScraped(
+      context,
+      recipeId,
+          (bool state) {
         setState(() {
-          isScraped = true;
+          isScraped = state;
         });
-      } else {
-        DocumentSnapshot<Map<String, dynamic>> doc =
-            existingScrapedRecipes.docs.first;
-
-        await FirebaseFirestore.instance
-            .collection('scraped_recipes')
-            .doc(doc.id)
-            .delete();
-        setState(() {
-          isScraped = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(isScraped ? '스크랩이 추가되었습니다.' : '스크랩이 해제되었습니다.'),
-        ));
-      }
-    } catch (e) {
-      print('Error scraping recipe: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('레시피 스크랩 중 오류가 발생했습니다.'),
-      ));
-    }
+      },
+    );
   }
 
   void _saveSearchKeyword(String keyword) async {

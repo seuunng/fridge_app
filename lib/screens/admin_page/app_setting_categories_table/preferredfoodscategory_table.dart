@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/models/preferred_food_model.dart';
+import 'package:food_for_later_new/services/preferred_foods_service.dart';
 
 enum SortState { none, ascending, descending }
 
@@ -95,82 +96,10 @@ class _PreferredfoodscategoryTableState
   }
 
   Future<void> _addDefaultPreferredCategories() async {
-    print('_addDefaultPreferredCategories 실행');
-    final newCategory = _selectedCategory;
-    final newFood = _foodNameController.text.trim();
-
-    if (newCategory == null || newCategory.isEmpty || newFood.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리와 식품명을 입력해주세요.')),
-      );
-      return;
-    }
-
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('default_prefered_foods_categories')
-          // .where('category', isEqualTo: newCategory)
-          .get();
-
-      bool categoryExists = false;
-      DocumentReference? existingDocRef;
-
-      print(querySnapshot.docs);
-
-      for (var doc in querySnapshot.docs) {
-        final docData = doc.data();
-
-        print('categoryMap $docData');
-        
-        if (docData.containsKey('category')) {
-          Map<String, dynamic> categoryMap =
-              Map<String, dynamic>.from(docData['category']);
-
-          print('categoryMap $categoryMap.containsKey(newCategory)');
-          
-          // 🔹 Firestore에서 newCategory가 존재하는지 확인
-          if (categoryMap.containsKey(newCategory)) {
-            categoryExists = true;
-            existingDocRef = doc.reference;
-
-            // 🔹 기존 카테고리 내부 리스트 가져오기
-            List<String> existingFoods =
-                List<String>.from(categoryMap[newCategory] ?? []);
-
-            if (!existingFoods.contains(newFood)) {
-              existingFoods.add(newFood);
-
-              // 🔹 Firestore 업데이트 (기존 문서 내 리스트 업데이트)
-              await existingDocRef
-                  .update({'category.$newCategory': existingFoods});
-            }
-
-            break; // 🔹 카테고리를 찾으면 더 이상 반복하지 않음
-          }
-        }
-      }
-
-      if (!categoryExists) {
-        // 🔹 Firestore에 새로운 카테고리 추가 (존재하지 않는 경우)
-        await FirebaseFirestore.instance
-            .collection('default_preferred_foods_categories')
-            .add({
-          'category': {
-            newCategory: [newFood]
-          },
-          'isDefault': true,
-        });
-      }
-      await _loadFoodsData();
-      setState(() {});
-      _foodNameController.clear();
-      _selectedCategory = null;
-    } catch (e) {
-      print('❌ Firestore 저장 중 오류 발생: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('데이터 저장 중 오류가 발생했습니다. 다시 시도해주세요.')),
-      );
-    }
+    await PreferredFoodsService.addDefaultPreferredCategories(
+      context,
+      _loadFoodsData,
+    );
   }
 
   void _editFood(int index) {

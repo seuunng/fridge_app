@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:food_for_later_new/screens/recipe/share_options.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
+import 'package:food_for_later_new/screens/settings/scraped_recipe_service.dart';
 
 class ReadRecipe extends StatefulWidget {
   final String recipeId;
@@ -223,50 +224,16 @@ class _ReadRecipeState extends State<ReadRecipe> {
     }
   }
 
-  void _toggleScraped() async {
-    try {
-      QuerySnapshot<Map<String, dynamic>> existingScrapedRecipes =
-          await FirebaseFirestore.instance
-              .collection('scraped_recipes')
-              .where('recipeId', isEqualTo: widget.recipeId)
-              .where('userId', isEqualTo: userId)
-              .get();
-
-      if (existingScrapedRecipes.docs.isEmpty) {
-        await FirebaseFirestore.instance.collection('scraped_recipes').add({
-          'userId': userId,
-          'recipeId': widget.recipeId,
-          'isScraped': true,
-          'scrapedGroupName': '기본함',
-          'scrapedAt': FieldValue.serverTimestamp(),
-        });
-
+  void _toggleScraped(String recipeId) async {
+    bool newState = await ScrapedRecipeService.toggleScraped(
+      context,
+      recipeId,
+          (bool state) {
         setState(() {
-          isScraped = true; // 스크랩 상태로 변경
+          isScraped = state;
         });
-      } else {
-        DocumentSnapshot<Map<String, dynamic>> doc =
-            existingScrapedRecipes.docs.first;
-
-        await FirebaseFirestore.instance
-            .collection('scraped_recipes')
-            .doc(doc.id) // 문서 ID로 삭제
-            .delete();
-
-        setState(() {
-          isScraped = false; // 스크랩 해제 상태로 변경
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(isScraped ? '스크랩이 추가되었습니다.' : '스크랩이 해제되었습니다.'),
-        ));
-      }
-    } catch (e) {
-      print('Error scraping recipe: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('레시피 스크랩 중 오류가 발생했습니다.'),
-      ));
-    }
+      },
+    );
   }
 
   void _addToShoppingListDialog() async {
@@ -544,7 +511,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
               visualDensity: const VisualDensity(horizontal: -4),
               icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
                   size: 26), // 스크랩 아이콘 크기 조정
-              onPressed: _toggleScraped,
+              onPressed: () => _toggleScraped(widget.recipeId),
             ),
           ],
         ),
@@ -610,7 +577,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
                           isScraped ? Icons.bookmark : Icons.bookmark_border,
                           size: 18,
                         ), // 스크랩 아이콘 크기 조정
-                        onPressed: _toggleScraped,
+                        onPressed: () => _toggleScraped(widget.recipeId),
                       ),
                       IconButton(
                         visualDensity: const VisualDensity(horizontal: -4),
