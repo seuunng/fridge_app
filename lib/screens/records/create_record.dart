@@ -155,6 +155,7 @@ class _CreateRecordState extends State<CreateRecord> {
           'color': category['color'],
           'createdAt': current.toIso8601String(),
           'isDeleted': category['isDeleted'],
+          'isDefault': true
         });
       }
 

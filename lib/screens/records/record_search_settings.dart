@@ -109,6 +109,7 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
           'userId': userId,
           'createdAt': FieldValue.serverTimestamp(), // 생성 시간 추가
           'isDeleted': category['isDeleted'],
+          'isDefault': true
         });
       }
 

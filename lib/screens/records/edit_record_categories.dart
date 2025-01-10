@@ -85,6 +85,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
           'userId': userId,
           'createdAt': FieldValue.serverTimestamp(), // 생성 시간 추가
           'isDeleted': category['isDeleted'],
+          'isDefault': true
         });
       }
 
@@ -324,7 +325,8 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
       'color': '#${_selectedColor.value.toRadixString(16).padLeft(8, '0')}',
       'userId': userId,
       'createdAt': FieldValue.serverTimestamp(), // 생성 시간 추가
-      'isDeleted': false
+      'isDeleted': false,
+      'isDefault': false
     };
 
     String? previousZone;

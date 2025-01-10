@@ -3,6 +3,7 @@ import 'package:food_for_later_new/screens/admin_page/trends_table/basicfoods_tr
 import 'package:food_for_later_new/screens/admin_page/trends_table/inputkeyword_trend_table.dart';
 import 'package:food_for_later_new/screens/admin_page/trends_table/preferredfoods_trend_table.dart';
 import 'package:food_for_later_new/screens/admin_page/trends_table/recipe_trend_table.dart';
+import 'package:food_for_later_new/screens/admin_page/trends_table/record_categories_trend_table.dart';
 import 'package:food_for_later_new/screens/admin_page/trends_table/searchkeyword_trend_table.dart';
 
 class AdminDashboardTrends extends StatefulWidget {
@@ -13,7 +14,7 @@ class AdminDashboardTrends extends StatefulWidget {
 class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
   PageController _pageController = PageController();
   int _currentPage = 0; // 현재 페이지 상태
-  final int _totalPages = 4; // 총 페이지 수
+  final int _totalPages = 5; // 총 페이지 수
 
   void _goToNextTable() {
     if (_currentPage == _totalPages - 1) {
@@ -56,9 +57,11 @@ class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
       case 1:
         return '인기 레시피';
       case 2:
-        return '기본 식품 추가';
+        return '기본식품 추가';
       case 3:
-        return '선호 식품 추가';
+        return '선호식품 추가';
+      case 4:
+        return '기록카테고리 추가';
       default:
         return '트렌드';
     }
@@ -104,6 +107,7 @@ class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
                   RecipeTrendTable(),
                   BasicfoodsTrendTable(),
                   PreferredfoodsTrendTable(),
+                  RecordCategoriesTrendTable(),
                   // InputkeywordTrendTable(),
                 ],
               ),
