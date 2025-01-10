@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
+import 'package:food_for_later_new/providers/role_provider.dart';
 import 'package:food_for_later_new/services/firebase_options.dart';
 import 'package:food_for_later_new/providers/theme_provider.dart';
 import 'package:food_for_later_new/screens/auth/login_main_page.dart';
@@ -65,6 +66,9 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(
           create: (_) => ThemeProvider(initialThemeMode, initialFont),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RoleProvider()..fetchUserRole(), // 🔹 RoleProvider 추가
         ),
       ],
       child: MyApp(),
