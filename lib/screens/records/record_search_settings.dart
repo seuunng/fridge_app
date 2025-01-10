@@ -195,6 +195,8 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
 
   // 날짜 선택 다이얼로그
   Future<void> _selectDate(BuildContext context, bool isStart) async {
+    final theme = Theme.of(context);
+
     DateTime initialDate =
         isStart ? DateTime.now() : startDate ?? DateTime.now();
     final DateTime? picked = await showDatePicker(
@@ -202,6 +204,28 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
       initialDate: initialDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
+              primary: theme.colorScheme.onSurface, // 선택된 날짜 및 헤더 색상
+              onPrimary: theme.colorScheme.onPrimary, // 헤더 텍스트 색상
+              onSurface: theme.colorScheme.onSurface, // 날짜 폰트 색상
+              surface: theme.colorScheme.background, // 달력 배경색 설정
+              primaryContainer: theme.colorScheme.primary, // 선택된 날짜의 배경색
+              onPrimaryContainer: theme.colorScheme.primary, // 선택된 날짜의 텍스트 색상
+
+            ),
+            dialogBackgroundColor: theme.colorScheme.background, // 다이얼로그 배경색
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary, // 확인, 취소 버튼 색상
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != (isStart ? startDate : endDate)) {
       setState(() {

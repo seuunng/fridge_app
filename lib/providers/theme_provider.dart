@@ -130,7 +130,7 @@ class ThemeProvider extends ChangeNotifier {
         primary: Colors.black, // 하단바 아이콘, 탭버튼 제목
         onPrimary: Colors.white, // 주요 배경위 텍스트나 아이콘색
         primaryContainer: Colors.white, //primary와 유사한 색상이지만, 더 연한 버전
-        onPrimaryContainer: Colors.white,
+        onPrimaryContainer: Colors.black,
         secondary: Colors.grey[300], // 캘린더 오늘,
         onSecondary: Colors.black, // 캘렌더 컬러박스 글씨
         surface: Colors.grey[300], //카드와 같은 표면 색상, 하단 네브바
@@ -186,7 +186,7 @@ class ThemeProvider extends ChangeNotifier {
         ),
     colorScheme: ColorScheme.dark().copyWith(
         primary: Colors.white, // 주요 배경색
-        onPrimary: Colors.white, // 주요 배경위 텍스트나 아이콘색
+        onPrimary: Colors.black, // datePicker 선택된 날짜 폰트
         primaryContainer: Colors.white, //primary와 유사한 색상이지만, 더 연한 버전
         onPrimaryContainer: Colors.white,
         secondary: Colors.grey, // 캘린더 오늘날짜 배경
