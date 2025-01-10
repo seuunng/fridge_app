@@ -223,6 +223,7 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
                 SizedBox(height: 16),
                 TextField(
                   controller: reviewContentController,
+                  style: TextStyle(color: theme.colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: '최소 10자 이상 입력해주세요!',
                     alignLabelWithHint: true,

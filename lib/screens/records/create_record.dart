@@ -37,6 +37,7 @@ class _CreateRecordState extends State<CreateRecord> {
   late List<Map<String, dynamic>> recordsWithImages = <Map<String, dynamic>>[];
   DateTime selectedDate = DateTime.now();
   bool isSaving = false;
+  int? selectedRecordIndex;
 
   // 분류와 그에 따른 구분 데이터를 정의
   Map<String, Map<String, dynamic>> categoryFieldMap = {};
@@ -48,11 +49,10 @@ class _CreateRecordState extends State<CreateRecord> {
   void _initializeValues() {
     if (categoryFieldMap.isNotEmpty) {
       selectedCategory = categoryFieldMap.keys.first;
-      selectedField = categoryFieldMap[selectedCategory]?['fields'] != null &&
-              (categoryFieldMap[selectedCategory]!['fields'] as List<String>)
-                  .isNotEmpty
-          ? categoryFieldMap[selectedCategory]!['fields'].first
-          : '';
+      List<String> fields =
+          categoryFieldMap[selectedCategory]?['fields'] ?? [];
+
+      selectedField = fields.isNotEmpty ? fields.first : '';
       selectedColor =
           categoryFieldMap[selectedCategory]?['color'] ?? Colors.grey;
     } else {
@@ -118,7 +118,16 @@ class _CreateRecordState extends State<CreateRecord> {
                 'color': category['color'],
               }
           };
-          _initializeValues();
+          // 🔹 기존에 선택된 `selectedCategory` 유지
+          if (!categoryFieldMap.containsKey(selectedCategory)) {
+            selectedCategory = categoryFieldMap.keys.isNotEmpty ? categoryFieldMap.keys.first : '식단';
+          }
+
+          // 🔹 기존에 선택된 `selectedField` 유지
+          List<String> availableFields = categoryFieldMap[selectedCategory]?['fields'] ?? [];
+          selectedField = availableFields.contains(selectedField)
+              ? selectedField
+              : (availableFields.isNotEmpty ? availableFields.first : '');
         });
       }
     } catch (e) {
@@ -181,10 +190,8 @@ class _CreateRecordState extends State<CreateRecord> {
 
       setState(() {
         selectedCategory = record.zone ?? '식단';
-        selectedField = record.records.first.unit ?? '아침';
         selectedDate = record.date;
-        selectedColor =
-            Color(int.parse(record.color.replaceFirst('#', '0xff')));
+        selectedColor = Color(int.parse(record.color.replaceFirst('#', '0xff')));
         dateController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
         recordsWithImages = record.records.map((rec) {
           return {
@@ -193,6 +200,15 @@ class _CreateRecordState extends State<CreateRecord> {
             'images': List<String>.from(rec.images ?? <String>[]),
           };
         }).toList();
+      });
+      // 🔹 `categoryFieldMap`이 로드된 이후 `selectedField` 유지
+      Future.delayed(Duration(milliseconds: 200), () {
+        setState(() {
+          List<String> availableFields = categoryFieldMap[selectedCategory]?['fields'] ?? [];
+          selectedField = availableFields.contains(record.records.first.unit)
+              ? record.records.first.unit
+              : (availableFields.isNotEmpty ? availableFields.first : '');
+        });
       });
     }
   }
@@ -406,9 +422,11 @@ class _CreateRecordState extends State<CreateRecord> {
                     (value) {
                       setState(() {
                         selectedCategory = value;
+                        List<String> availableFields = categoryFieldMap[selectedCategory]?['fields'] ?? [];
                         // 분류 변경 시 구분을 첫 번째 값으로 초기화
-                        selectedField =
-                            categoryFieldMap[selectedCategory]!['fields'].first;
+                        selectedField = availableFields.contains(selectedField)
+                            ? selectedField
+                            : (availableFields.isNotEmpty ? availableFields.first : '');
                         selectedColor =
                             categoryFieldMap[selectedCategory]!['color'];
                         // fieldController.text = selectedField;
@@ -463,6 +481,12 @@ class _CreateRecordState extends State<CreateRecord> {
   Widget _buildDropdown(String label, List<String> options, String currentValue,
       Function(String) onChanged) {
     final theme = Theme.of(context);
+    // 현재 선택된 값이 목록에 없는 경우 기본값을 설정
+    print(options);
+    print(currentValue);
+    if (!options.contains(currentValue)) {
+      currentValue = options.isNotEmpty ? options.first : '';
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -471,19 +495,22 @@ class _CreateRecordState extends State<CreateRecord> {
           SizedBox(width: 16),
           DropdownButton<String>(
             value: currentValue, // 현재 선택된 값을 드롭다운의 value로 사용
-            items: options.map<DropdownMenuItem<String>>((String value) {
+            items: options.isNotEmpty
+                ? options.map<DropdownMenuItem<String>>((String value) {
               return DropdownMenuItem<String>(
                   value: value,
                   child: Text(
                     value,
                     style: TextStyle(color: theme.colorScheme.onSurface),
                   ));
-            }).toList(),
+            }).toList()
+                : null,
             onChanged: (newValue) {
               if (newValue != null) {
                 onChanged(newValue);
               }
             },
+            hint: Text("선택 없음"),
           ),
         ],
       ),
@@ -513,6 +540,14 @@ class _CreateRecordState extends State<CreateRecord> {
                 List<String>.from(recordsWithImages[index]['images'] ?? []);
 
             return ListTile(
+              onTap: () {
+                setState(() {
+                  selectedRecordIndex = index; // 선택한 기록의 인덱스를 저장
+                  selectedField = recordsWithImages[index]['field'];
+                  contentsController.text = recordsWithImages[index]['contents'];
+                  _imageFiles = List<String>.from(recordsWithImages[index]['images'] ?? []);
+                });
+              },
               title: Column(
                 children: [
                   Row(
@@ -549,7 +584,7 @@ class _CreateRecordState extends State<CreateRecord> {
                       height: 50,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Text('Error loading image');
+                        return SizedBox();
                       },
                     );
                   } else if (imagePath.startsWith('/')) {
@@ -560,7 +595,7 @@ class _CreateRecordState extends State<CreateRecord> {
                       height: 50,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Text('Error loading image');
+                        return SizedBox();
                       },
                     );
                   } else {
@@ -572,6 +607,11 @@ class _CreateRecordState extends State<CreateRecord> {
                 onTap: () {
                   setState(() {
                     recordsWithImages.removeAt(index);
+                    if (selectedRecordIndex == index) {
+                      selectedRecordIndex = null;
+                      contentsController.clear();
+                      _imageFiles = [];
+                    }
                   });
                 },
                 child: Icon(Icons.close, size: 18),
@@ -607,51 +647,55 @@ class _CreateRecordState extends State<CreateRecord> {
               onPressed: _pickImages, // _pickImages 메서드 호출
             ),
             if (_imageFiles != null && _imageFiles!.isNotEmpty) ...[
-              Wrap(
-                children: _imageFiles!.map((imagePath) {
-                  return Stack(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: kIsWeb
-                            ? Image.network(
-                                imagePath,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(Icons.error); // 로드 실패 시 아이콘 표시
-                                },
-                              )
-                            : Image.file(
-                                File(imagePath), // 개별 이미지의 경로에 접근
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
+              Expanded(
+                child: Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: _imageFiles!.map((imagePath) {
+                    return Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: kIsWeb
+                              ? Image.network(
+                                  imagePath,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(Icons.error); // 로드 실패 시 아이콘 표시
+                                  },
+                                )
+                              : Image.file(
+                                  File(imagePath), // 개별 이미지의 경로에 접근
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _imageFiles!.remove(imagePath);
+                              });
+                            },
+                            child: Container(
+                              color: Colors.black54,
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.white,
                               ),
-                      ),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _imageFiles!.remove(imagePath);
-                            });
-                          },
-                          child: Container(
-                            color: Colors.black54,
-                            child: Icon(
-                              Icons.close,
-                              size: 18,
-                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                }).toList(),
+                      ],
+                    );
+                  }).toList(),
+                ),
               ),
             ],
             Spacer(),
@@ -674,11 +718,23 @@ class _CreateRecordState extends State<CreateRecord> {
                             .toList() ??
                         [];
                     // 명시적으로 dynamic 타입으로 선언
-                    recordsWithImages.add({
-                      'field': selectedField,
-                      'contents': contentsController.text,
-                      'images': imagePaths, // imagePaths가 List<String>임을 보장
-                    } as Map<String, dynamic>);
+                    if (selectedRecordIndex != null) {
+                      // 기존 기록 수정
+                      recordsWithImages[selectedRecordIndex!] = {
+                        'field': selectedField,
+                        'contents': contentsController.text,
+                        'images': imagePaths,
+                      };
+                      selectedRecordIndex = null;
+                    } else {
+                      // 새 기록 추가
+                      recordsWithImages.add({
+                        'field': selectedField,
+                        'contents': contentsController.text,
+                        'images': imagePaths,
+                      });
+                    }
+
 
                     contentsController.clear();
                     _imageFiles = [];
