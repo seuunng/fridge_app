@@ -1,4 +1,4 @@
-package com.example.food_for_later
+package com.seuunng.foodforlater
 
 import io.flutter.embedding.android.FlutterActivity
 

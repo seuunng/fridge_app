@@ -5,15 +5,22 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
     id "com.google.gms.google-services" // Firebase 플러그인
 }
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
 
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+} else {
+    throw new GradleException("🔴 keystore.properties 파일을 찾을 수 없습니다!")
+}
 android {
-    namespace = "com.example.food_for_later"
+    namespace = "com.seuunng.foodforlater"
     compileSdk = 34  // 명시적으로 설정
     ndkVersion = "23.1.7779620"  // Flutter 기본 NDK 버전으로 설정
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.food_for_later"
+        applicationId = "com.seuunng.foodforlater"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdkVersion 23  // 최소 SDK 버전
@@ -21,6 +28,7 @@ android {
         versionCode 1
         versionName "1.0"
         multiDexEnabled true // 추가
+        missingDimensionStrategy 'file_picker', 'android'
 
         manifestPlaceholders = [
                 NAVER_CLIENT_ID: "pbbWXl5xZH7xRCPLmqfT",
@@ -37,12 +45,19 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-
+    signingConfigs {
+        release {
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+        }
+    }
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
