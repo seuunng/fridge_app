@@ -106,6 +106,15 @@ class _RecipeReviewState extends State<RecipeReview> {
   }
 
   void _toggleNiced(int index) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null || user.email == 'guest@foodforlater.com') {
+      // 🔹 방문자(게스트) 계정이면 스크랩 차단 및 안내 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 후 리뷰를 좋아요 할 수 있습니다.')),
+      );
+      return; // 🚫 여기서 함수 종료 (스크랩 기능 실행 안 함)
+    }
     final String reviewId = recipeReviews[index]['reviewId'];
 
     try {
@@ -266,7 +275,10 @@ class _RecipeReviewState extends State<RecipeReview> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('리뷰',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface)),
           SizedBox(height: 16),
           recipeReviews.isEmpty
               ? Center(
@@ -322,15 +334,15 @@ class _RecipeReviewState extends State<RecipeReview> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      nickname,
-                                        style: TextStyle(color: theme.colorScheme.onSurface)
-                                    ),
+                                    Text(nickname,
+                                        style: TextStyle(
+                                            color:
+                                                theme.colorScheme.onSurface)),
                                     SizedBox(width: 4),
-                                    Text(
-                                      formattedDate,
-                                        style: TextStyle(color: theme.colorScheme.onSurface)
-                                    ),
+                                    Text(formattedDate,
+                                        style: TextStyle(
+                                            color:
+                                                theme.colorScheme.onSurface)),
                                     _buildRatingStars(rating)
                                   ],
                                 ),
@@ -366,7 +378,9 @@ class _RecipeReviewState extends State<RecipeReview> {
                                   Row(
                                     children: [
                                       Text('|',
-                                          style: TextStyle(color: theme.colorScheme.onSurface)),
+                                          style: TextStyle(
+                                              color:
+                                                  theme.colorScheme.onSurface)),
                                       TextButton(
                                         onPressed: () {
                                           Navigator.push(
@@ -388,7 +402,9 @@ class _RecipeReviewState extends State<RecipeReview> {
                                               MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text('수정',
-                                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                                            style: TextStyle(
+                                                color: theme
+                                                    .colorScheme.onSurface)),
                                       ),
                                       TextButton(
                                         onPressed: () =>
@@ -400,7 +416,9 @@ class _RecipeReviewState extends State<RecipeReview> {
                                               MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: Text('삭제',
-                                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                                            style: TextStyle(
+                                                color: theme
+                                                    .colorScheme.onSurface)),
                                       ),
                                       SizedBox(width: 5),
                                     ],
@@ -408,10 +426,9 @@ class _RecipeReviewState extends State<RecipeReview> {
                               ],
                             ),
                             SizedBox(height: 10),
-                            Text(
-                              recipeReviews[index]['content']!,
-                                style: TextStyle(color: theme.colorScheme.onSurface)
-                            ),
+                            Text(recipeReviews[index]['content']!,
+                                style: TextStyle(
+                                    color: theme.colorScheme.onSurface)),
                             SizedBox(height: 10),
                             Wrap(
                               spacing: 8.0,

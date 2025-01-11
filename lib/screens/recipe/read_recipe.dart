@@ -180,7 +180,17 @@ class _ReadRecipeState extends State<ReadRecipe> {
   }
 
   void _toggleLike() async {
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null || user.email == 'guest@foodforlater.com') {
+      // 🔹 방문자(게스트) 계정이면 스크랩 차단 및 안내 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 후 레시피를 좋아요 할 수 있습니다.')),
+      );
+      return; // 🚫 여기서 함수 종료 (스크랩 기능 실행 안 함)
+    }
+
+    final userId = user.uid;
 
     try {
       // 스크랩 상태 확인을 위한 쿼리
