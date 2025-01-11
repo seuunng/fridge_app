@@ -62,6 +62,7 @@ class _AddItemState extends State<AddItem> {
   double mobileGridMaxExtent = 70; // 모바일에서 최대 크기
   double webGridMaxExtent = 200; // 웹에서 최대 크기
   double gridSpacing = 8.0;
+  String userRole = '';
 
   @override
   void initState() {
@@ -73,6 +74,7 @@ class _AddItemState extends State<AddItem> {
       _loadCategoriesFromFirestore();
     }
     _loadDeletedItems();
+    _loadUserRole();
   }
 
   void _loadSelectedFridge() async {
@@ -106,7 +108,7 @@ class _AddItemState extends State<AddItem> {
       }
 
       final defaultSnapshot =
-      await FirebaseFirestore.instance.collection('default_foods').get();
+          await FirebaseFirestore.instance.collection('default_foods').get();
 
       // 🔹 기본 식품 목록 불러오기 (사용자가 수정하지 않은 것만 추가)
       for (var doc in defaultSnapshot.docs) {
@@ -120,6 +122,23 @@ class _AddItemState extends State<AddItem> {
     } catch (e) {
       print("Error fetching foods: $e");
       return [];
+    }
+  }
+
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
     }
   }
 
@@ -226,8 +245,17 @@ class _AddItemState extends State<AddItem> {
   }
 
   Future<void> _addItemsToFridge() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 후에 냉장고에 추가할 수 있습니다.')),
+      );
+      return; // 🚫 게스트 사용자는 추가 불가
+    }
+
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    final fridgeId = selected_fridgeId; ; // 여기에 실제 유저 ID를 추가하세요
+    final fridgeId = selected_fridgeId;
+    ; // 여기에 실제 유저 ID를 추가하세요
 
     try {
       for (String itemName in selectedItems) {
@@ -285,13 +313,22 @@ class _AddItemState extends State<AddItem> {
   }
 
   Future<void> _addItemsToShoppingList() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 후에 장바구니에 추가할 수 있습니다.')),
+      );
+      return; // 🚫 게스트 사용자는 추가 불가
+    }
+
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     try {
       for (String itemName in selectedItems) {
         final existingItemSnapshot = await FirebaseFirestore.instance
             .collection('shopping_items')
-            .where('items', isEqualTo: itemName.trim().toLowerCase()) // 공백 및 대소문자 제거
+            .where('items',
+                isEqualTo: itemName.trim().toLowerCase()) // 공백 및 대소문자 제거
             .where('userId', isEqualTo: userId)
             .get();
 
@@ -365,6 +402,9 @@ class _AddItemState extends State<AddItem> {
     setState(() {
       searchKeyword = keyword.trim().toLowerCase();
       isSearchActive = true; // 검색 버튼을 누르면 검색 활성화
+      if (searchKeyword.isNotEmpty) {
+        _saveSearchKeyword(searchKeyword);
+      }
 
       if (widget.sourcePage == 'preferred_foods_category') {
         itemsByPreferredCategory.forEach((category, categoryModels) {
@@ -420,6 +460,52 @@ class _AddItemState extends State<AddItem> {
     } catch (e) {
       print('검색어 저장 중 오류 발생: $e');
     }
+  }
+
+  void _handleAddPreferredCategory() {
+    if (userRole != 'admin' && userRole != 'paid_user') {
+      // 🔹 일반 사용자는 냉장고 추가 불가능
+      if (widget.sourcePage == 'preferred_foods_category') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('프리미엄 서비스를 이용하면 나만의 선호식품 카테고리를 관리할 수 있어요!'),
+              ],
+            ),
+            duration: Duration(seconds: 3), // 3초간 표시
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('프리미엄 서비스를 이용하면 나만의 식품 카테고리를 관리할 수 있어요!'),
+              ],
+            ),
+            duration: Duration(seconds: 3), // 3초간 표시
+          ),
+        );
+      }
+      return; // 🚫 페이지 이동 차단
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddPreferredCategory(
+          categoryName: selectedCategory ?? '기타',
+          sourcePage: 'add_category',
+        ),
+      ),
+    ).then((_) {
+      _loadPreferredFoodsCategoriesFromFirestore();
+    });
   }
 
   @override
@@ -685,19 +771,7 @@ class _AddItemState extends State<AddItem> {
           if (index == itemsByPreferredCategory.keys.length) {
             // +아이콘 추가
             return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddPreferredCategory(
-                      categoryName: selectedCategory ?? '기타',
-                      sourcePage: 'add_category',
-                    ),
-                  ),
-                ).then((_) {
-                  _loadPreferredFoodsCategoriesFromFirestore();
-                });
-              },
+              onTap: _handleAddPreferredCategory,
               child: Container(
                 decoration: BoxDecoration(
                   color: theme.chipTheme.backgroundColor,
@@ -786,23 +860,7 @@ class _AddItemState extends State<AddItem> {
         itemBuilder: (context, index) {
           if (index == itemCount) {
             return GestureDetector(
-              onTap: () {
-                if (isPreferredCategory) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddPreferredCategory(
-                        categoryName: selectedCategory ?? '기타',
-                        sourcePage: 'add_items',
-                      ),
-                    ),
-                  ).then((_) {
-                    _loadPreferredFoodsCategoriesFromFirestore();
-                  });
-                } else {
-                  _navigateToAddItemPage();
-                }
-              },
+              onTap: _handleAddPreferredCategory,
               child: Container(
                 decoration: BoxDecoration(
                   color: selectedItems == items
@@ -859,7 +917,8 @@ class _AddItemState extends State<AddItem> {
                     foodData = foodsSnapshot.docs.first.data();
                   } else {
                     // 🔹 foods에 데이터가 없으면 default_foods에서 검색
-                    final defaultFoodsSnapshot = await FirebaseFirestore.instance
+                    final defaultFoodsSnapshot = await FirebaseFirestore
+                        .instance
                         .collection('default_foods')
                         .where('foodsName', isEqualTo: itemName)
                         .get();
@@ -871,9 +930,12 @@ class _AddItemState extends State<AddItem> {
 
                   if (foodData != null) {
                     // 🔹 데이터가 존재하는 경우 상세보기 페이지로 이동
-                    String defaultCategory = foodData['defaultCategory'] ?? '기타';
-                    String defaultFridgeCategory = foodData['defaultFridgeCategory'] ?? '기타';
-                    String shoppingListCategory = foodData['shoppingListCategory'] ?? '기타';
+                    String defaultCategory =
+                        foodData['defaultCategory'] ?? '기타';
+                    String defaultFridgeCategory =
+                        foodData['defaultFridgeCategory'] ?? '기타';
+                    String shoppingListCategory =
+                        foodData['shoppingListCategory'] ?? '기타';
                     int shelfLife = foodData['shelfLife'] ?? 0;
 
                     Navigator.push(
@@ -885,7 +947,8 @@ class _AddItemState extends State<AddItem> {
                           fridgeCategory: defaultFridgeCategory,
                           shoppingListCategory: shoppingListCategory,
                           consumptionDays: shelfLife,
-                          registrationDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                          registrationDate:
+                              DateFormat('yyyy-MM-dd').format(DateTime.now()),
                         ),
                       ),
                     );

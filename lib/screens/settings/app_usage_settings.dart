@@ -20,15 +20,31 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   String _selectedCategory_records = '앨범형'; // 기본 선택값
   final List<String> _categories_records = ['앨범형', '달력형', '목록형']; // 카테고리 리스트
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  String userRole = '';
 
-  String _newCategory = '';
   @override
   void initState() {
     super.initState();
     _loadFridgeCategoriesFromFirestore(); // 초기화 시 Firestore에서 데이터를 불러옴
     _loadSelectedFridge();
+    _loadUserRole();
   }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   void _loadSelectedFridge() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
@@ -111,6 +127,13 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
 
   // 새로운 카테고리 추가 함수
   void _addNewCategory(List<String> categories, String categoryType) {
+    if (userRole != 'admin' && userRole != 'paid_user') {
+      // 🔹 일반 사용자는 냉장고 추가 불가능
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('프리미엄 서비스를 이용하면 냉장고를 여러 개 등록하고 스마트한 식재료 관리를 할 수 있어요!')),
+      );
+      return;
+    }
     if (categories.length >= 3) {
       // 카테고리 개수가 3개 이상이면 추가 불가
       ScaffoldMessenger.of(context).showSnackBar(
@@ -252,6 +275,14 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   }
 
   void _saveSettings() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || user?.email == 'guest@foodforlater.com') {
+      // 🔹 게스트 계정이면 설정 저장 불가 & 로그인 요청 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 후 설정을 저장할 수 있습니다.')),
+      );
+      return; // 🚫 여기서 함수 종료 (저장 X)
+    }
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('selectedFridge', _selectedCategory_fridge);
     await prefs.setString('selectedRecordListType', _selectedCategory_records);

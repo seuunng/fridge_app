@@ -368,6 +368,15 @@ class _RecipeMainPageState extends State<RecipeMainPage>
             FloatingAddButton(
               heroTag: 'recipe_add_button',
               onPressed: () {
+                final user = FirebaseAuth.instance.currentUser;
+
+                if (user == null || user.email == 'guest@foodforlater.com') {
+                  // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('로그인 후 레시피를 작성할 수 있습니다.')),
+                  );
+                  return; // 🚫 여기서 함수 종료 (페이지 이동 X)
+                }
                 Navigator.push(
                   context,
                   MaterialPageRoute(

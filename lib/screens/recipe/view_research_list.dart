@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
-import 'package:food_for_later_new/screens/settings/scraped_recipe_service.dart';
+import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

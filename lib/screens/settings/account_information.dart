@@ -19,8 +19,8 @@ class AccountInformation extends StatefulWidget {
 }
 
 class _AccountInformationState extends State<AccountInformation> {
-  String _nickname = '사용자의 닉네임'; // 닉네임 기본값
-  String _email = 'user@example.com'; // 이메일 기본값
+  String _nickname = '방문자'; // 닉네임 기본값
+  String _email = 'guest@foodforlater.com'; // 이메일 기본값
   final TextEditingController _passwordController = TextEditingController();
   firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -259,12 +259,23 @@ class _AccountInformationState extends State<AccountInformation> {
             // SizedBox(width: 20), // 두 버튼 사이 간격
             Expanded(
               child: NavbarButton(
-                buttonTitle: '로그아웃',
-                onPressed: () {
-                  // 람다식으로 함수 전달
-                  _logoutAlertDialog();
-                },
-              ),
+                  buttonTitle:
+                      (user == null || user?.email == 'guest@foodforlater.com')
+                          ? '로그인' // 🔹 게스트 계정이면 "로그인" 버튼
+                          : '로그아웃', // 🔹 로그인된 계정이면 "로그아웃" 버튼
+                  onPressed: () {
+                    if (user == null ||
+                        user?.email == 'guest@foodforlater.com') {
+                      // 🔹 게스트일 경우, 로그인 페이지로 이동 (다이얼로그 없이)
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => LoginPage()),
+                      );
+                    } else {
+                      // 🔹 로그인된 계정일 경우, 로그아웃 기능 실행
+                      _logoutAlertDialog();
+                    }
+                  }),
             ),
           ],
         ),
@@ -425,7 +436,8 @@ class _AccountInformationState extends State<AccountInformation> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('로그아웃을 진행할까요?',
+          title: Text(
+            '로그아웃을 진행할까요?',
             style: TextStyle(
               color: Theme.of(context).brightness == Brightness.dark
                   ? Colors.white

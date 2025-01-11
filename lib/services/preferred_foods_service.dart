@@ -6,12 +6,20 @@ class PreferredFoodsService {
   static Future<void> addDefaultPreferredCategories(BuildContext context, Function reloadCategories) async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
+      // 🔹 Firestore에서 해당 유저의 기본 카테고리가 존재하는지 먼저 확인
+      final existingCategories = await FirebaseFirestore.instance
+          .collection('preferred_foods_categories')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      // 🔹 기존 카테고리가 있으면 추가하지 않음 (중복 방지)
+      if (existingCategories.docs.isNotEmpty) {
+        print('기본 선호 카테고리가 이미 존재합니다. 추가하지 않습니다.');
+        return;
+      }
+
       final defaultCategories = {
-        '알러지': [
-          '우유',
-          '계란',
-          '땅콩',
-        ],
+        '알러지': ['우유', '계란', '땅콩'],
         '유제품': ['우유', '치즈', '요거트'],
         '비건': ['육류', '해산물', '유제품', '계란', '꿀'],
         '무오신채': ['마늘', '양파', '부추', '파', '달래'],

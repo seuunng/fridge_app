@@ -5,7 +5,7 @@ import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:food_for_later_new/screens/settings/scraped_recipe_service.dart';
+import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 
 class ViewScrapRecipeList extends StatefulWidget {
   @override

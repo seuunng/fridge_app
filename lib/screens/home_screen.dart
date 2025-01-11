@@ -273,6 +273,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Theme.of(context).colorScheme.onSurface),
                 title: Text('의견보내기'),
                 onTap: () {
+                  final user = FirebaseAuth.instance.currentUser;
+
+                  if (user == null || user.email == 'guest@foodforlater.com') {
+                    // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('로그인 후에 의견을 보내주세요.')),
+                    );
+                    return; // 🚫 여기서 함수 종료 (페이지 이동 X)
+                  }
                   Navigator.pop(context); // 사이드바 닫기
                   Navigator.push(
                     context,

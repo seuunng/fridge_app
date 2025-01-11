@@ -21,12 +21,14 @@ class _RecipeReviewState extends State<RecipeReview> {
   List<Map<String, dynamic>> recipeReviews = [];
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
+  bool isAdmin = false;
   TextEditingController reviewContentController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadReviewsFromFirestore();
+    _checkAdminRole();
   }
 
   void _loadReviewsFromFirestore() async {
@@ -224,6 +226,24 @@ class _RecipeReviewState extends State<RecipeReview> {
     );
   }
 
+  Future<void> _checkAdminRole() async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore
+          .instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          isAdmin = userDoc.data()?['role'] == 'admin'; // 관리자 역할 확인
+        });
+      }
+    } catch (e) {
+      print("Error checking admin role: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -342,7 +362,7 @@ class _RecipeReviewState extends State<RecipeReview> {
                                   ),
                                   SizedBox(width: 10),
                                 ]),
-                                if (isAuthor)
+                                if (isAdmin || isAuthor)
                                   Row(
                                     children: [
                                       Text('|',

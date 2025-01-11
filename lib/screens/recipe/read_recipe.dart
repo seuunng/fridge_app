@@ -9,7 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:food_for_later_new/screens/recipe/share_options.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
-import 'package:food_for_later_new/screens/settings/scraped_recipe_service.dart';
+import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 
 class ReadRecipe extends StatefulWidget {
   final String recipeId;
@@ -479,6 +479,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -596,7 +597,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
                       SizedBox(width: 4),
                       if (isAdmin || isOwner)
                         Row(children: [
-                          Text('|'),
+                          Text('|',
+                              style: TextStyle(color: theme.colorScheme.onSurface)),
                           SizedBox(width: 4),
                           Container(
                             child: TextButton(
@@ -665,6 +667,15 @@ class _ReadRecipeState extends State<ReadRecipe> {
                       child: NavbarButton(
                         buttonTitle: '리뷰쓰기',
                         onPressed: () {
+                          final user = FirebaseAuth.instance.currentUser;
+
+                          if (user == null || user.email == 'guest@foodforlater.com') {
+                            // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('로그인 후 리뷰를 작성할 수 있습니다.')),
+                            );
+                            return; // 🚫 여기서 함수 종료 (페이지 이동 X)
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(
