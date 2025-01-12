@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/screens/admin_page/admin_login.dart';
+import 'package:food_for_later_new/screens/auth/purchase_page.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_main_page.dart';
 import 'package:food_for_later_new/screens/recipe/recipe_main_page.dart';
@@ -288,6 +289,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(
                         builder: (context) =>
                             FeedbackSubmission()), // 계정 정보 페이지로 이동
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.workspace_premium_outlined,
+                    color: Theme.of(context).colorScheme.onSurface),
+                title: Text('프리미엄 전환'),
+                onTap: () {
+                  Navigator.pop(context); // 사이드바 닫기
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            PurchasePage()), // 계정 정보 페이지로 이동
                   );
                 },
               ),

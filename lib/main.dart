@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:food_for_later_new/providers/role_provider.dart';
+import 'package:food_for_later_new/screens/auth/purchase_page.dart';
 import 'package:food_for_later_new/services/firebase_options.dart';
 import 'package:food_for_later_new/providers/theme_provider.dart';
 import 'package:food_for_later_new/screens/auth/login_main_page.dart';
@@ -15,7 +16,9 @@ import 'package:food_for_later_new/screens/auth/splash_screen.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_main_page.dart';
 import 'package:food_for_later_new/screens/home_screen.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
+import 'package:food_for_later_new/services/in_app_purchase_service.dart';
 import 'package:food_for_later_new/themes/custom_theme_mode.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -76,7 +79,22 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final InAppPurchaseService _iapService = InAppPurchaseService();
+  late Stream<List<PurchaseDetails>> _purchaseUpdates;
+
+  @override
+  void initState() {
+    super.initState();
+    _purchaseUpdates = InAppPurchase.instance.purchaseStream;
+    _iapService.listenToPurchaseUpdates(_purchaseUpdates); // ✅ 정상 호출 가능
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(builder: (context, themeProvider, child) {
@@ -99,6 +117,8 @@ class MyApp extends StatelessWidget {
           switch (settings.name) {
             case '/home':
               return MaterialPageRoute(builder: (context) => HomeScreen());
+            case '/purchase': // 구매 페이지 추가
+              return MaterialPageRoute(builder: (context) => PurchasePage());
             case '/login':
               return MaterialPageRoute(builder: (context) => LoginPage());
             default:
