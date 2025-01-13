@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/fridge_category_model.dart';
@@ -48,6 +50,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
 
   DateTime currentDate = DateTime.now();
   FocusNode _focusNode = FocusNode();
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
@@ -64,6 +68,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
     _focusNode.addListener(() {
       setState(() {}); // FocusNode 상태가 바뀔 때 화면을 다시 그리도록 설정
     });
+    _loadUserRole();
+
   }
 
   @override
@@ -71,7 +77,23 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
     _focusNode.dispose(); // FocusNode 해제
     super.dispose();
   }
+  void _loadUserRole() async {
 
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   void _loadFoodsCategoriesFromFirestore() async {
     try {
       final foodsSnapshot = await FirebaseFirestore.instance.collection('foods').get();
@@ -407,54 +429,65 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
         ),
       ),
       // 하단에 추가 버튼 추가
-      bottomNavigationBar: Container(
-        color: Colors.transparent,
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: SizedBox(
-          width: double.infinity,
-          child: NavbarButton(
-            buttonTitle: '저장하기',
-            onPressed: () async {
-              // 식품 데이터 수집
-              final updatedData = {
-                'foodsName': foodNameController.text, // 사용자가 입력한 식품명
-                'defaultCategory': selectedFoodsCategory?.defaultCategory ?? '',
-                'defaultFridgeCategory':
-                    selectedFridgeCategory?.categoryName ?? '',
-                'shoppingListCategory':
-                    selectedShoppingListCategory?.categoryName ?? '',
-                // 'expirationDate': expirationDays,
-                'shelfLife': consumptionDays,
-              };
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          Container(
+            color: Colors.transparent,
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: SizedBox(
+              width: double.infinity,
+              child: NavbarButton(
+                buttonTitle: '저장하기',
+                onPressed: () async {
+                  // 식품 데이터 수집
+                  final updatedData = {
+                    'foodsName': foodNameController.text, // 사용자가 입력한 식품명
+                    'defaultCategory': selectedFoodsCategory?.defaultCategory ?? '',
+                    'defaultFridgeCategory':
+                        selectedFridgeCategory?.categoryName ?? '',
+                    'shoppingListCategory':
+                        selectedShoppingListCategory?.categoryName ?? '',
+                    // 'expirationDate': expirationDays,
+                    'shelfLife': consumptionDays,
+                  };
 
-              try {
-                final snapshot = await FirebaseFirestore.instance
-                    .collection('foods')
-                    .where('foodsName', isEqualTo: widget.foodsName)
-                    .get();
+                  try {
+                    final snapshot = await FirebaseFirestore.instance
+                        .collection('foods')
+                        .where('foodsName', isEqualTo: widget.foodsName)
+                        .get();
 
-                if (snapshot.docs.isNotEmpty) {
-                  final docId = snapshot.docs.first.id; // 첫 번째 문서의 ID를 가져옴
+                    if (snapshot.docs.isNotEmpty) {
+                      final docId = snapshot.docs.first.id; // 첫 번째 문서의 ID를 가져옴
 
-                  await FirebaseFirestore.instance
-                      .collection('foods')
-                      .doc(docId)
-                      .update(updatedData);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('해당 데이터를 찾을 수 없습니다.')),
-                  );
-                }
-                Navigator.pop(context);
-              } catch (e) {
-                print('Error updating data: $e');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('데이터 저장 중 오류가 발생했습니다.')),
-                );
-              }
-            },
+                      await FirebaseFirestore.instance
+                          .collection('foods')
+                          .doc(docId)
+                          .update(updatedData);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('해당 데이터를 찾을 수 없습니다.')),
+                      );
+                    }
+                    Navigator.pop(context);
+                  } catch (e) {
+                    print('Error updating data: $e');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('데이터 저장 중 오류가 발생했습니다.')),
+                    );
+                  }
+                },
+              ),
+            ),
           ),
-        ),
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            ),
+        ],
       ),
     );
   }

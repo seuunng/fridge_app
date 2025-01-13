@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/screens/recipe/add_recipe.dart';
 import 'package:food_for_later_new/screens/recipe/add_recipe_review.dart';
@@ -51,6 +52,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
   bool isAdmin = false;
   late String recipeUrl;
 
+  String userRole = '';
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +74,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
     loadScrapedData(widget.recipeId);
     loadLikedData(widget.recipeId);
     _increaseViewCount(widget.recipeId);
+    _loadUserRole();
     _pageController = PageController(initialPage: 0);
     recipeUrl = 'https://food-for-later.web.app/recipe/${widget.recipeId}';
   }
@@ -80,7 +84,23 @@ class _ReadRecipeState extends State<ReadRecipe> {
     _pageController.dispose(); // 페이지 컨트롤러 해제
     super.dispose();
   }
+  void _loadUserRole() async {
 
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   void loadUserData() async {
     if (userId.isNotEmpty) {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -669,34 +689,45 @@ class _ReadRecipeState extends State<ReadRecipe> {
                   RecipeReview(
                     recipeId: widget.recipeId,
                   ),
-                  Container(
-                    color: Colors.transparent,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: NavbarButton(
-                        buttonTitle: '리뷰쓰기',
-                        onPressed: () {
-                          final user = FirebaseAuth.instance.currentUser;
+                  Column(
+                    mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+                    mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+                    children: [
+                      Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: NavbarButton(
+                            buttonTitle: '리뷰쓰기',
+                            onPressed: () {
+                              final user = FirebaseAuth.instance.currentUser;
 
-                          if (user == null || user.email == 'guest@foodforlater.com') {
-                            // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('로그인 후 리뷰를 작성할 수 있습니다.')),
-                            );
-                            return; // 🚫 여기서 함수 종료 (페이지 이동 X)
-                          }
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddRecipeReview(
-                                recipeId: widget.recipeId,
-                              ),
-                            ),
-                          );
-                        },
+                              if (user == null || user.email == 'guest@foodforlater.com') {
+                                // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('로그인 후 리뷰를 작성할 수 있습니다.')),
+                                );
+                                return; // 🚫 여기서 함수 종료 (페이지 이동 X)
+                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddRecipeReview(
+                                    recipeId: widget.recipeId,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                    ),
+                      if (userRole != 'admin' && userRole != 'paid_user')
+                        SafeArea(
+                          bottom: false, // 하단 여백 제거
+                          child: BannerAdWidget(),
+                        ),
+                    ],
                   )
                 ],
               ),

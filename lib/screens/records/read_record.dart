@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/screens/records/create_record.dart';
 import 'package:intl/intl.dart';
@@ -19,7 +21,31 @@ class ReadRecord extends StatefulWidget {
 
 class _ReadRecordState extends State<ReadRecord> {
   Map<String, List<String>> categoryMap = {};
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecordCategories(); // 초기화 시 record_categories 불러오기
+    _loadUserRole();
+  }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   Future<void> _fetchRecordCategories() async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -39,11 +65,6 @@ class _ReadRecordState extends State<ReadRecord> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchRecordCategories(); // 초기화 시 record_categories 불러오기
-  }
 
   // Firestore에서 해당 기록을 삭제하는 함수
   Future<void> _deleteRecord(String recordId) async {
@@ -286,6 +307,17 @@ class _ReadRecordState extends State<ReadRecord> {
             ],
           );
         },
+      ),
+      bottomNavigationBar:
+      Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              child: BannerAdWidget(),
+            ),
+        ],
       ),
     );
   }

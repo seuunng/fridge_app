@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/preferred_food_model.dart';
 import 'package:food_for_later_new/models/recipe_method_model.dart';
@@ -28,14 +29,34 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
   Map<String, List<PreferredFoodModel>> itemsByPreferredCategory = {};
 
   Set<String> renderedCategories = {};
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
   @override
   void initState() {
     super.initState();
     _loadMethodFromFirestore();
     _loadSearchSettingsFromLocal();
     _loadPreferredFoodsCategoriesFromFirestore();
+    _loadUserRole();
   }
+  void _loadUserRole() async {
 
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   void _loadMethodFromFirestore() async {
     try {
       final snapshot = await _db.collection('recipe_method_categories').get();
@@ -231,20 +252,31 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SizedBox(
-          width: double.infinity,
-          height: 50, // 버튼 높이 설정
-          child: NavbarButton(
-            buttonTitle: '저장',
-            onPressed: () async {
-              await _saveSearchSettingsToLocal(); // 설정을 로컬에 저장
-              Navigator.pop(context);
-            },
-          ),
+      bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Padding(
+                padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50, // 버튼 높이 설정
+              child: NavbarButton(
+                buttonTitle: '저장',
+                onPressed: () async {
+                  await _saveSearchSettingsToLocal(); // 설정을 로컬에 저장
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            ),
+            if (userRole != 'admin' && userRole != 'paid_user')
+              SafeArea(
+                bottom: false, // 하단 여백 제거
+                child: BannerAdWidget(),
+              ),
+          ],
         ),
-      ),
     );
   }
 

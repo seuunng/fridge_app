@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
@@ -63,6 +64,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
   bool useFridgeIngredientsState = false;
   // String? category = widget.category.isNotEmpty ? widget.category[0] : null;
 
+  String userRole = '';
+
   @override
   void initState() {
     super.initState();
@@ -75,8 +78,26 @@ class _ViewResearchListState extends State<ViewResearchList> {
     _initializeTopIngredients();
     _loadSearchSettingsFromLocal();
     _loadFridgeItemsFromFirestore();
-  }
 
+    _loadUserRole();
+  }
+  void _loadUserRole() async {
+
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   // 검색 상세설정 값 불러오기
   Future<void> _loadSearchSettingsFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
@@ -611,6 +632,17 @@ class _ViewResearchListState extends State<ViewResearchList> {
           ],
         ),
       ),
+        bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+    mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+            if (userRole != 'admin' && userRole != 'paid_user')
+      SafeArea(
+      bottom: false, // 하단 여백 제거
+      child: BannerAdWidget(),
+    ),
+    ]
+    ),
     );
   }
 

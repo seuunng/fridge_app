@@ -2,6 +2,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
@@ -321,7 +322,6 @@ class _AddItemState extends State<AddItem> {
       return; // 🚫 게스트 사용자는 추가 불가
     }
 
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     try {
       for (String itemName in selectedItems) {
@@ -574,27 +574,37 @@ class _AddItemState extends State<AddItem> {
           ],
         ),
       ),
-      bottomNavigationBar: selectedItems.isNotEmpty &&
-              (widget.sourcePage == 'shoppingList' ||
-                  widget.sourcePage == 'fridge')
-          ? Container(
-              color: Colors.transparent,
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-              child: SizedBox(
-                width: double.infinity,
-                child: NavbarButton(
-                  buttonTitle: widget.addButton,
-                  onPressed: () {
-                    if (widget.sourcePage == 'shoppingList') {
-                      _addItemsToShoppingList(); // 장바구니에 아이템 추가
-                    } else if (widget.sourcePage == 'fridge') {
-                      _addItemsToFridge(); // 냉장고에 아이템 추가
-                    }
-                  },
-                ),
-              ),
-            )
-          : null,
+      bottomNavigationBar:
+          (selectedItems.isNotEmpty &&
+                  (widget.sourcePage == 'shoppingList' ||
+                      widget.sourcePage == 'fridge')) ?
+              Column(
+                mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+                mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+                children: [
+                  Container(
+                      color: Colors.transparent,
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: NavbarButton(
+                          buttonTitle: widget.addButton,
+                          onPressed: () {
+                            if (widget.sourcePage == 'shoppingList') {
+                              _addItemsToShoppingList(); // 장바구니에 아이템 추가
+                            } else if (widget.sourcePage == 'fridge') {
+                              _addItemsToFridge(); // 냉장고에 아이템 추가
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  if (userRole != 'admin' && userRole != 'paid_user')
+                  BannerAdWidget(),
+                ],
+              ):
+          (userRole != 'admin' && userRole != 'paid_user')?
+            BannerAdWidget():null
     );
   }
 

@@ -18,6 +18,7 @@ import 'package:food_for_later_new/screens/home_screen.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:food_for_later_new/services/in_app_purchase_service.dart';
 import 'package:food_for_later_new/themes/custom_theme_mode.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,7 @@ final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 //Flutter 앱의 진입점
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize(); // 🔹 광고 SDK 초기화
 
   try {
     await dotenv.load(fileName: "assets/env/.env");

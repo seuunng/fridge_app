@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/services/record_category_service.dart';
 import 'package:intl/intl.dart';
@@ -18,6 +19,7 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
   String? selectedPeriod = '1년';
   DateTime? startDate;
   DateTime? endDate;
+  String userRole = '';
 
   Map<String, bool> categoryOptions = {};
 
@@ -29,8 +31,23 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
     _loadCategoryFromFirestore();
     _loadSearchSettingsFromLocal();
     endDate = DateTime.now();
+    _loadUserRole();
   }
-
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   void _loadCategoryFromFirestore() async {
     try {
       final snapshot = await _db
@@ -424,19 +441,29 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
       bottomNavigationBar: Container(
         color: Colors.transparent,
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: SizedBox(
-          width: double.infinity,
-          child: NavbarButton(
-            buttonTitle: '저장',
-            onPressed: () async {
-              await _saveSearchSettingsToLocal(); // 설정을 로컬에 저장
-              Navigator.pop(context, {
-                'selectedCategories': selectedCategories,
-                'startDate': startDate,
-                'endDate': endDate,
-              });
-            },
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+          mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: NavbarButton(
+                buttonTitle: '저장',
+                onPressed: () async {
+                  await _saveSearchSettingsToLocal(); // 설정을 로컬에 저장
+                  Navigator.pop(context, {
+                    'selectedCategories': selectedCategories,
+                    'startDate': startDate,
+                    'endDate': endDate,
+                  });
+                },
+              ),
+            ),
+            if (userRole != 'admin' && userRole != 'paid_user')
+              SafeArea(
+                child: BannerAdWidget(),
+              ),
+          ],
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/services/record_category_service.dart';
 
 class EditRecordCategories extends StatefulWidget {
@@ -17,13 +18,29 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
   final TextEditingController _unitController = TextEditingController();
   Color _selectedColor = Colors.grey[300]!; // 기본 색상
   List<String> units = [];
+  String userRole = '';
 
   @override
   void initState() {
     super.initState();
-    _loadCategories(); // 카테고리 데이터를 로드
+    _loadCategories(); // 카테고리 데이터를 로
+    _loadUserRole();
   }
-
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   // Firestore에서 카테고리 데이터를 로드하는 함수
   void _loadCategories() async {
     try {
@@ -467,6 +484,18 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12), // 버튼의 모서리를 둥글게
         ),
+      ),
+      bottomNavigationBar:
+      Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              child: BannerAdWidget(),
+            ),
+        ],
+
       ),
     );
   }

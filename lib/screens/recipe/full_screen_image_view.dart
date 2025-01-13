@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 
 class FullScreenImageView extends StatefulWidget {
   final List<String> images;
@@ -16,14 +19,31 @@ class FullScreenImageView extends StatefulWidget {
 class _FullScreenImageViewState extends State<FullScreenImageView> {
   late PageController _pageController;
   int _currentIndex = 0;
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _loadUserRole();
     _pageController = PageController(initialPage: widget.initialIndex);
   }
-
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   @override
   void dispose() {
     _pageController.dispose();
@@ -72,6 +92,18 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
           );
         },
       ),
+    bottomNavigationBar:
+    Column(
+    mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+    mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+    children: [
+      if (userRole != 'admin' && userRole != 'paid_user')
+      SafeArea(
+        child: BannerAdWidget(),
+      ),
+    ],
+
+    ),
     );
   }
 }

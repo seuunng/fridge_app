@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/main.dart';
@@ -38,6 +39,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
   late AnimationController _controller;
   late Animation<double> _animation;
+  String userRole = '';
 
   @override
   void initState() {
@@ -58,6 +60,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     setState(() {
       isDeletedMode = false;
     });
+    _loadUserRole();
   }
 
   @override
@@ -83,6 +86,23 @@ class FridgeMainPageState extends State<FridgeMainPage>
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
+
   Future<void> _initializeData() async {
     await _loadCategoriesFromFirestore();
     await _loadFridgeNameFromFirestore();
@@ -478,18 +498,24 @@ class FridgeMainPageState extends State<FridgeMainPage>
                 )
               : null,
 
-          bottomNavigationBar: isDeletedMode
-              ? Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: NavbarButton(
-                      buttonTitle: '삭제 하기',
-                      onPressed: _confirmDeleteItems,
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+            mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+            children: [
+              if (isDeletedMode)
+                  Container(
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: NavbarButton(
+                          buttonTitle: '삭제 하기',
+                          onPressed: _confirmDeleteItems,
+                        ),
+                      ),
                     ),
-                  ),
-                )
-              : null,
+              if (userRole != 'admin' && userRole != 'paid_user') BannerAdWidget(),
+            ],
+          ),
         ));
   }
 

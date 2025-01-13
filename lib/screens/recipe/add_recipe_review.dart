@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,15 +28,34 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
   List<String>? _imageFiles = [];
   List<String> reviewImages = [];
   String imageUrl = '';
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
     super.initState();
     if (widget.reviewId != null) {
       _loadReviewData();
+      _loadUserRole();
     }
   }
+  void _loadUserRole() async {
 
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   // 리뷰 데이터를 Firestore에서 불러와서 초기화
   Future<void> _loadReviewData() async {
     try {
@@ -310,16 +330,27 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
         ),
 
         // 저장 버튼
-        bottomNavigationBar: Container(
-          color: Colors.transparent,
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: SizedBox(
-            width: double.infinity,
-            child: NavbarButton(
-              buttonTitle: '저장하기',
-              onPressed: _saveReview,
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+          mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+          children: [
+            Container(
+              color: Colors.transparent,
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: SizedBox(
+                width: double.infinity,
+                child: NavbarButton(
+                  buttonTitle: '저장하기',
+                  onPressed: _saveReview,
+                ),
+              ),
             ),
-          ),
+            if (userRole != 'admin' && userRole != 'paid_user')
+              SafeArea(
+                bottom: false, // 하단 여백 제거
+                child: BannerAdWidget(),
+              ),
+          ],
         ));
   }
 

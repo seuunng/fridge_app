@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/record_model.dart';
 import 'package:food_for_later_new/services/record_category_service.dart';
@@ -39,6 +40,7 @@ class _CreateRecordState extends State<CreateRecord> {
   DateTime selectedDate = DateTime.now();
   bool isSaving = false;
   int? selectedRecordIndex;
+  String userRole = '';
 
   // 분류와 그에 따른 구분 데이터를 정의
   Map<String, Map<String, dynamic>> categoryFieldMap = {};
@@ -47,21 +49,6 @@ class _CreateRecordState extends State<CreateRecord> {
   List<AssetEntity> images = [];
   List<String>? _imageFiles = [];
 
-  void _initializeValues() {
-    if (categoryFieldMap.isNotEmpty) {
-      selectedCategory = categoryFieldMap.keys.first;
-      List<String> fields =
-          categoryFieldMap[selectedCategory]?['fields'] ?? [];
-
-      selectedField = fields.isNotEmpty ? fields.first : '';
-      selectedColor =
-          categoryFieldMap[selectedCategory]?['color'] ?? Colors.grey;
-    } else {
-      selectedCategory = '식단'; // 기본 카테고리
-      selectedField = ''; // 기본 필드
-      selectedColor = Colors.grey; // 기본 색상
-    }
-  }
 
   @override
   void initState() {
@@ -81,8 +68,40 @@ class _CreateRecordState extends State<CreateRecord> {
     }
     _initializeValues();
     _loadCategories();
+    _loadUserRole();
+  }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
   }
 
+  void _initializeValues() {
+    if (categoryFieldMap.isNotEmpty) {
+      selectedCategory = categoryFieldMap.keys.first;
+      List<String> fields =
+          categoryFieldMap[selectedCategory]?['fields'] ?? [];
+
+      selectedField = fields.isNotEmpty ? fields.first : '';
+      selectedColor =
+          categoryFieldMap[selectedCategory]?['color'] ?? Colors.grey;
+    } else {
+      selectedCategory = '식단'; // 기본 카테고리
+      selectedField = ''; // 기본 필드
+      selectedColor = Colors.grey; // 기본 색상
+    }
+  }
   // Firestore에서 카테고리 데이터를 불러오는 함수
   void _loadCategories() async {
     try {
@@ -409,12 +428,22 @@ class _CreateRecordState extends State<CreateRecord> {
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: SizedBox(
-          width: double.infinity,
-          child: NavbarButton(
-            buttonTitle: '저장하기',
-            onPressed: _saveRecord,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+          mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: NavbarButton(
+                buttonTitle: '저장하기',
+                onPressed: _saveRecord,
+              ),
+            ),
+            if (userRole != 'admin' && userRole != 'paid_user')
+              SafeArea(
+                child: BannerAdWidget(),
+              ),
+          ],
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/custom_dropdown.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
@@ -31,6 +32,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   List<String> fridgeIngredients = [];
   bool isLoading = true; // 로딩 상태 추가
   bool isScraped = false;
+  String userRole = '';
 
   @override
   void initState() {
@@ -38,8 +40,25 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     selectedRecipes.clear();
     _loadData();
     _loadScrapedGroups();
+    _loadUserRole();
   }
+  void _loadUserRole() async {
 
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   Future<void> _loadData() async {
     setState(() {
       isLoading = true; // 로딩 상태 시작
@@ -385,8 +404,12 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
             ),
           ],
         ),
-        bottomNavigationBar: selectedRecipes.isNotEmpty
-            ? Container(
+        bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+        if(selectedRecipes.isNotEmpty)
+            Container(
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: SizedBox(
                   width: double.infinity,
@@ -401,8 +424,15 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                     },
                   ),
                 ),
-              )
-            : null);
+              ),
+    if (userRole != 'admin' && userRole != 'paid_user')
+    SafeArea(
+    bottom: false, // 하단 여백 제거
+    child: BannerAdWidget(),
+    ),
+    ],
+        ),
+            );
   }
 
   Widget _buildRecipeGrid() {

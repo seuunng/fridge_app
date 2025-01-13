@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/models/record_model.dart';
 import 'package:food_for_later_new/screens/records/create_record.dart';
 import 'package:food_for_later_new/screens/records/read_record.dart';
@@ -21,13 +22,29 @@ class _RecordsListViewState extends State<RecordsListView> {
   List<String>? selectedCategories;
   bool isLoading = true; // 데이터를 불러오는 중 상태 표시
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  String userRole = '';
 
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
     _loadSearchSettingsFromLocal(); // SharedPreferences에서 검색 조건 불러오기
   }
-
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   Future<void> _loadSearchSettingsFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -139,7 +156,19 @@ class _RecordsListViewState extends State<RecordsListView> {
           ),
         ],
       ),
-    ));
+    ),
+      bottomNavigationBar:
+      Column(
+      mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+      mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+      children: [
+        if (userRole != 'admin' && userRole != 'paid_user')
+          SafeArea(
+            child: BannerAdWidget(),
+          ),
+      ],
+
+    ),);
   }
 
   Widget _buildRecordsSection() {

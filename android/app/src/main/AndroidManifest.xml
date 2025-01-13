@@ -31,6 +31,9 @@
         <meta-data
             android:name="com.naver.sdk.clientName"
             android:value="@string/client_name" />
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-4461306523468443~6417141675"/>
 
 
         <activity

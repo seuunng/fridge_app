@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/items_in_fridge.dart';
@@ -35,6 +36,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
   Map<String, List<String>> methodCategories = {};
   List<String> filteredItems = [];
   List<String> fridgeIngredients = [];
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   final List<Tab> myTabs = <Tab>[
     Tab(text: '재료별'),
@@ -58,13 +61,28 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     _loadThemaFromFirestore(); // Firestore로부터 카테고리 데이터 로드
     _loadMethodFromFirestore();
     _loadItemsInFridgeFromFirestore();
+    _loadUserRole();
   }
+  void _loadUserRole() async {
 
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   Future<Map<String, List<String>>> _fetchFoods() async {
     Map<String, List<String>> categoryMap = {};
     Set<String> userFoodNames = {}; // 사용자가 수정한 식품명을 저장
-
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     try {
       // ✅ 1. 사용자가 수정한 foods 데이터 가져오기
@@ -338,56 +356,70 @@ class _RecipeMainPageState extends State<RecipeMainPage>
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: NavbarButton(
-                buttonTitle: '냉장고 재료 레시피 추천',
-                onPressed: () async {
-                  List<String> topIngredients =
-                      _getTopIngredientsByCategoryPriority(
-                          itemsByCategory, fridgeIngredients);
+      bottomNavigationBar:
+      Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+        child:
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: NavbarButton(
+                    buttonTitle: '냉장고 재료 레시피 추천',
+                    onPressed: () async {
+                      List<String> topIngredients =
+                          _getTopIngredientsByCategoryPriority(
+                              itemsByCategory, fridgeIngredients);
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ViewResearchList(
-                        // category: topIngredients,
-                        useFridgeIngredients: true,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            SizedBox(width: 20),
-            // 물건 추가 버튼
-            FloatingAddButton(
-              heroTag: 'recipe_add_button',
-              onPressed: () {
-                final user = FirebaseAuth.instance.currentUser;
-
-                if (user == null || user.email == 'guest@foodforlater.com') {
-                  // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('로그인 후 레시피를 작성할 수 있습니다.')),
-                  );
-                  return; // 🚫 여기서 함수 종료 (페이지 이동 X)
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddRecipe(),
-                    fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ViewResearchList(
+                            // category: topIngredients,
+                            useFridgeIngredients: true,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+                SizedBox(width: 20),
+                // 물건 추가 버튼
+                FloatingAddButton(
+                  heroTag: 'recipe_add_button',
+                  onPressed: () {
+                    final user = FirebaseAuth.instance.currentUser;
+
+                    if (user == null || user.email == 'guest@foodforlater.com') {
+                      // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('로그인 후 레시피를 작성할 수 있습니다.')),
+                      );
+                      return; // 🚫 여기서 함수 종료 (페이지 이동 X)
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddRecipe(),
+                        fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
+          ),
+            if (userRole != 'admin' && userRole != 'paid_user')
+              SafeArea(
+                bottom: false, // 하단 여백 제거
+                child: BannerAdWidget(),
+              ),
           ],
-        ),
+
       ),
     );
   }
