@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 
 class FeedbackSubmission extends StatefulWidget {
@@ -16,6 +17,7 @@ class FeedbackSubmission extends StatefulWidget {
 class _FeedbackSubmissionState extends State<FeedbackSubmission> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  String userRole = '';
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
@@ -284,16 +286,27 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        color: Colors.transparent,
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: SizedBox(
-          width: double.infinity,
-          child: NavbarButton(
-            buttonTitle: '의견 보내기',
-            onPressed: _submitFeedback,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          Container(
+            color: Colors.transparent,
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: SizedBox(
+              width: double.infinity,
+              child: NavbarButton(
+                buttonTitle: '의견 보내기',
+                onPressed: _submitFeedback,
+              ),
+            ),
           ),
-        ),
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            ),
+        ],
       ),
     );
   }

@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/main.dart';
 import 'package:food_for_later_new/providers/font_provider.dart';
@@ -18,14 +21,32 @@ class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
   // final List<String> _categories_them = ['Light', 'Dark']; // 카테고리 리스트
   String _selectedCategory_font = 'NanumGothic'; // 기본 선택값
   List<String> _categories_font = [];
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
     super.initState();
     _loadSelectedEnvironmentSettingValue();
     _loadFonts();
+    _loadUserRole();
   }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   void _loadFonts() async {
     final fontProvider = FontProvider();
     await fontProvider.loadFonts();
@@ -139,12 +160,26 @@ class _AppEnvironmentSettingsState extends State<AppEnvironmentSettings> {
           ),
         ],
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: NavbarButton(
-          buttonTitle: '저장',
-          onPressed: _saveSettings,
-        ),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: NavbarButton(
+                buttonTitle: '저장',
+                onPressed: _saveSettings,
+              ),
+            ),
+          ),
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            ),
+        ],
       ),
     );
   }

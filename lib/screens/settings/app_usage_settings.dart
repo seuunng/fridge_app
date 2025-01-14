@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
@@ -17,7 +18,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   List<String> _categories_fridge = []; // 카테고리 리스트
   String _selectedCategory_foods = '입고일 기준'; // 기본 선택값
   final List<String> _categories_foods = ['소비기한 기준', '입고일 기준']; // 카테고리 리스트
-  String _selectedCategory_records = '앨범형'; // 기본 선택값
+  String _selectedCategory_records = '달력형'; // 기본 선택값
   final List<String> _categories_records = ['앨범형', '달력형', '목록형']; // 카테고리 리스트
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   String userRole = '';
@@ -51,7 +52,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
     setState(() {
       _selectedCategory_fridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
       _selectedCategory_records =
-          prefs.getString('selectedRecordListType') ?? '앨범형';
+          prefs.getString('selectedRecordListType') ?? '달력형';
       _selectedCategory_foods =
           prefs.getString('selectedFoodStatusManagement') ?? '소비기한 기준';
     });
@@ -436,12 +437,27 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: NavbarButton(
-          buttonTitle: '저장',
-          onPressed: _saveSettings,
-        ),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          Container(
+            color: Colors.transparent,
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: SizedBox(
+              width: double.infinity,
+              child: NavbarButton(
+                buttonTitle: '저장',
+                onPressed: _saveSettings,
+              ),
+            ),
+          ),
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            ),
+        ],
       ),
     );
   }

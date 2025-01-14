@@ -52,6 +52,7 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
   FocusNode _focusNode = FocusNode();
   String userRole = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  bool _isPremiumUser = false;
 
   @override
   void initState() {
@@ -78,7 +79,6 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
     super.dispose();
   }
   void _loadUserRole() async {
-
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -88,6 +88,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
       if (userDoc.exists) {
         setState(() {
           userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+          // 🔹 paid_user 또는 admin이면 유료 사용자로 설정
+          _isPremiumUser = (userRole == 'paid_user' || userRole == 'admin');
         });
       }
     } catch (e) {
@@ -239,11 +241,13 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                         ),
                       );
                     }).toList(),
-                    onChanged: (FoodsModel? newValue) {
+                    onChanged:_isPremiumUser // 🔹 유료 사용자만 변경 가능
+                        ? (FoodsModel? newValue) {
                       setState(() {
                         selectedFoodsCategory = newValue;
                       });
-                    },
+                    }
+                        : null,
                   ),
                 ],
               ),
@@ -262,6 +266,7 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                     child: TextField(
                       controller: foodNameController
                         ..text = widget.foodsName ?? '',
+                      readOnly: !_isPremiumUser,
                       textAlign: TextAlign.center, // 텍스트를 가운데 정렬
                       // textAlign: TextAlign.,
                       focusNode: _focusNode,
@@ -302,11 +307,13 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                                 TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
-                    onChanged: (FridgeCategory? newValue) {
+                    onChanged:  _isPremiumUser
+                        ? (FridgeCategory? newValue) {
                       setState(() {
                         selectedFridgeCategory = newValue;
                       });
-                    },
+                    }
+                        : null, // 일반 사용자는 선택 불가능
                   ),
                   SizedBox(width: 20),
                 ],
@@ -333,11 +340,13 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                                 TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
-                    onChanged: (ShoppingCategory? newValue) {
+                    onChanged: _isPremiumUser
+                        ? (ShoppingCategory? newValue) {
                       setState(() {
                         selectedShoppingListCategory = newValue;
                       });
-                    },
+                    }
+                        : null,
                   ),
                   SizedBox(width: 20),
                 ],
@@ -381,10 +390,11 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                     children: [
                       IconButton(
                         icon: Icon(Icons.remove),
-                        onPressed: () {
-                          setState(() {
+                        onPressed: () {_isPremiumUser
+                        ?
+                        setState(() {
                             if (consumptionDays > 1) consumptionDays--;
-                          });
+                          }):null;
                         },
                       ),
                       Text('$consumptionDays 일',
@@ -393,10 +403,11 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                               color: theme.colorScheme.onSurface)),
                       IconButton(
                         icon: Icon(Icons.add),
-                        onPressed: () {
-                          setState(() {
+                        onPressed: () {_isPremiumUser
+                        ?
+                        setState(() {
                             consumptionDays++;
-                          });
+                          }):null;
                         },
                       ),
                     ],
@@ -441,6 +452,13 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
               child: NavbarButton(
                 buttonTitle: '저장하기',
                 onPressed: () async {
+                  if (userRole != 'admin' && userRole != 'paid_user') {
+                    // 🔹 일반 사용자는 냉장고 추가 불가능
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('프리미엄 서비스를 이용하면 상세내용을 수정하여 나만의 식재료 관리를 할 수 있어요!')),
+                    );
+                    return;
+                  }
                   // 식품 데이터 수집
                   final updatedData = {
                     'foodsName': foodNameController.text, // 사용자가 입력한 식품명

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -25,13 +26,31 @@ class _AccountInformationState extends State<AccountInformation> {
   firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   String _avatar = 'assets/avatar/avatar-01.png';
+  String userRole = '';
+  final userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    _loadUserRole();
   }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   void _loadUserInfo() async {
     if (user != null) {
       final userDoc = await FirebaseFirestore.instance
@@ -41,15 +60,15 @@ class _AccountInformationState extends State<AccountInformation> {
 
       if (userDoc.exists) {
         setState(() {
-          _email = userDoc.data()?['email'] ?? '이메일 없음';
-          _nickname = userDoc.data()?['nickname'] ?? '닉네임 없음';
+          _email = userDoc.data()?['email'] ?? '이메일';
+          _nickname = userDoc.data()?['nickname'] ?? '닉네임';
           _avatar = userDoc.data()?['avatar'] ?? 'assets/avatar/avatar-01.png';
         });
       } else {
         // Firestore에 사용자 데이터가 없을 경우 기본값 설정
         setState(() {
-          _email = userDoc.data()?['email'] ?? '이메일 없음';
-          _nickname = userDoc.data()?['email']?.split('@')[0] ?? '닉네임 없음';
+          _email = userDoc.data()?['email'] ?? '이메일';
+          _nickname = userDoc.data()?['email']?.split('@')[0] ?? '닉네임';
           _avatar = userDoc.data()?['avatar'] ?? 'assets/avatar/avatar-01.png';
         });
       }
@@ -240,46 +259,58 @@ class _AccountInformationState extends State<AccountInformation> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        color: Colors.transparent,
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          // 버튼 사이 간격을 균등하게 설정
-          children: [
-            // Expanded(
-            //   child: NavbarButton(
-            //     buttonTitle: '회원탈퇴',
-            //     onPressed: () {
-            //       // 람다식으로 함수 전달
-            //       _withdrawAlertDialog();
-            //     },
-            //   ),
-            // ),
-            // SizedBox(width: 20), // 두 버튼 사이 간격
-            Expanded(
-              child: NavbarButton(
-                  buttonTitle:
-                      (user == null || user?.email == 'guest@foodforlater.com')
-                          ? '로그인' // 🔹 게스트 계정이면 "로그인" 버튼
-                          : '로그아웃', // 🔹 로그인된 계정이면 "로그아웃" 버튼
-                  onPressed: () {
-                    if (user == null ||
-                        user?.email == 'guest@foodforlater.com') {
-                      // 🔹 게스트일 경우, 로그인 페이지로 이동 (다이얼로그 없이)
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginPage()),
-                      );
-                    } else {
-                      // 🔹 로그인된 계정일 경우, 로그아웃 기능 실행
-                      _logoutAlertDialog();
-                    }
-                  }),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          Container(
+            color: Colors.transparent,
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              // 버튼 사이 간격을 균등하게 설정
+              children: [
+                // Expanded(
+                //   child: NavbarButton(
+                //     buttonTitle: '회원탈퇴',
+                //     onPressed: () {
+                //       // 람다식으로 함수 전달
+                //       _withdrawAlertDialog();
+                //     },
+                //   ),
+                // ),
+                // SizedBox(width: 20), // 두 버튼 사이 간격
+                Expanded(
+                  child: NavbarButton(
+                      buttonTitle:
+                          (user == null || user?.email == 'guest@foodforlater.com')
+                              ? '로그인' // 🔹 게스트 계정이면 "로그인" 버튼
+                              : '로그아웃', // 🔹 로그인된 계정이면 "로그아웃" 버튼
+                      onPressed: () {
+                        if (user == null ||
+                            user?.email == 'guest@foodforlater.com') {
+                          // 🔹 게스트일 경우, 로그인 페이지로 이동 (다이얼로그 없이)
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => LoginPage()),
+                          );
+                        } else {
+                          // 🔹 로그인된 계정일 경우, 로그아웃 기능 실행
+                          _logoutAlertDialog();
+                        }
+                      }),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            ),
+        ],
       ),
+
     );
   }
 

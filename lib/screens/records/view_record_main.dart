@@ -19,7 +19,7 @@ class ViewRecordMain extends StatefulWidget {
 
 class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
   PageController _pageController = PageController();
-  String selectedRecordListType = '앨범형';
+  String selectedRecordListType = '달력형';
   String selectedCategory = '모두'; // 필드 추가
   int _currentPage = 0; // 현재 페이지 상태
   final int _totalPages = 3; // 총 페이지 수
@@ -63,7 +63,7 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
       selectedRecordListType =
-          prefs.getString('selectedRecordListType') ?? '앨범형';
+          prefs.getString('selectedRecordListType') ?? '달력형';
       int initialPage = _getInitialPage(selectedRecordListType);
       _pageController = PageController(initialPage: initialPage);
       _currentPage = initialPage;
@@ -137,11 +137,11 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
       case '앨범형':
         return ['앨범형', '달력형', '목록형'][_currentPage];
       case '달력형':
-        return ['달력형', '앨범형', '목록형'][_currentPage];
+        return ['달력형', '목록형', '앨범형' ][_currentPage];
       case '목록형':
         return ['목록형', '앨범형', '달력형'][_currentPage];
       default:
-        return ['앨범형', '달력형', '목록형'][_currentPage];
+        return ['달력형', '목록형', '앨범형'][_currentPage];
     }
   }
 
