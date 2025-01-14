@@ -27,21 +27,16 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
   void initState() {
     super.initState();
 
-    if (widget.sourcePage == 'add_items') {
       categoryController.text = widget.categoryName ?? "";
       if (widget.categoryName != null && widget.categoryName!.isNotEmpty) {
+        categoryController.text = widget.categoryName!;
         _loadCategoryItems(); // Firestore에서 데이터 로드
       } else {
+        categoryController.text = "";
         setState(() {
           isLoading = false; // 카테고리 이름이 없을 경우 로딩 상태 해제
         });
       }
-    } else if (widget.sourcePage == 'add_category') {
-      categoryController.text = ""; // 빈값 설정
-      setState(() {
-        isLoading = false; // 로딩 상태 해제
-      });
-    }
   }
 
   Future<void> _loadCategoryItems() async {

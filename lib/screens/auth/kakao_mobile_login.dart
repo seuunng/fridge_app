@@ -69,7 +69,9 @@ final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
         }
       }
       await FirebaseService.recordSessionStart();
-      Navigator.pushReplacementNamed(context, '/home');
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     } else {
       throw Exception('Firebase Custom Token 생성 실패: ${response.body}');
     }

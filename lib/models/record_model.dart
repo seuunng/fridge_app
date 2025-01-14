@@ -43,12 +43,16 @@ class RecordModel {
 
     return RecordModel(
       id: id,
-      date: (json['date'] != null && json['date'] is Timestamp)
+      date: json['date'] != null
           ? (json['date'] as Timestamp).toDate()
           : DateTime.now(), // 기본값 설정
-      zone: json['zone'] ?? '',
+      zone: json['zone'] ?? '미지정',
       color: json['color'] ?? '#000000',
-      records: recordDetails,
+      records: (json['records'] != null)
+          ? (json['records'] as List<dynamic>)
+          .map((e) => RecordDetail.fromJson(e))
+          .toList()
+          : [],
       userId: json['userId'] ?? '', // userId 추가
     );
   }

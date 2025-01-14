@@ -110,7 +110,9 @@ class _LoginPageState extends State<LoginPage> {
       if (result.user != null) {
         await addUserToFirestore(result.user!); // Firestore에 사용자 추가
         assignRandomAvatarToUser(result.user!.uid);
-        Navigator.pushReplacementNamed(context, '/home');
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } on firebase_auth.FirebaseAuthException catch (e) {
       // FirebaseAuthException 별 오류 처리
@@ -253,6 +255,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> signInWithNaver() async {
     try {
+      await Future.delayed(Duration(milliseconds: 100));
       final NaverLoginResult res = await FlutterNaverLogin.logIn();
       if (res.status == NaverLoginStatus.loggedIn) {
         NaverAccessToken token = await FlutterNaverLogin.currentAccessToken;
@@ -262,6 +265,7 @@ class _LoginPageState extends State<LoginPage> {
 
         final response = await createNaverFirebaseToken(token.accessToken);
         if (response != null) {
+          await Future.delayed(Duration(milliseconds: 100));
           final firebaseUser = await _auth.signInWithCustomToken(response);
 
           if (firebaseUser.user != null) {
@@ -274,7 +278,9 @@ class _LoginPageState extends State<LoginPage> {
             );
             assignRandomAvatarToUser(firebaseUser.user!.uid);
             await FirebaseService.recordSessionStart();
-            Navigator.pushReplacementNamed(context, '/home');
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, '/home');
+            }
           }
         }
       } else {
@@ -444,6 +450,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
+              Spacer(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

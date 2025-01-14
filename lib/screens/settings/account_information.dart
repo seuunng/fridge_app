@@ -92,7 +92,9 @@ class _AccountInformationState extends State<AccountInformation> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.')),
         );
-        Navigator.pushReplacementNamed(context, '/login');
+        if (context.mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } on firebase_auth.FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {

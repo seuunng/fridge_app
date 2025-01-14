@@ -36,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? selectedCategory;
   bool isAdmin = false;
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   // 각 페이지를 저장하는 리스트
   @override
@@ -50,8 +52,25 @@ class _HomeScreenState extends State<HomeScreen> {
       RecipeMainPage(category: []),
       ViewRecordMain(selectedCategory: selectedRecordListType),
     ];
+    _loadUserRole();
   }
+  void _loadUserRole() async {
 
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   void _loadSelectedRecordListType() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
@@ -159,11 +178,31 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
 
       case 'record_search_detail_setting':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => RecordSearchSettings()));
-        break;
+        if (userRole != 'admin' && userRole != 'paid_user') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('프리미엄 서비스를 이용하면 나의 요리기록을 스마트하게 할 수 있어요!'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return; // 🚨 페이지 이동 차단!
+        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => RecordSearchSettings()),
+        );
+        break; // ✅ `break` 추가
 
       case 'record_categories_setting':
+        if (userRole != 'admin' && userRole != 'paid_user') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('프리미엄 서비스를 이용하면 나의 요리기록을 스마트하게 할 수 있어요!'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return; // 🚨 페이지 이동 차단!
+        }
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => EditRecordCategories()));
         break;

@@ -76,6 +76,7 @@ class _RecordsAlbumViewState extends State<RecordsAlbumView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     // Firestore 쿼리 필터링
     Query query = FirebaseFirestore.instance.collection('record');
     if (userId != null) {
@@ -102,6 +103,17 @@ class _RecordsAlbumViewState extends State<RecordsAlbumView> {
       body: StreamBuilder<QuerySnapshot>(
         stream: query.snapshots(),
         builder: (context, snapshot) {
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('나의 요리생활을 기록해주세요.', style: TextStyle(color: theme.colorScheme.onSurface)),
+                  Text('사진만 모아서 보여드립니다.', style: TextStyle(color: theme.colorScheme.onSurface)),
+                ],
+              ),
+            );
+          }
           if (snapshot.hasError) {
             return Center(child: Text('데이터를 가져오는 중 오류가 발생했습니다.'));
           }

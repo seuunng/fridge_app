@@ -383,6 +383,22 @@ class _AddItemState extends State<AddItem> {
   }
 
   void _navigateToAddItemPage() async {
+    if (userRole != 'admin' && userRole != 'paid_user') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('프리미엄 서비스를 이용하면 나만의 식품 카테고리를 관리할 수 있어요!'),
+            ],
+          ),
+          duration: Duration(seconds: 3), // 3초간 표시
+        ),
+      );
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -395,6 +411,36 @@ class _AddItemState extends State<AddItem> {
     if (result == true) {
       _loadCategoriesFromFirestore();
     }
+  }
+
+  void _navigateAddPreferredCategory() {
+    print('_navigateAddPreferredCategory() selectedCategory $selectedCategory');
+    if (userRole != 'admin' && userRole != 'paid_user') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('프리미엄 서비스를 이용하면 나만의 선호식품 카테고리를 관리할 수 있어요!'),
+              ],
+            ),
+            duration: Duration(seconds: 3), // 3초간 표시
+          ),
+        );
+        return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddPreferredCategory(
+          categoryName: selectedCategory ?? '',
+          sourcePage: 'add_category',
+        ),
+      ),
+    ).then((_) {
+      _loadPreferredFoodsCategoriesFromFirestore();
+    });
   }
 
   void _searchItems(String keyword) {
@@ -462,51 +508,7 @@ class _AddItemState extends State<AddItem> {
     }
   }
 
-  void _handleAddPreferredCategory() {
-    if (userRole != 'admin' && userRole != 'paid_user') {
-      // 🔹 일반 사용자는 냉장고 추가 불가능
-      if (widget.sourcePage == 'preferred_foods_category') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('프리미엄 서비스를 이용하면 나만의 선호식품 카테고리를 관리할 수 있어요!'),
-              ],
-            ),
-            duration: Duration(seconds: 3), // 3초간 표시
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('프리미엄 서비스를 이용하면 나만의 식품 카테고리를 관리할 수 있어요!'),
-              ],
-            ),
-            duration: Duration(seconds: 3), // 3초간 표시
-          ),
-        );
-      }
-      return; // 🚫 페이지 이동 차단
-    }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddPreferredCategory(
-          categoryName: selectedCategory ?? '기타',
-          sourcePage: 'add_category',
-        ),
-      ),
-    ).then((_) {
-      _loadPreferredFoodsCategoriesFromFirestore();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -781,7 +783,7 @@ class _AddItemState extends State<AddItem> {
           if (index == itemsByPreferredCategory.keys.length) {
             // +아이콘 추가
             return GestureDetector(
-              onTap: _handleAddPreferredCategory,
+              onTap: _navigateAddPreferredCategory,
               child: Container(
                 decoration: BoxDecoration(
                   color: theme.chipTheme.backgroundColor,
@@ -870,7 +872,7 @@ class _AddItemState extends State<AddItem> {
         itemBuilder: (context, index) {
           if (index == itemCount) {
             return GestureDetector(
-              onTap: _handleAddPreferredCategory,
+              onTap: isPreferredCategory? _navigateAddPreferredCategory: _navigateToAddItemPage,
               child: Container(
                 decoration: BoxDecoration(
                   color: selectedItems == items

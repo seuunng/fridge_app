@@ -73,11 +73,11 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
 
   int _getInitialPage(String recordListType) {
     switch (recordListType) {
-      case '앨범형':
-        return 0;
       case '달력형':
+        return 0;
+      case '목록형':
         return 1;
-      case '리스트형':
+      case '앨범형':
         return 2;
       default:
         return 0;
@@ -120,14 +120,14 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
 
   List<Widget> _getPageOrder() {
     switch (selectedRecordListType) {
-      case '앨범형':
-        return [RecordsAlbumView(), RecordsCalendarView(), RecordsListView()];
       case '달력형':
-        return [RecordsCalendarView(), RecordsAlbumView(), RecordsListView()];
+        return [RecordsCalendarView(), RecordsListView(), RecordsAlbumView()];
       case '목록형':
         return [RecordsListView(), RecordsAlbumView(), RecordsCalendarView()];
-      default:
+      case '앨범형':
         return [RecordsAlbumView(), RecordsCalendarView(), RecordsListView()];
+      default:
+        return [RecordsCalendarView(), RecordsListView(), RecordsAlbumView()];
     }
   }
 

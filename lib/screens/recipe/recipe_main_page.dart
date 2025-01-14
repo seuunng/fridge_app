@@ -317,6 +317,21 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                           .colorScheme
                           .onSurface), // 스크랩 아이콘 크기 조정
                   onPressed: () {
+                    if (userRole != 'admin' && userRole != 'paid_user') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('로그인 하고 레시피를 스크랩해서 관리하세요!'),
+                            ],
+                          ),
+                          duration: Duration(seconds: 3), // 3초간 표시
+                        ),
+                      );
+                      return;
+                    }
                     Navigator.push(
                       context,
                       MaterialPageRoute(
