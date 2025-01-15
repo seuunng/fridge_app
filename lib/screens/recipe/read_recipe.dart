@@ -514,14 +514,13 @@ class _ReadRecipeState extends State<ReadRecipe> {
       appBar: AppBar(
         title: Row(
           children: [
-            Container(
+            Expanded(
               child: Text(
                 recipeName,
                 maxLines: 1, // 최대 1줄만 보여줌
                 overflow: TextOverflow.ellipsis, // 넘칠 경우 말줄임표로 표시
               ),
             ),
-            Spacer(),
             IconButton(
               visualDensity: const VisualDensity(horizontal: -4),
               icon: Icon(

@@ -306,26 +306,29 @@ class _AdminDashboardUsageMetricsState
                 // 범례를 표시하는 Row
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      LegendItem(
-                          color: Colors.green,
-                          text: '레시피',
-                          value: totals['recipe'] ?? 0),
-                      LegendItem(
-                          color: Colors.cyan,
-                          text: '스크랩',
-                          value: totals['scraped'] ?? 0),
-                      LegendItem(
-                          color: Colors.yellow,
-                          text: '리뷰',
-                          value: totals['review'] ?? 0),
-                      LegendItem(
-                          color: Colors.pink,
-                          text: '기록',
-                          value: totals['record'] ?? 0),
-                    ],
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        LegendItem(
+                            color: Colors.green,
+                            text: '레시피',
+                            value: totals['recipe'] ?? 0),
+                        LegendItem(
+                            color: Colors.cyan,
+                            text: '스크랩',
+                            value: totals['scraped'] ?? 0),
+                        LegendItem(
+                            color: Colors.yellow,
+                            text: '리뷰',
+                            value: totals['review'] ?? 0),
+                        LegendItem(
+                            color: Colors.pink,
+                            text: '기록',
+                            value: totals['record'] ?? 0),
+                      ],
+                    ),
                   ),
                 ),
                 SingleChildScrollView(

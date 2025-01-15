@@ -372,69 +372,73 @@ class _RecipeMainPageState extends State<RecipeMainPage>
         ],
       ),
       bottomNavigationBar:
-      Column(
-        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
-        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
-        children: [
-          Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-        child:
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: NavbarButton(
-                    buttonTitle: '냉장고 재료 레시피 추천',
-                    onPressed: () async {
-                      List<String> topIngredients =
-                          _getTopIngredientsByCategoryPriority(
-                              itemsByCategory, fridgeIngredients);
+      Container(
+        color: Colors.transparent,
+        padding: EdgeInsets.only(bottom: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+          mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+          children: [
+            Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+          child:
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: NavbarButton(
+                      buttonTitle: '냉장고 재료 레시피 추천',
+                      onPressed: () async {
+                        List<String> topIngredients =
+                            _getTopIngredientsByCategoryPriority(
+                                itemsByCategory, fridgeIngredients);
 
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ViewResearchList(
+                              // category: topIngredients,
+                              useFridgeIngredients: true,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 20),
+                  // 물건 추가 버튼
+                  FloatingAddButton(
+                    heroTag: 'recipe_add_button',
+                    onPressed: () {
+                      final user = FirebaseAuth.instance.currentUser;
+
+                      if (user == null || user.email == 'guest@foodforlater.com') {
+                        // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('로그인 후 레시피를 작성할 수 있습니다.')),
+                        );
+                        return; // 🚫 여기서 함수 종료 (페이지 이동 X)
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ViewResearchList(
-                            // category: topIngredients,
-                            useFridgeIngredients: true,
-                          ),
+                          builder: (context) => AddRecipe(),
+                          fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
                         ),
                       );
                     },
                   ),
-                ),
-                SizedBox(width: 20),
-                // 물건 추가 버튼
-                FloatingAddButton(
-                  heroTag: 'recipe_add_button',
-                  onPressed: () {
-                    final user = FirebaseAuth.instance.currentUser;
-
-                    if (user == null || user.email == 'guest@foodforlater.com') {
-                      // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('로그인 후 레시피를 작성할 수 있습니다.')),
-                      );
-                      return; // 🚫 여기서 함수 종료 (페이지 이동 X)
-                    }
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AddRecipe(),
-                        fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-            if (userRole != 'admin' && userRole != 'paid_user')
-              SafeArea(
-                bottom: false, // 하단 여백 제거
-                child: BannerAdWidget(),
+                ],
               ),
-          ],
+            ),
+              if (userRole != 'admin' && userRole != 'paid_user')
+                SafeArea(
+                  bottom: false, // 하단 여백 제거
+                  child: BannerAdWidget(),
+                ),
+            ],
 
+        ),
       ),
     );
   }
