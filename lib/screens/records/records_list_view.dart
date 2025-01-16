@@ -290,7 +290,10 @@ class _RecordsListViewState extends State<RecordsListView> {
                                       color: theme.colorScheme.onSurface),
                                 ),
                                 SizedBox(width: 4),
-                                Text('|'),
+                                Text('|',
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface
+                                  ),),
                                 SizedBox(width: 4),
                                 Text(
                                   record?.date != null

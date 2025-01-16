@@ -105,6 +105,8 @@ class _InputkeywordTrendTableState extends State<InputkeywordTrendTable> {
                                 ? Icons.arrow_downward
                                 : Icons.sort,
                         size: 16,
+                          color: theme.colorScheme.onSurface
+
                       ),
                     ],
                   ),

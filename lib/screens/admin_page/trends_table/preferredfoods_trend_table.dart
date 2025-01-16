@@ -128,6 +128,8 @@ class _PreferredfoodsTrendTableState extends State<PreferredfoodsTrendTable> {
                             ? Icons.arrow_downward
                             : Icons.sort,
                         size: 16,
+                          color: theme.colorScheme.onSurface
+
                       ),
                     ],
                   ),

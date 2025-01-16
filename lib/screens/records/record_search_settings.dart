@@ -280,6 +280,14 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                               color: theme.chipTheme.labelStyle?.color,
                             ),
                     ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      side: BorderSide(
+                        color: theme.chipTheme.labelStyle?.color ??
+                            Colors.white, // 테두리 색상 빨간색으로 변경
+                        width: 1, // 테두리 두께 조절
+                      ),
+                    ),
                     selected: isSelected,
                     onSelected: (selected) {
                       _onCategoryChanged(category, selected);
@@ -413,7 +421,8 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                 ),
                 Expanded(
                   child: IconButton(
-                    icon: Icon(Icons.calendar_today),
+                    icon: Icon(Icons.calendar_today,
+                        color: theme.colorScheme.onSurface),
                     onPressed: () => _selectDate(context, true),
                   ),
                 ),
@@ -429,7 +438,8 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                 ),
                 Expanded(
                   child: IconButton(
-                    icon: Icon(Icons.calendar_today),
+                    icon: Icon(Icons.calendar_today,
+                        color: theme.colorScheme.onSurface),
                     onPressed: () => _selectDate(context, false),
                   ),
                 ),

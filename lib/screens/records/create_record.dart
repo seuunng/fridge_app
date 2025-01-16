@@ -609,7 +609,7 @@ class _CreateRecordState extends State<CreateRecord> {
                     }
                   });
                 },
-                child: Icon(Icons.close, size: 18),
+                child: Icon(Icons.close, size: 18,color: theme.colorScheme.onSurface),
               ),
             );
           },
@@ -638,7 +638,7 @@ class _CreateRecordState extends State<CreateRecord> {
         Row(
           children: [
             IconButton(
-              icon: Icon(Icons.camera_alt_outlined),
+              icon: Icon(Icons.camera_alt_outlined,color: theme.colorScheme.onSurface),
               onPressed: _pickImages, // _pickImages 메서드 호출
             ),
             if (_imageFiles != null && _imageFiles!.isNotEmpty) ...[
@@ -658,7 +658,7 @@ class _CreateRecordState extends State<CreateRecord> {
                                   height: 50,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Icon(Icons.error); // 로드 실패 시 아이콘 표시
+                                    return Icon(Icons.error,color: theme.colorScheme.onSurface); // 로드 실패 시 아이콘 표시
                                   },
                                 )
                               : Image.file(
@@ -682,7 +682,7 @@ class _CreateRecordState extends State<CreateRecord> {
                               child: Icon(
                                 Icons.close,
                                 size: 18,
-                                color: Colors.white,
+                                  color: theme.colorScheme.onSurface
                               ),
                             ),
                           ),
@@ -695,7 +695,7 @@ class _CreateRecordState extends State<CreateRecord> {
             ],
             Spacer(),
             IconButton(
-              icon: Icon(Icons.add),
+              icon: Icon(Icons.add,color: theme.colorScheme.onSurface),
               onPressed: () {
                 if (recordsWithImages.length >= 10) {
                   // 최대 10개의 기록만 추가 가능하도록 제한

@@ -168,7 +168,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                         label: Text(
                           unit,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.chipTheme.selectedColor,
+                            color: theme.chipTheme.labelStyle?.color,
                             fontSize: 12, // 강조를 위해 굵게 설정
                           ),
                         ),
@@ -183,6 +183,15 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                           child: Icon(
                             Icons.close,
                             size: 16.0, // 삭제 아이콘 크기
+                              color: theme.colorScheme.onSurface
+                          ),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                          side: BorderSide(
+                            color: theme.chipTheme.labelStyle?.color ??
+                                Colors.white, // 테두리 색상 빨간색으로 변경
+                            width: 1, // 테두리 두께 조절
                           ),
                         ),
                         onDeleted: () {

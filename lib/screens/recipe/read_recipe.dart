@@ -591,12 +591,14 @@ class _ReadRecipeState extends State<ReadRecipe> {
                         visualDensity: const VisualDensity(horizontal: -4),
                         icon: Icon(
                             isLiked ? Icons.favorite : Icons.favorite_border,
-                            size: 18), // 스크랩 아이콘 크기 조정
+                            size: 18,
+                            color: theme.colorScheme.onSurface), // 스크랩 아이콘 크기 조정
                         onPressed: _toggleLike,
                       ),
                       IconButton(
                         visualDensity: const VisualDensity(horizontal: -4),
-                        icon: Icon(Icons.share, size: 18), // 스크랩 아이콘 크기 조정
+                        icon: Icon(Icons.share, size: 18,
+                            color: theme.colorScheme.onSurface), // 스크랩 아이콘 크기 조정
                         onPressed: () {
                           showShareOptions(context, fromEmail, toEmail, nickname, recipeName, recipeUrl);
                         },
@@ -606,13 +608,15 @@ class _ReadRecipeState extends State<ReadRecipe> {
                         icon: Icon(
                           isScraped ? Icons.bookmark : Icons.bookmark_border,
                           size: 18,
+                            color: theme.colorScheme.onSurface
                         ), // 스크랩 아이콘 크기 조정
                         onPressed: () => _toggleScraped(widget.recipeId),
                       ),
                       IconButton(
                         visualDensity: const VisualDensity(horizontal: -4),
                         icon: Icon(Icons.feedback_outlined,
-                            size: 18), // 스크랩 아이콘 크기 조정
+                            size: 18,
+                            color: theme.colorScheme.onSurface), // 스크랩 아이콘 크기 조정
                         onPressed: () {
                           Navigator.push(
                               context,
@@ -744,7 +748,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
     if (mainImages.isEmpty) {
       return Container(
         height: 400,
-        color: Colors.grey,
+        // color: Colors.grey,
         child: Icon(Icons.image, color: Colors.white, size: 100),
       );
     }
@@ -822,28 +826,32 @@ class _ReadRecipeState extends State<ReadRecipe> {
         children: [
           Column(
             children: [
-              Icon(Icons.people, size: 25),
+              Icon(Icons.people, size: 25,
+                  color: theme.colorScheme.onSurface),
               Text('$servings 인분',
                   style: TextStyle(color: theme.colorScheme.onSurface)),
             ],
           ),
           Column(
             children: [
-              Icon(Icons.timer, size: 25),
+              Icon(Icons.timer, size: 25,
+                  color: theme.colorScheme.onSurface),
               Text('$cookTime 분',
                   style: TextStyle(color: theme.colorScheme.onSurface)),
             ],
           ),
           Column(
             children: [
-              Icon(Icons.emoji_events, size: 25),
+              Icon(Icons.emoji_events, size: 25,
+                  color: theme.colorScheme.onSurface),
               Text(difficulty,
                   style: TextStyle(color: theme.colorScheme.onSurface)),
             ],
           ),
           Column(
             children: [
-              Icon(Icons.remove_red_eye_sharp, size: 25),
+              Icon(Icons.remove_red_eye_sharp, size: 25,
+                  color: theme.colorScheme.onSurface),
               Text('$viewCount명 읽음',
                   style:
                       TextStyle(color: theme.colorScheme.onSurface)), // 조회수 표시
@@ -908,8 +916,10 @@ class _ReadRecipeState extends State<ReadRecipe> {
   }
 
   Widget _buildAddToShoppingListButton() {
+    final theme = Theme.of(context);
     return IconButton(
-      icon: Icon(Icons.add_shopping_cart),
+      icon: Icon(Icons.add_shopping_cart,
+          color: theme.colorScheme.onSurface),
       onPressed: _addToShoppingListDialog, // 팝업 다이얼로그 호출
     );
   }

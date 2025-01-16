@@ -245,15 +245,20 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     }
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        String newCategory = '';
+      builder: (BuildContext context) {final theme = Theme.of(context);
+
+      String newCategory = '';
         return AlertDialog(
-          title: Text('스크랩 그룹 추가'),
+          title: Text('스크랩 그룹 추가',
+              style: TextStyle(
+              color: theme.colorScheme.onSurface
+          ),),
           content: TextField(
             onChanged: (value) {
               newCategory = value;
             },
-            decoration: InputDecoration(hintText: '새로운 그룹 입력'),
+            decoration: InputDecoration(hintText: '새로운 그룹 입력'),style:
+          TextStyle(color: theme.chipTheme.labelStyle!.color),
           ),
           actions: [
             TextButton(
@@ -283,13 +288,20 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   // 선택된 냉장고 삭제 함수
   void _deleteCategory(
       String category, List<String> categories, String categoryType) {
+    final theme = Theme.of(context);
     final fridgeRef = FirebaseFirestore.instance.collection('scraped_group');
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('그룹 삭제'),
-          content: Text('스크랩 그룹을 삭제하시겠습니까?'),
+          title: Text('그룹 삭제',
+            style: TextStyle(
+                color: theme.colorScheme.onSurface
+            ),),
+          content: Text('스크랩 그룹을 삭제하시겠습니까?',
+            style: TextStyle(
+                color: theme.colorScheme.onSurface
+            ),),
           actions: [
             TextButton(
               child: Text('취소'),
@@ -355,6 +367,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
         appBar: AppBar(
           title: Text('스크랩 레시피 목록'),
@@ -370,6 +383,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                     style: TextStyle(
                       fontSize: 18, // 원하는 폰트 크기로 지정 (예: 18)
                       fontWeight: FontWeight.bold, // 폰트 굵기 조정 (선택사항)
+                        color: theme.colorScheme.onSurface
                     ),
                   ),
                   // Spacer(),

@@ -128,6 +128,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
 
   // 새로운 카테고리 추가 함수
   void _addNewCategory(List<String> categories, String categoryType) {
+    final theme = Theme.of(context);
     if (userRole != 'admin' && userRole != 'paid_user') {
       // 🔹 일반 사용자는 냉장고 추가 불가능
       ScaffoldMessenger.of(context).showSnackBar(
@@ -152,9 +153,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
         return AlertDialog(
           title: Text('$categoryType 추가',
             style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
+                color: theme.colorScheme.onSurface
             ),
           ),
           content: TextField(
@@ -162,6 +161,8 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
               newCategory = value;
             },
             decoration: InputDecoration(hintText: '새로운 냉장고 이름 입력'),
+            style:
+            TextStyle(color: theme.chipTheme.labelStyle!.color),
           ),
           actions: [
             TextButton(

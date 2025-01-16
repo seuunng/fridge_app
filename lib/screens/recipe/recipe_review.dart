@@ -354,7 +354,8 @@ class _RecipeReviewState extends State<RecipeReview> {
                                         isNiced
                                             ? Icons.thumb_up
                                             : Icons.thumb_up_alt_outlined,
-                                        size: 12),
+                                        size: 12,
+                                        color: theme.colorScheme.onSurface),
                                   ),
                                   SizedBox(width: 10),
                                   GestureDetector(
@@ -370,7 +371,8 @@ class _RecipeReviewState extends State<RecipeReview> {
                                                   )));
                                     },
                                     child:
-                                        Icon(Icons.feedback_outlined, size: 12),
+                                        Icon(Icons.feedback_outlined, size: 12,
+                                            color: theme.colorScheme.onSurface),
                                   ),
                                   SizedBox(width: 10),
                                 ]),

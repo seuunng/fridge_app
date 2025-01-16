@@ -271,7 +271,9 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
                 Spacer(),
                 DropdownButton<FridgeCategory>(
                   value: selectedFridgeCategory,
-                  hint: Text('카테고리 선택'),
+                  hint: Text('카테고리 선택',
+                      style: TextStyle(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6))),
                   items: fridgeCategories.map((FridgeCategory value) {
                     return DropdownMenuItem<FridgeCategory>(
                       value: value,

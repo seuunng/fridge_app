@@ -107,6 +107,8 @@ class _SearchkeywordTrendTableState extends State<SearchkeywordTrendTable> {
                                 ? Icons.arrow_downward
                                 : Icons.sort,
                         size: 16,
+                          color: theme.colorScheme.onSurface
+
                       ),
                     ],
                   ),

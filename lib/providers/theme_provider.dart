@@ -254,7 +254,7 @@ class ThemeProvider extends ChangeNotifier {
   );
 
   final ThemeData greenTheme = ThemeData(
-    brightness: Brightness.light,
+    brightness: Brightness.dark,
     primaryColor: Color(0xFF19411C),
     scaffoldBackgroundColor: Color(0xFF28432B),
     appBarTheme: AppBarTheme(
@@ -354,8 +354,8 @@ class ThemeProvider extends ChangeNotifier {
       titleLarge: TextStyle(color: Colors.white),
     ),
     colorScheme: ColorScheme.light().copyWith(
-        primary: Color(0xFF836441), // 하단바 아이콘, 탭버튼 제목
-        onPrimary: Color(0xFF2C1803), // 주요 배경위 텍스트나 아이콘색
+        primary: Color(0xFF2C1803), // 하단바 아이콘, 탭버튼 제목
+        onPrimary: Colors.white, // 주요 배경위 텍스트나 아이콘색
         primaryContainer: Colors.white, //primary와 유사한 색상이지만, 더 연한 버전
         onPrimaryContainer: Color(0xFFE5D8C9),
         secondary: Color(0xFFE5D8C9), // 캘린더 오늘,

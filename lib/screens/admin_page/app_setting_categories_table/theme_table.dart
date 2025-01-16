@@ -258,6 +258,7 @@ class _ThemeTableState extends State<ThemeTable> {
                                                   ? Icons.arrow_downward
                                                   : Icons.sort,
                                           size: 12,
+                                            color: theme.colorScheme.onSurface
                                         ),
                                       ],
                                     ),

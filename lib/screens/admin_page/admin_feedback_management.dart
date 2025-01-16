@@ -222,6 +222,7 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                       ? Icons.arrow_downward
                       : Icons.sort,
               size: 16,
+                color: theme.colorScheme.onSurface
             ),
           ],
         ),

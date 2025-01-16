@@ -307,6 +307,7 @@ class _HowtocookTableState extends State<HowtocookTable> {
                                                   ? Icons.arrow_downward
                                                   : Icons.sort,
                                           size: 12,
+                                            color: theme.colorScheme.onSurface
                                         ),
                                       ],
                                     ),

@@ -445,14 +445,16 @@ class _AddRecipeState extends State<AddRecipe> {
             _buildMainImagePicker(),
             Row(
               children: [
-                Icon(Icons.timer, size: 25), // 아이콘
+                Icon(Icons.timer, size: 25,
+                    color: theme.colorScheme.onSurface), // 아이콘
                 SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
                 Container(
                   // flex: 1,
                   child: _buildTimeInputSection(),
                 ),
                 SizedBox(width: 5),
-                Icon(Icons.people, size: 25),
+                Icon(Icons.people, size: 25,
+                    color: theme.colorScheme.onSurface),
                 SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
                 Expanded(
                   flex: 1,
@@ -460,7 +462,8 @@ class _AddRecipeState extends State<AddRecipe> {
                       _buildTextField('인원', servingsController, isNumber: true),
                 ),
                 SizedBox(width: 5),
-                Icon(Icons.emoji_events, size: 25),
+                Icon(Icons.emoji_events, size: 25,
+                    color: theme.colorScheme.onSurface),
                 SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
                 Expanded(
                   flex: 2,
@@ -551,7 +554,8 @@ class _AddRecipeState extends State<AddRecipe> {
           children: [
             if (mainImages.length < 4) // 이미지가 4장 미만일 때만 선택 가능
               IconButton(
-                icon: Icon(Icons.camera_alt_outlined),
+                icon: Icon(Icons.camera_alt_outlined,
+                    color: theme.colorScheme.onSurface),
                 onPressed: _pickMainImages, // 이미지 선택 메서드 호출
               ),
             ...mainImages.map((imageUrl) {
@@ -653,12 +657,12 @@ class _AddRecipeState extends State<AddRecipe> {
                     margin: EdgeInsets.symmetric(horizontal: 2.0), // 칩들 간의 간격
                     child: Chip(
                       label: Text(
-                        item,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isSelected
-                              ? theme.chipTheme.labelStyle!.color
-                              : theme.chipTheme
-                                  .selectedColor, // 선택된 항목은 글씨 색을 흰색으로
+                        item, // 선택된 항목은 글씨 색을 흰색으로
+                style: theme.textTheme.bodyMedium?.copyWith(
+                color: isSelected
+                ? theme.chipTheme.secondaryLabelStyle!.color
+                    : theme.chipTheme.labelStyle!
+                    .color,
                         ),
                       ),
                       backgroundColor: isSelected
@@ -690,7 +694,8 @@ class _AddRecipeState extends State<AddRecipe> {
                   ?.copyWith(color: theme.chipTheme.labelStyle!.color)),
           padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
           labelPadding: EdgeInsets.symmetric(horizontal: 1.0),
-          deleteIcon: Icon(Icons.close),
+          deleteIcon: Icon(Icons.close,
+              color: theme.colorScheme.onSurface),
           onDeleted: () {
             setState(() {
               selectedItems.remove(item);
@@ -868,14 +873,16 @@ class _AddRecipeState extends State<AddRecipe> {
                       stepsWithImages[index]['image']!.isNotEmpty
                   ? Image.network(stepsWithImages[index]['image']!,
                       width: 50, height: 50, fit: BoxFit.cover)
-                  : Icon(Icons.image, size: 50),
+                  : Icon(Icons.image, size: 50,
+                  color: theme.colorScheme.onSurface),
               trailing: GestureDetector(
                 onTap: () {
                   setState(() {
                     stepsWithImages.removeAt(index);
                   });
                 },
-                child: Icon(Icons.close, size: 18),
+                child: Icon(Icons.close, size: 18,
+                    color: theme.colorScheme.onSurface),
               ),
             );
           },
@@ -897,7 +904,8 @@ class _AddRecipeState extends State<AddRecipe> {
                               height: 50,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.error);
+                                return Icon(Icons.error,
+                                    color: theme.colorScheme.onSurface);
                               },
                             )
                           : Image.file(
@@ -921,6 +929,7 @@ class _AddRecipeState extends State<AddRecipe> {
                           child: Icon(
                             Icons.close,
                             size: 18,
+                              color: theme.colorScheme.onSurface
                             // color: theme.chipTheme.labelStyle!.color,
                           ),
                         ),
@@ -931,14 +940,16 @@ class _AddRecipeState extends State<AddRecipe> {
               }).toList(),
             if (_imageFiles == null || _imageFiles!.isEmpty)
               IconButton(
-                icon: Icon(Icons.camera_alt_outlined),
+                icon: Icon(Icons.camera_alt_outlined,
+                    color: theme.colorScheme.onSurface),
                 onPressed: _pickImages,
               ),
             Expanded(
               child: _buildTextField('조리 과정 입력', stepDescriptionController),
             ),
             IconButton(
-              icon: Icon(Icons.add),
+              icon: Icon(Icons.add,
+                  color: theme.colorScheme.onSurface),
               onPressed: () async {
                 if (stepDescriptionController.text.isNotEmpty &&
                     _imageFiles != null &&

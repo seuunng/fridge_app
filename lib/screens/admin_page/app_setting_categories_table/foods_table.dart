@@ -352,6 +352,7 @@ class _FoodsTableState extends State<FoodsTable> {
                                                   ? Icons.arrow_downward
                                                   : Icons.sort,
                                           size: 12,
+                                            color: theme.colorScheme.onSurface
                                         ),
                                       ],
                                     ),
