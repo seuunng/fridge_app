@@ -124,6 +124,8 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
+              style:
+              TextStyle(color: theme.chipTheme.labelStyle!.color),
               onChanged: (query) {
                 setState(() {
                   searchQuery = query;
@@ -132,67 +134,70 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
             ),
           ),
           SingleChildScrollView(
-            scrollDirection: Axis.vertical, // 세로 스크롤 추가
-            child: DataTable(
-              columns: [
-                _buildSortableColumn('날짜', 'timestamp', _dateSortState),
-                _buildSortableColumn(
-                    '구분', 'feedbackType', _feedbackTypeSortState),
-                _buildSortableColumn('항목', 'category', _categorySortState),
-                _buildSortableColumn('작성자', 'author', _authorSortState),
-                _buildSortableColumn(
-                    '확인사항', 'confirmationNote', _confirmationSortState),
-                _buildSortableColumn('처리결과', 'status', _statusSortState),
-              ],
-              rows: filteredData.map((row) {
-                return DataRow(cells: [
-                  DataCell(Text(_formatDate(row['timestamp']),
-                      style: TextStyle(color: theme.colorScheme.onSurface))),
-                  DataCell(Text(row['feedbackType'],
-                      style: TextStyle(color: theme.colorScheme.onSurface))),
-                  DataCell(Text(row['category'],
-                      style: TextStyle(color: theme.colorScheme.onSurface)),
-                  ),
-                  DataCell(Text(row['author'],
-                      style: TextStyle(color: theme.colorScheme.onSurface))),
-                  DataCell(
-                    GestureDetector(
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FeedbackDetailPage(
-                              feedbackId: row['id'] ?? '', // 기본값 처리
-                              content: row['content'] ?? '내용 없음', // 기본값 추가
-                              author: row['author'] ?? '작성자 없음',
-                              authorEmail: row['authorEmail'] ?? '이메일 없음', // 기본값 추가
-                              createdDate: row['timestamp'] ?? DateTime.now(),
-                              statusOptions: ['미처리', '처리 중', '완료'],
-                              confirmationNote: row['confirmationNote'] ?? '확인되지 않음',
-                              selectedStatus: row['status'] ?? '미처리',
-                              postNo: row['postNo'] ?? '', // 기본값 추가
-                              postType: row['postType'] ?? '기타',
-                              feedbackType: row['feedbackType'] ?? '기타',
-                              category: row['category'] ?? '기타',
+            scrollDirection: Axis.horizontal, // 가로 스크롤 추가
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: DataTable(
+                columns: [
+                  _buildSortableColumn('날짜', 'timestamp', _dateSortState),
+                  _buildSortableColumn(
+                      '구분', 'feedbackType', _feedbackTypeSortState),
+                  _buildSortableColumn('항목', 'category', _categorySortState),
+                  _buildSortableColumn('작성자', 'author', _authorSortState),
+                  _buildSortableColumn(
+                      '확인사항', 'confirmationNote', _confirmationSortState),
+                  _buildSortableColumn('처리결과', 'status', _statusSortState),
+                ],
+                rows: filteredData.map((row) {
+                  return DataRow(cells: [
+                    DataCell(Text(_formatDate(row['timestamp']),
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                    DataCell(Text(row['feedbackType'],
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                    DataCell(Text(row['category'],
+                        style: TextStyle(color: theme.colorScheme.onSurface)),
+                    ),
+                    DataCell(Text(row['author'],
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                    DataCell(
+                      GestureDetector(
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FeedbackDetailPage(
+                                feedbackId: row['id'] ?? '', // 기본값 처리
+                                content: row['content'] ?? '내용 없음', // 기본값 추가
+                                author: row['author'] ?? '작성자 없음',
+                                authorEmail: row['authorEmail'] ?? '이메일 없음', // 기본값 추가
+                                createdDate: row['timestamp'] ?? DateTime.now(),
+                                statusOptions: ['미처리', '처리 중', '완료'],
+                                confirmationNote: row['confirmationNote'] ?? '확인되지 않음',
+                                selectedStatus: row['status'] ?? '미처리',
+                                postNo: row['postNo'] ?? '', // 기본값 추가
+                                postType: row['postType'] ?? '기타',
+                                feedbackType: row['feedbackType'] ?? '기타',
+                                category: row['category'] ?? '기타',
+                              ),
                             ),
+                          );
+                          if (result == true) {
+                            _loadFeedbackDataFromFirestore();
+                          }
+                        },
+                        child: Text(
+                          row['confirmationNote'],
+                          style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
                           ),
-                        );
-                        if (result == true) {
-                          _loadFeedbackDataFromFirestore();
-                        }
-                      },
-                      child: Text(
-                        row['confirmationNote'],
-                        style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
                         ),
-                      ),
-                    ),),
-                  DataCell(Text(row['status'],
-                      style: TextStyle(color: theme.colorScheme.onSurface))),
-                ]);
-              }).toList(),
+                      ),),
+                    DataCell(Text(row['status'],
+                        style: TextStyle(color: theme.colorScheme.onSurface))),
+                  ]);
+                }).toList(),
+              ),
             ),
           ),
         ],

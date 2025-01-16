@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/recipe_review.dart';
 import 'package:image_picker/image_picker.dart';
@@ -54,6 +55,8 @@ class _AddRecipeState extends State<AddRecipe> {
 
   List<String>? _imageFiles = [];
   List<String> mainImages = [];
+  String userRole = '';
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
@@ -102,8 +105,25 @@ class _AddRecipeState extends State<AddRecipe> {
       mainImages = [];
     }
     _loadDataFromFirestore();
+    _loadUserRole();
   }
+  void _loadUserRole() async {
 
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
   Future<List<String>> _fetchIngredients() async {
     Set<String> userIngredients = {}; // 사용자가 추가한 재료
     List<String> allIngredients = [];
@@ -504,8 +524,20 @@ class _AddRecipeState extends State<AddRecipe> {
             SizedBox(height: 10),
             _buildStepsWithImagesSection(),
           ],
+
         ),
       ),
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+          mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+          children: [
+            if (userRole != 'admin' && userRole != 'paid_user')
+              SafeArea(
+                bottom: false, // 하단 여백 제거
+                child: BannerAdWidget(),
+              ),
+          ],
+        )
     );
   }
 

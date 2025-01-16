@@ -569,6 +569,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('레시피 검색'),
@@ -593,6 +594,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 8.0, horizontal: 10.0),
                           ),
+                          style:
+                          TextStyle(color: theme.chipTheme.labelStyle!.color),
                           onSubmitted: (value) {
                             final trimmedValue = value.trim();
                             if (trimmedValue.isNotEmpty) {

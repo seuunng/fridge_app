@@ -653,18 +653,26 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   }
 
   Future<String?> _showGroupChangeDialog() async {
+    final theme = Theme.of(context);
     String? newGroupName;
     return showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('그룹 변경'),
+          title: Text('그룹 변경',
+            style: TextStyle(
+                color: theme.colorScheme.onSurface
+            ),
+          ),
           content: DropdownButtonFormField<String>(
             value: _scraped_groups.isNotEmpty ? _scraped_groups[0] : null,
             items: _scraped_groups
                 .map((group) => DropdownMenuItem(
                       value: group,
-                      child: Text(group),
+                      child: Text(group,
+                        style: TextStyle(
+                            color: theme.colorScheme.onSurface
+                        ),),
                     ))
                 .toList(),
             onChanged: (value) {

@@ -161,95 +161,98 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
       appBar: AppBar(
         title: Text('레시피 검색 상세설정'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '조리 방법 선택',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface),
-            ),
-            for (var entry in cookingMethods.entries) // Map의 각 entry를 순회하며 빌드
-              _buildMethodCategory(entry.key, entry.value),
-            SizedBox(height: 16),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '조리 방법 선택',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ),
+              for (var entry in cookingMethods.entries) // Map의 각 entry를 순회하며 빌드
+                _buildMethodCategory(entry.key, entry.value),
+              SizedBox(height: 16),
 
-            // 제외 검색어 선택
-            Text(
-              '검색에서 제외하고 싶은 식재료를 선택',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface),
-            ),
-            TextField(
-              controller: excludeKeywordController,
-              decoration: InputDecoration(hintText: '제외할 재료를 입력하세요'),
-              onSubmitted: (value) {
-                _addExcludeKeyword();
-              },
-            ),
-            SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              children: excludeKeywords?.map((keyword) {
-                    return GestureDetector(
-                      onDoubleTap: () {
-                        setState(() {
-                          excludeKeywords?.remove(keyword);
-                        });
-                      },
-                      child: Chip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.remove_circle, // '-' 아이콘
-                              color: theme.chipTheme.labelStyle?.color ??
-                                  Colors.red, // 아이콘 색상
-                              size: 16, // 아이콘 크기
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              keyword,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.chipTheme.selectedColor,
-                                fontWeight: FontWeight.bold, // 강조를 위해 굵게 설정
+              // 제외 검색어 선택
+              Text(
+                '검색에서 제외하고 싶은 식재료를 선택',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ),
+              TextField(
+                controller: excludeKeywordController,
+                decoration: InputDecoration(hintText: '제외할 재료를 입력하세요'),
+                style: TextStyle(color: theme.chipTheme.labelStyle!.color),
+                onSubmitted: (value) {
+                  _addExcludeKeyword();
+                },
+              ),
+              SizedBox(height: 8),
+              Wrap(
+                spacing: 8.0,
+                children: excludeKeywords?.map((keyword) {
+                      return GestureDetector(
+                        onDoubleTap: () {
+                          setState(() {
+                            excludeKeywords?.remove(keyword);
+                          });
+                        },
+                        child: Chip(
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.remove_circle, // '-' 아이콘
+                                color: theme.chipTheme.labelStyle?.color ??
+                                    Colors.red, // 아이콘 색상
+                                size: 16, // 아이콘 크기
                               ),
+                              SizedBox(width: 6),
+                              Text(
+                                keyword,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.chipTheme.selectedColor,
+                                  fontWeight: FontWeight.bold, // 강조를 위해 굵게 설정
+                                ),
+                              ),
+                            ],
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            side: BorderSide(
+                              color: theme.chipTheme.labelStyle?.color ??
+                                  Colors.red, // 테두리 색상 빨간색으로 변경
+                              width: 1, // 테두리 두께 조절
                             ),
-                          ],
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                          side: BorderSide(
-                            color: theme.chipTheme.labelStyle?.color ??
-                                Colors.red, // 테두리 색상 빨간색으로 변경
-                            width: 1, // 테두리 두께 조절
                           ),
                         ),
-                      ),
-                    );
-                  }).toList() ??
-                  [],
-            ),
-            SizedBox(height: 16),
-            // 레시피 출처 선택
-            Text(
-              '선호 식품 및 조리방법 선택',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface),
-            ),
+                      );
+                    }).toList() ??
+                    [],
+              ),
+              SizedBox(height: 16),
+              // 레시피 출처 선택
+              Text(
+                '선호 식품 및 조리방법 선택',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ),
 
-            // for (var entry
-            // in itemsByPreferredCategory.entries) // Map의 각 entry를 순회하며 빌드
-            _buildPreferredCategory(),
-            SizedBox(height: 16),
-          ],
+              // for (var entry
+              // in itemsByPreferredCategory.entries) // Map의 각 entry를 순회하며 빌드
+              _buildPreferredCategory(),
+              SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: Column(

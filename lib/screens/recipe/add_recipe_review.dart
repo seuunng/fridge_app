@@ -228,6 +228,7 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface
                       )),
                 ),
                 SizedBox(height: 16),
@@ -238,6 +239,7 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface
                       )),
                 ),
                 SizedBox(height: 16),

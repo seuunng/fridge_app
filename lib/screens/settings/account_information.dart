@@ -186,7 +186,6 @@ class _AccountInformationState extends State<AccountInformation> {
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface),
             ),
-
             Row(
               children: [
                 Spacer(),
@@ -225,17 +224,18 @@ class _AccountInformationState extends State<AccountInformation> {
             ),
             Row(
               children: [
-                Spacer(),
-                Text(
-                  _email,
-                  style: TextStyle(
-                      fontSize: 16, color: theme.colorScheme.onSurface),
+                Expanded(
+                  child: Text(
+                    _email,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: theme.colorScheme.onSurface,
+
+                    ),
+                  ),
                 ),
-                Spacer(),
-                SizedBox(
-                  width: 70,
-                  height: 50,
-                )
+
               ],
             ),
             Text(

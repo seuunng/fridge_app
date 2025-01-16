@@ -406,7 +406,10 @@ class _FoodsTableState extends State<FoodsTable> {
                           items: categoryOptions.map((String category) {
                             return DropdownMenuItem<String>(
                               value: category,
-                              child: Text(category),
+                              child: Text(category,
+                                style: TextStyle(
+                                    color: theme.colorScheme.onSurface
+                                ),),
                             );
                           }).toList(),
                           decoration: InputDecoration(

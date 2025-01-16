@@ -414,7 +414,7 @@ class ThemeProvider extends ChangeNotifier {
     ),
     colorScheme: ColorScheme.light().copyWith(
         primary: Color(0xFF453837), // 탭버튼 제목
-        onPrimary: Colors.black, // 주요 배경위 텍스트나 아이콘색
+        onPrimary: Colors.white, // 주요 배경위 텍스트나 아이콘색
         primaryContainer: Colors.white, //primary와 유사한 색상이지만, 더 연한 버전
         onPrimaryContainer: Colors.white,
         secondary: Color(0x83E2A69E), // 캘린더 오늘,

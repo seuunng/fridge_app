@@ -47,6 +47,23 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
       _selectedType = '제안';
     }
     fetchPostTitle(); // 🔹 레시피명 또는 리뷰내용 가져오기
+    _loadUserRole();
+  }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
   }
   // 🔹 postNo를 이용해 Firestore에서 데이터 가져오기
   Future<void> fetchPostTitle() async {

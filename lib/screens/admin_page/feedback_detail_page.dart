@@ -239,7 +239,10 @@ print(snapshot.data());
                   ),
                   SizedBox(width: 10),
                   Text(
-                    '${widget.feedbackType} ${widget.category}'
+                    '${widget.feedbackType} ${widget.category}',
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurface
+                    ),
                   ),
                   SizedBox(width: 10),
                   Text(
@@ -250,7 +253,10 @@ print(snapshot.data());
                   ),
                   SizedBox(width: 10),
                   Text(
-                      '${widget.postType}'
+                      '${widget.postType}',
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurface
+                    ),
                   ),
                 ],
               ),
@@ -282,7 +288,9 @@ print(snapshot.data());
               ),
               SizedBox(height: 10),
               TextField(
-                controller: _confirmationController, // Controller를 사용하여 초기 값 설정
+                controller: _confirmationController,
+                style:
+                TextStyle(color: theme.chipTheme.labelStyle!.color), // Controller를 사용하여 초기 값 설정
                 onChanged: (value) {
                   setState(() {
                     confirmationNote = value; // 확인사항 업데이트
@@ -335,6 +343,7 @@ print(snapshot.data());
   }
 
   Widget _buildReportedContentWidget() {
+    final theme = Theme.of(context);
     if (widget.postType == '레시피') {
       // 레시피의 경우 해당 내용을 보여줌
       return Column(
@@ -342,21 +351,27 @@ print(snapshot.data());
         children: [
           SizedBox(height: 10),
           Text('신고 대상',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
           SizedBox(height: 10),
           Row(
             children: [
               Text('신고 레시피 작성자: ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              Text('${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})'),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+              Expanded(child: Text('${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),)),
             ],
           ),
           SizedBox(height: 10),
           Row(
             children: [
               Text('레시피 이름: ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              Text('${reportedContent?['recipeName'] ?? '알 수 없음'}'),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,color: theme.colorScheme.onSurface)),
+              Expanded(child: Text('${reportedContent?['recipeName'] ?? '알 수 없음'}',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),)),
             ],
           ),
 
@@ -370,23 +385,30 @@ print(snapshot.data());
         children: [
           SizedBox(height: 10),
           Text('신고 대상',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface)),
           SizedBox(height: 10),
           Row(
             children: [
               Text('해당 리뷰 작성자: ',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)
               ),
-              Text('${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})'),
+              Expanded(child: Text('${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),)),
             ],
           ),
           SizedBox(height: 10),
           Row(
             children: [
               Text('해당 리뷰 내용: ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,  color: theme.colorScheme.onSurface)
               ),
-              Text('${reportedContent?['content'] ?? '없음'}'),
+              Expanded(child: Text('${reportedContent?['content'] ?? '없음'}',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),)),
             ],
           ),
           // 리뷰의 기타 정보들...

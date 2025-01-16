@@ -265,6 +265,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('레시피'),
@@ -288,6 +289,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                       contentPadding:
                           EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
                     ),
+                    style:
+                    TextStyle(color: theme.chipTheme.labelStyle!.color),
                     // onChanged: (value) {
                     //   _searchItems(value); // 검색어 입력 시 아이템 필터링
                     // },
@@ -337,7 +340,10 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                       MaterialPageRoute(
                         builder: (context) => ViewScrapRecipeList(),
                       ),
-                    ); // 스크랩 아이콘 클릭 시 실행할 동작
+                    ).then((_) {
+                      // 🔹 Navigator.pop 이후 텍스트 필드 초기화
+                      _searchController.clear();
+                    }); // 스크랩 아이콘 클릭 시 실행할 동작
                   },
                 ),
               ],
@@ -401,7 +407,10 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                               useFridgeIngredients: true,
                             ),
                           ),
-                        );
+                        ).then((_) {
+                          // 🔹 Navigator.pop 이후 텍스트 필드 초기화
+                          _searchController.clear();
+                        });
                       },
                     ),
                   ),
@@ -425,7 +434,10 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                           builder: (context) => AddRecipe(),
                           fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
                         ),
-                      );
+                      ).then((_) {
+                        // 🔹 Navigator.pop 이후 텍스트 필드 초기화
+                        _searchController.clear();
+                      });
                     },
                   ),
                 ],
