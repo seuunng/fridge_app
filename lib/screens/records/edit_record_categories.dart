@@ -83,6 +83,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
   }
   // 데이터 추가 함수
   void _addOrEditCategory({int? index}) {
+    String? errorMessage; // 에러 메시지를 표시하기 위한 상태 관리
     if (index != null) {
       // 수정 모드
       _recordCategoryController.text = userData[index]['기록 카테고리'];
@@ -168,7 +169,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                         label: Text(
                           unit,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.chipTheme.labelStyle?.color,
+                            color: theme.colorScheme.onSurface,
                             fontSize: 12, // 강조를 위해 굵게 설정
                           ),
                         ),
@@ -262,10 +263,19 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                   child: Text('취소'),
                 ),
                 TextButton(
-                  onPressed: () {
-                    _saveCategory(index: index); // 저장 로직 호출
-                    _unitController.clear(); // 텍스트 필드 초기화
-                    Navigator.of(context).pop(); // 팝업 닫기
+                  onPressed: () async {
+                    if (_recordCategoryController.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('카테고리 이름을 입력해주세요.')),
+                      );
+                    } else if (units.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('최소 하나의 분류를 추가해주세요.')),
+                      );
+                    } else {
+                      await _saveCategory(index: index);
+                      Navigator.of(context).pop();
+                    }
                   },
                   child: Text(index == null ? '추가' : '수정'),
                   // onPressed: () {
@@ -304,11 +314,15 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
 
   // Firestore에 카테고리를 저장하거나 수정하는 함수
   Future<void> _saveCategory({int? index}) async {
-    if (_recordCategoryController.text.isEmpty || units.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 이름과 분류를 입력해주세요.')),
-      );
-      return;
+    // 입력 검증: 카테고리 이름과 분류 리스트가 비어있으면 저장 중단
+    if (_recordCategoryController.text.isEmpty) {
+
+      return; // 저장 중단
+    }
+
+    if (units.isEmpty) {
+
+      return; // 저장 중단
     }
 
     final category = {

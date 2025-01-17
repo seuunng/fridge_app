@@ -29,7 +29,11 @@ final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 //Flutter 앱의 진입점
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize(); // 🔹 광고 SDK 초기화
+  if (!kIsWeb) {
+    MobileAds.instance.initialize();
+  } else {
+    print("웹에서는 Google Ads가 지원되지 않습니다.");
+  }
 
   try {
     await dotenv.load(fileName: "assets/env/.env");
@@ -87,14 +91,22 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final InAppPurchaseService _iapService = InAppPurchaseService();
-  late Stream<List<PurchaseDetails>> _purchaseUpdates;
+  late final InAppPurchaseService? _iapService;
+  late Stream<List<PurchaseDetails>>? _purchaseUpdates;
+
 
   @override
   void initState() {
     super.initState();
-    _purchaseUpdates = InAppPurchase.instance.purchaseStream;
-    _iapService.listenToPurchaseUpdates(_purchaseUpdates); // ✅ 정상 호출 가능
+    if (!kIsWeb) {
+      _iapService = InAppPurchaseService();
+      _purchaseUpdates = InAppPurchase.instance.purchaseStream;
+      _iapService?.listenToPurchaseUpdates(_purchaseUpdates!);
+    } else {
+      _iapService = null;
+      _purchaseUpdates = null;
+      print("웹에서는 In-App Purchase가 지원되지 않습니다.");
+    }
   }
 
   @override

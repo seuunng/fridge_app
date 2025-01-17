@@ -18,10 +18,23 @@ class _PurchasePageState extends State<PurchasePage> {
   }
 
   Future<void> _loadProducts() async {
-    List<ProductDetails> products = await _iapService.getProducts();
-    setState(() {
-      _products = products;
-    });
+    try {
+      print('📦 상품 로드 중...');
+      List<ProductDetails> products = await _iapService.getProducts();
+      if (products.isEmpty) {
+        print('❌ 상품 로드 실패: 상품이 비어 있음');
+      } else {
+        print('✅ 상품 로드 성공: $products');
+      }
+      setState(() {
+        _products = products;
+      });
+    } catch (e) {
+      print('❌ 상품 로드 중 오류 발생: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('상품 로드에 실패했습니다. 잠시 후 다시 시도하세요.')),
+      );
+    }
   }
 
   @override

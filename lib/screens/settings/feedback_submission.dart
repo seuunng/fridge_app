@@ -21,6 +21,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  final TextEditingController _postTitleController = TextEditingController();
   String? postTitle;
 
   // 🔹 "제안"과 "신고"를 위한 라디오 버튼 선택 변수
@@ -94,19 +95,28 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
     String selectedCategory = _selectedType == '제안'
         ? _selectedCategoryProposal
         : _selectedCategoryReport;
-
+    postTitle=_postTitleController.text;
+// 사용자가 입력한 `postTitle`이 비어 있으면 오류 메시지 표시
+    if ((postTitle == null || postTitle!.isEmpty) && _selectedType == '신고') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('신고 대상을 입력해주세요!')),
+      );
+      return;
+    }
     // 입력값을 처리하는 로직을 여기에 추가 (예: 서버로 전송 또는 로컬 저장)
     if (content.isNotEmpty) {
       try {
         // Firestore에 데이터 저장
-        DocumentReference docRef = await _db.collection('feedback').add({
+        await _db.collection('feedback').add({
           // 'title': title,
           'content': content,
           'feedbackType': _selectedType, // 🔹 선택한 구분 (제안 or 신고)
           'category': selectedCategory,
           'timestamp': FieldValue.serverTimestamp(), // 서버 시간을 저장
-          'postType': widget.postType ?? '의견보내기',
+          // 'postType': widget.postType ?? '의견보내기',
+          'postType': postTitle == null ? widget.postType ?? '의견보내기' : '신고하기(대상없음)',
           'postNo': widget.postNo ?? '',
+          'postTitle': postTitle ?? '',
           'author': userId,
         });
 
@@ -133,6 +143,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    bool isEditing = false; // 수정 모드 상태 추가
     return Scaffold(
       appBar: AppBar(
         title: Text('의견보내기'),
@@ -150,35 +161,45 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onSurface),
                 ),
-                SizedBox(width: 30),
+                Spacer(),
                 Expanded(
-                  child: ListTile(
-                    title: Text('제안',
-                        style: TextStyle(color: theme.colorScheme.onSurface)),
-                    leading: Radio<String>(
-                      value: '제안',
-                      groupValue: _selectedType,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedType = value!;
-                        });
-                      },
-                    ),
+                  child: Row(
+                    children: [
+                      Radio<String>(
+                        value: '제안',
+                        groupValue: _selectedType,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedType = value!;
+                          });
+                        },
+                      ),
+                      SizedBox(width: 2), // 버튼과 텍스트 사이 간격
+                      Text(
+                        '제안',
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
+                    ],
                   ),
-                ), // 텍스트와 드롭다운 사이 간격
+                ),
                 Expanded(
-                  child: ListTile(
-                    title: Text('신고',
-                        style: TextStyle(color: theme.colorScheme.onSurface)),
-                    leading: Radio<String>(
-                      value: '신고',
-                      groupValue: _selectedType,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedType = value!;
-                        });
-                      },
-                    ),
+                  child: Row(
+                    children: [
+                      Radio<String>(
+                        value: '신고',
+                        groupValue: _selectedType,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedType = value!;
+                          });
+                        },
+                      ),
+                      SizedBox(width: 2), // 버튼과 텍스트 사이 간격
+                      Text(
+                        '신고',
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -197,15 +218,14 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
                         color: theme.colorScheme.onSurface),
                   ),
                   Spacer(),
-                  Expanded(
+                  DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _categoriesProposal
                               .contains(_selectedCategoryProposal)
                           ? _selectedCategoryProposal
                           : (_categoriesProposal.isNotEmpty
                               ? _categoriesProposal.first
-                              : null),
-                      isExpanded: true, // 드롭다운 너비 확장
+                              : null),// 드롭다운 너비 확장
                       items: _categoriesProposal.map((String category) {
                         return DropdownMenuItem<String>(
                           value: category,
@@ -265,6 +285,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
                   ),
                 ],
               ),
+              SizedBox(height: 10),
               Text(
                 '신고대상',
                 style: TextStyle(
@@ -272,11 +293,27 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSurface),
               ),
-              Text(
-                '[${widget.postType ?? ''}] ${postTitle}',
-                style:
-                    TextStyle(fontSize: 18, color: theme.colorScheme.onSurface),
-              ),
+              SizedBox(height: 10),
+              if (isEditing || postTitle == null || postTitle!.isEmpty )
+                TextField(
+                  controller: _postTitleController,
+                  decoration: InputDecoration(
+                    hintText: '신고 대상을 입력하세요',
+                    border: OutlineInputBorder(),
+                  ),
+                )
+              else
+                GestureDetector(
+                  onDoubleTap: () {
+                    setState(() {
+                      isEditing = true; // 더블 클릭 시 수정 모드로 전환
+                    });
+                  },
+                  child: Text(
+                    '[${widget.postType ?? ''}] ${postTitle}',
+                    style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurface),
+                  ),
+                ),
             ],
             SizedBox(height: 16),
             Text(

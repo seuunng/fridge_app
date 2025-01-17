@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -13,7 +14,10 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void initState() {
     super.initState();
-    _loadBannerAd();
+    // 웹 플랫폼에서는 광고를 로드하지 않음
+    if (!kIsWeb) {
+      _loadBannerAd();
+    }
   }
 
   void _loadBannerAd() {
@@ -38,6 +42,10 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return SizedBox.shrink(); // 웹에서는 빈 공간 반환
+    }
+
     return _isAdLoaded
         ? Container(
       alignment: Alignment.center,
@@ -50,7 +58,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   void dispose() {
-    _bannerAd.dispose();
+    if (!kIsWeb) {
+      _bannerAd.dispose();
+    }
     super.dispose();
   }
 }

@@ -17,7 +17,7 @@ class FeedbackDetailPage extends StatefulWidget {
   final String selectedStatus;
   final String feedbackType;
   final String category;
-
+  final String postTitle;
 
   FeedbackDetailPage({
     required this.feedbackId, // feedback 문서 ID를 받아서 업데이트에 사용
@@ -32,6 +32,7 @@ class FeedbackDetailPage extends StatefulWidget {
     required this.selectedStatus,
     required this.feedbackType,
     required this.category,
+    required this.postTitle,
   });
 
   @override
@@ -55,7 +56,8 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
     _confirmationController =
         TextEditingController(text: widget.confirmationNote);
     _loadReportedContent().then((_) {
-      if (reportedContent != null) { // 🔹 reportedContent가 null이 아닐 때만 실행
+      if (reportedContent != null) {
+        // 🔹 reportedContent가 null이 아닐 때만 실행
         _fetchUserInfo();
       }
     });
@@ -108,6 +110,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
       print('사용자 정보를 가져오는 중 오류 발생: $e');
     }
   }
+
   Future<void> _sendEmail(String email) async {
     final String subject = Uri.encodeComponent('의견 처리 안내');
     final String body = Uri.encodeComponent(
@@ -127,6 +130,13 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
   }
 
   Future<void> _saveSettings(BuildContext context) async {
+    if (confirmationNote.trim().isEmpty) {
+      // 확인사항이 비어 있으면 경고 메시지를 표시하고 저장하지 않음
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('확인사항을 입력해주세요.')),
+      );
+      return;
+    }
     try {
       await FirebaseFirestore.instance
           .collection('feedback') // feedback 컬렉션 참조
@@ -169,7 +179,7 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
       } else {
         return null;
       }
-print(snapshot.data());
+      print(snapshot.data());
       return snapshot.data();
     } catch (e) {
       print('Error fetching reported content: $e');
@@ -240,11 +250,13 @@ print(snapshot.data());
                   SizedBox(width: 10),
                   Text(
                     '${widget.feedbackType} ${widget.category}',
-                    style: TextStyle(
-                        color: theme.colorScheme.onSurface
-                    ),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                   ),
-                  SizedBox(width: 10),
+                ],
+              ),
+              Row(
+                children: [
+                  Spacer(),
                   Text(
                     '게시물 유형',
                     style: TextStyle(
@@ -253,10 +265,8 @@ print(snapshot.data());
                   ),
                   SizedBox(width: 10),
                   Text(
-                      '${widget.postType}',
-                    style: TextStyle(
-                        color: theme.colorScheme.onSurface
-                    ),
+                    '${widget.postType}',
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                   ),
                 ],
               ),
@@ -277,6 +287,8 @@ print(snapshot.data());
               if (reportedContent != null) _buildReportedContentWidget(),
               if (reportedContent != null) SizedBox(height: 10),
               if (reportedContent != null) _buildNavigateButton(),
+              if (widget.postType == '신고하기(대상없음)')
+                _buildReportedContent2Widget(),
               SizedBox(height: 20),
               Divider(),
               Text(
@@ -289,8 +301,9 @@ print(snapshot.data());
               SizedBox(height: 10),
               TextField(
                 controller: _confirmationController,
-                style:
-                TextStyle(color: theme.chipTheme.labelStyle!.color), // Controller를 사용하여 초기 값 설정
+                style: TextStyle(
+                    color: theme.chipTheme.labelStyle!
+                        .color), // Controller를 사용하여 초기 값 설정
                 onChanged: (value) {
                   setState(() {
                     confirmationNote = value; // 확인사항 업데이트
@@ -322,7 +335,8 @@ print(snapshot.data());
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value,
-                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                            style:
+                                TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
                   ),
@@ -351,27 +365,38 @@ print(snapshot.data());
         children: [
           SizedBox(height: 10),
           Text('신고 대상',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface)),
           SizedBox(height: 10),
           Row(
             children: [
               Text('신고 레시피 작성자: ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-              Expanded(child: Text('${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})',
-                style: TextStyle(
-                    color: theme.colorScheme.onSurface
-                ),)),
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface)),
+              Expanded(
+                  child: Text(
+                '${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})',
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              )),
             ],
           ),
           SizedBox(height: 10),
           Row(
             children: [
               Text('레시피 이름: ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,color: theme.colorScheme.onSurface)),
-              Expanded(child: Text('${reportedContent?['recipeName'] ?? '알 수 없음'}',
-                style: TextStyle(
-                    color: theme.colorScheme.onSurface
-                ),)),
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface)),
+              Expanded(
+                  child: Text(
+                '${reportedContent?['recipeName'] ?? '알 수 없음'}',
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              )),
             ],
           ),
 
@@ -385,30 +410,38 @@ print(snapshot.data());
         children: [
           SizedBox(height: 10),
           Text('신고 대상',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface)),
           SizedBox(height: 10),
           Row(
             children: [
               Text('해당 리뷰 작성자: ',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)
-              ),
-              Expanded(child: Text('${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})',
-                style: TextStyle(
-                    color: theme.colorScheme.onSurface
-                ),)),
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface)),
+              Expanded(
+                  child: Text(
+                '${reportedNickname ?? '알 수 없음'} (${reportedEmail ?? '알 수 없음'})',
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              )),
             ],
           ),
           SizedBox(height: 10),
           Row(
             children: [
               Text('해당 리뷰 내용: ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,  color: theme.colorScheme.onSurface)
-              ),
-              Expanded(child: Text('${reportedContent?['content'] ?? '없음'}',
-                style: TextStyle(
-                    color: theme.colorScheme.onSurface
-                ),)),
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface)),
+              Expanded(
+                  child: Text(
+                '${reportedContent?['content'] ?? '없음'}',
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              )),
             ],
           ),
           // 리뷰의 기타 정보들...
@@ -449,5 +482,26 @@ print(snapshot.data());
       },
       child: Text('${widget.postType} 페이지로 이동'),
     );
+  }
+
+  Widget _buildReportedContent2Widget() {
+    final theme = Theme.of(context);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(height: 10),
+      Row(
+        children: [
+          Text('신고 대상: ',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface)),
+          Expanded(
+              child: Text(
+            '${widget.postTitle ?? '알 수 없음'}',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          )),
+        ],
+      ),
+    ]);
   }
 }

@@ -49,7 +49,6 @@ class _CreateRecordState extends State<CreateRecord> {
   List<AssetEntity> images = [];
   List<String>? _imageFiles = [];
 
-
   @override
   void initState() {
     super.initState();
@@ -70,6 +69,7 @@ class _CreateRecordState extends State<CreateRecord> {
     _loadCategories();
     _loadUserRole();
   }
+
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -90,8 +90,7 @@ class _CreateRecordState extends State<CreateRecord> {
   void _initializeValues() {
     if (categoryFieldMap.isNotEmpty) {
       selectedCategory = categoryFieldMap.keys.first;
-      List<String> fields =
-          categoryFieldMap[selectedCategory]?['fields'] ?? [];
+      List<String> fields = categoryFieldMap[selectedCategory]?['fields'] ?? [];
 
       selectedField = fields.isNotEmpty ? fields.first : '';
       selectedColor =
@@ -102,6 +101,7 @@ class _CreateRecordState extends State<CreateRecord> {
       selectedColor = Colors.grey; // 기본 색상
     }
   }
+
   // Firestore에서 카테고리 데이터를 불러오는 함수
   void _loadCategories() async {
     try {
@@ -140,11 +140,14 @@ class _CreateRecordState extends State<CreateRecord> {
           };
           // 🔹 기존에 선택된 `selectedCategory` 유지
           if (!categoryFieldMap.containsKey(selectedCategory)) {
-            selectedCategory = categoryFieldMap.keys.isNotEmpty ? categoryFieldMap.keys.first : '식단';
+            selectedCategory = categoryFieldMap.keys.isNotEmpty
+                ? categoryFieldMap.keys.first
+                : '식단';
           }
 
           // 🔹 기존에 선택된 `selectedField` 유지
-          List<String> availableFields = categoryFieldMap[selectedCategory]?['fields'] ?? [];
+          List<String> availableFields =
+              categoryFieldMap[selectedCategory]?['fields'] ?? [];
           selectedField = availableFields.contains(selectedField)
               ? selectedField
               : (availableFields.isNotEmpty ? availableFields.first : '');
@@ -159,7 +162,8 @@ class _CreateRecordState extends State<CreateRecord> {
   }
 
   Future<void> _createDefaultCategories() async {
-    await RecordCategoryService.createDefaultCategories(userId, context, _loadCategories);
+    await RecordCategoryService.createDefaultCategories(
+        userId, context, _loadCategories);
   }
 
   //수정모드일때 데이터를 받아옴
@@ -176,12 +180,13 @@ class _CreateRecordState extends State<CreateRecord> {
       setState(() {
         selectedCategory = record.zone ?? '식단';
         selectedDate = record.date;
-        selectedColor = Color(int.parse(record.color.replaceFirst('#', '0xff')));
+        selectedColor =
+            Color(int.parse(record.color.replaceFirst('#', '0xff')));
         dateController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
         recordsWithImages = record.records.map((rec) {
           return {
-            'field': rec.unit ?? '',
-            'contents': rec.contents ?? '',
+            'field': rec.unit as String? ?? '',
+            'contents': rec.contents as String? ?? '',
             'images': List<String>.from(rec.images ?? <String>[]),
           };
         }).toList();
@@ -189,13 +194,31 @@ class _CreateRecordState extends State<CreateRecord> {
       // 🔹 `categoryFieldMap`이 로드된 이후 `selectedField` 유지
       Future.delayed(Duration(milliseconds: 200), () {
         setState(() {
-          List<String> availableFields = categoryFieldMap[selectedCategory]?['fields'] ?? [];
+          List<String> availableFields =
+              categoryFieldMap[selectedCategory]?['fields'] ?? [];
           selectedField = availableFields.contains(record.records.first.unit)
               ? record.records.first.unit
               : (availableFields.isNotEmpty ? availableFields.first : '');
         });
       });
     }
+  }
+
+  Future<File> _compressImage(File file) async {
+    final compressedImage = await FlutterImageCompress.compressWithFile(
+      file.absolute.path,
+      minWidth: 800, // 원하는 너비 (예: 800px)
+      minHeight: 800, // 원하는 높이 (예: 800px)
+      quality: 85, // 압축 품질 (1-100, 100은 품질 유지)
+    );
+
+    // 압축된 이미지 파일을 저장할 경로 지정
+    final tempDir = await getTemporaryDirectory();
+    final compressedFile =
+        File('${tempDir.path}/compressed_${file.path.split('/').last}');
+    compressedFile.writeAsBytesSync(compressedImage!);
+
+    return compressedFile;
   }
 
   // 이미지를 선택하는 메서드
@@ -208,43 +231,43 @@ class _CreateRecordState extends State<CreateRecord> {
       return;
     }
 
-    if (_imageFiles == null) {
-      _imageFiles = [];
-    }
-
-    // 한 기록에 최대 4개의 사진만 추가할 수 있도록 제한
-    for (XFile file in pickedFiles) {
-      if (_imageFiles!.length >= 4) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('한 기록당 최대 4개의 사진만 추가할 수 있습니다.'),
-          ),
-        );
-        break;
+    setState(() {
+      if (_imageFiles == null) {
+        _imageFiles = [];
       }
 
-      if (!_imageFiles!.contains(file.path)) {
-        if (kIsWeb) {
-          // 웹 환경에서는 Blob URL 생성
-          final bytes = await file.readAsBytes();
-          final blobUrl =
-              Uri.dataFromBytes(bytes, mimeType: 'image/jpeg').toString();
-          setState(() {
-            _imageFiles!.add(file.path); // 로컬 경로를 XFile 객체로 변환하여 추가
-          });
-        } else {
-          setState(() {
-            _imageFiles!.add(file.path); // 로컬 파일 경로 추가
-          });
+      // 한 기록에 최대 4개의 사진만 추가할 수 있도록 제한
+      for (XFile file in pickedFiles) {
+        if (_imageFiles!.length >= 4) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('한 기록당 최대 4개의 사진만 추가할 수 있습니다.'),
+            ),
+          );
+          break;
         }
+        _imageFiles!.add(file.path); // 새로 추가된 이미지를 리스트에 반영
+      }
+
+      if (pickedFiles != null && pickedFiles.isNotEmpty) {
+        setState(() {
+          if (selectedRecordIndex != null) {
+            final images =
+                recordsWithImages[selectedRecordIndex!]['images'] ?? [];
+            recordsWithImages[selectedRecordIndex!]['images'] = [
+              ...images,
+              ...pickedFiles.map((file) => file.path).toList(),
+            ];
+          } else {
+            _imageFiles?.addAll(pickedFiles.map((file) => file.path).toList());
+          }
+        });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('이미 추가된 이미지입니다.'),
-          ),
+          SnackBar(content: Text('이미지를 선택하지 않았습니다.')),
         );
       }
-    }
+    });
   }
 
 // 이미지 업로드 메서드
@@ -302,14 +325,15 @@ class _CreateRecordState extends State<CreateRecord> {
 
     List<RecordDetail> recordDetails = recordsWithImages.map((record) {
       return RecordDetail(
-        unit: record['field'],
-        contents: record['contents'],
+        unit: record['field'] as String,
+        contents: record['contents'] as String,
         images: List<String>.from(record['images'] as List<dynamic>),
       );
     }).toList();
 
     final record = RecordModel(
-      id: widget.recordId ?? Uuid().v4(), // 고유 ID 생성, 수정 모드일 때 기존 ID 사용
+      id: widget.recordId ?? Uuid().v4(),
+      // 고유 ID 생성, 수정 모드일 때 기존 ID 사용
       date: selectedDate,
       color: '#${selectedColor.value.toRadixString(16).padLeft(8, '0')}',
       zone: selectedCategory,
@@ -337,23 +361,6 @@ class _CreateRecordState extends State<CreateRecord> {
       );
       print('Error saving record: $e');
     }
-  }
-
-  Future<File> _compressImage(File file) async {
-    final compressedImage = await FlutterImageCompress.compressWithFile(
-      file.absolute.path,
-      minWidth: 800, // 원하는 너비 (예: 800px)
-      minHeight: 800, // 원하는 높이 (예: 800px)
-      quality: 85, // 압축 품질 (1-100, 100은 품질 유지)
-    );
-
-    // 압축된 이미지 파일을 저장할 경로 지정
-    final tempDir = await getTemporaryDirectory();
-    final compressedFile =
-        File('${tempDir.path}/compressed_${file.path.split('/').last}');
-    compressedFile.writeAsBytesSync(compressedImage!);
-
-    return compressedFile;
   }
 
   @override
@@ -407,11 +414,14 @@ class _CreateRecordState extends State<CreateRecord> {
                     (value) {
                       setState(() {
                         selectedCategory = value;
-                        List<String> availableFields = categoryFieldMap[selectedCategory]?['fields'] ?? [];
+                        List<String> availableFields =
+                            categoryFieldMap[selectedCategory]?['fields'] ?? [];
                         // 분류 변경 시 구분을 첫 번째 값으로 초기화
                         selectedField = availableFields.contains(selectedField)
                             ? selectedField
-                            : (availableFields.isNotEmpty ? availableFields.first : '');
+                            : (availableFields.isNotEmpty
+                                ? availableFields.first
+                                : '');
                         selectedColor =
                             categoryFieldMap[selectedCategory]!['color'];
                         // fieldController.text = selectedField;
@@ -492,13 +502,13 @@ class _CreateRecordState extends State<CreateRecord> {
             value: currentValue, // 현재 선택된 값을 드롭다운의 value로 사용
             items: options.isNotEmpty
                 ? options.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(
-                    value,
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                  ));
-            }).toList()
+                    return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                        ));
+                  }).toList()
                 : null,
             onChanged: (newValue) {
               if (newValue != null) {
@@ -538,9 +548,11 @@ class _CreateRecordState extends State<CreateRecord> {
               onTap: () {
                 setState(() {
                   selectedRecordIndex = index; // 선택한 기록의 인덱스를 저장
-                  selectedField = recordsWithImages[index]['field'];
-                  contentsController.text = recordsWithImages[index]['contents'];
-                  _imageFiles = List<String>.from(recordsWithImages[index]['images'] ?? []);
+                  selectedField = recordsWithImages[index]['field'] as String;
+                  contentsController.text =
+                      recordsWithImages[index]['contents'] as String;
+                  _imageFiles = List<String>.from(
+                      recordsWithImages[index]['images'] ?? []);
                 });
               },
               title: Column(
@@ -569,32 +581,28 @@ class _CreateRecordState extends State<CreateRecord> {
               subtitle: Wrap(
                 spacing: 8.0,
                 runSpacing: 8.0,
-                children: _imageFiles!.map((imagePath) {
+                children: (recordsWithImages[index]['images'] as List<dynamic>)
+                    .map((imagePath) {
+                  final String imagePathStr = imagePath as String; // 명시적 타입 변환
                   // URL과 로컬 파일 구분
                   if (imagePath.startsWith('http') ||
                       imagePath.startsWith('https')) {
                     return Image.network(
-                      imagePath,
+                      imagePathStr,
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return SizedBox();
-                      },
-                    );
-                  } else if (imagePath.startsWith('/')) {
-                    // 로컬 파일 경로인 경우
-                    return Image.file(
-                      File(imagePath),
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return SizedBox();
+                        return Icon(Icons.error); // 로드 실패 시 아이콘 표시
                       },
                     );
                   } else {
-                    return Container(); // 예상치 못한 형식의 이미지 경로인 경우 빈 컨테이너 반환
+                    return Image.file(
+                      File(imagePathStr),
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    );
                   }
                 }).toList(),
               ),
@@ -609,7 +617,8 @@ class _CreateRecordState extends State<CreateRecord> {
                     }
                   });
                 },
-                child: Icon(Icons.close, size: 18,color: theme.colorScheme.onSurface),
+                child: Icon(Icons.close,
+                    size: 18, color: theme.colorScheme.onSurface),
               ),
             );
           },
@@ -638,7 +647,8 @@ class _CreateRecordState extends State<CreateRecord> {
         Row(
           children: [
             IconButton(
-              icon: Icon(Icons.camera_alt_outlined,color: theme.colorScheme.onSurface),
+              icon: Icon(Icons.camera_alt_outlined,
+                  color: theme.colorScheme.onSurface),
               onPressed: _pickImages, // _pickImages 메서드 호출
             ),
             if (_imageFiles != null && _imageFiles!.isNotEmpty) ...[
@@ -658,7 +668,9 @@ class _CreateRecordState extends State<CreateRecord> {
                                   height: 50,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Icon(Icons.error,color: theme.colorScheme.onSurface); // 로드 실패 시 아이콘 표시
+                                    return Icon(Icons.error,
+                                        color: theme.colorScheme
+                                            .onSurface); // 로드 실패 시 아이콘 표시
                                   },
                                 )
                               : Image.file(
@@ -679,11 +691,8 @@ class _CreateRecordState extends State<CreateRecord> {
                             },
                             child: Container(
                               color: Colors.black54,
-                              child: Icon(
-                                Icons.close,
-                                size: 18,
-                                  color: theme.colorScheme.onSurface
-                              ),
+                              child: Icon(Icons.close,
+                                  size: 18, color: theme.colorScheme.onSurface),
                             ),
                           ),
                         ),
@@ -695,7 +704,7 @@ class _CreateRecordState extends State<CreateRecord> {
             ],
             Spacer(),
             IconButton(
-              icon: Icon(Icons.add,color: theme.colorScheme.onSurface),
+              icon: Icon(Icons.add, color: theme.colorScheme.onSurface),
               onPressed: () {
                 if (recordsWithImages.length >= 10) {
                   // 최대 10개의 기록만 추가 가능하도록 제한
@@ -708,32 +717,34 @@ class _CreateRecordState extends State<CreateRecord> {
                 }
                 if (contentsController.text.isNotEmpty) {
                   setState(() {
-                    List<String> imagePaths = _imageFiles
-                            ?.map((image) => image.toString())
-                            .toList() ??
-                        [];
-                    // 명시적으로 dynamic 타입으로 선언
+                    final newRecord = {
+                      'field': selectedField,
+                      'contents': contentsController.text,
+                      'images':
+                          List<String>.from(_imageFiles ?? []), // 명시적 타입 변환
+                    };
+
                     if (selectedRecordIndex != null) {
-                      // 기존 기록 수정
-                      recordsWithImages[selectedRecordIndex!] = {
-                        'field': selectedField,
-                        'contents': contentsController.text,
-                        'images': imagePaths,
-                      };
+                      // 선택된 항목 업데이트
+                      recordsWithImages[selectedRecordIndex!] =
+                          Map<String, Object>.from(newRecord);
                       selectedRecordIndex = null;
                     } else {
-                      // 새 기록 추가
-                      recordsWithImages.add({
-                        'field': selectedField,
-                        'contents': contentsController.text,
-                        'images': imagePaths,
-                      });
+                      // 새로운 항목 추가
+                      recordsWithImages
+                          .add(Map<String, Object>.from(newRecord));
                     }
 
-
+                    // 입력 필드와 이미지 초기화
                     contentsController.clear();
                     _imageFiles = [];
                   });
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('기록 내용을 입력하세요.'),
+                    ),
+                  );
                 }
               },
             ),

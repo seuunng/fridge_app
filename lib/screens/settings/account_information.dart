@@ -465,6 +465,7 @@ class _AccountInformationState extends State<AccountInformation> {
 
   // 로그아웃 처리
   void _logoutAlertDialog() async {
+    final theme = Theme.of(context);
     await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -472,9 +473,7 @@ class _AccountInformationState extends State<AccountInformation> {
           title: Text(
             '로그아웃을 진행할까요?',
             style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
+                color: theme.colorScheme.onSurface
             ),
           ),
           actions: [

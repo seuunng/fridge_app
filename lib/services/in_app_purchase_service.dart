@@ -23,7 +23,7 @@ class InAppPurchaseService {
   Future<List<ProductDetails>> getProducts() async {
     final bool available = await _iap.isAvailable();
     if (!available) {
-      print('인앱 결제 사용 불가');
+      print('❌ 인앱 결제 사용 불가');
       return [];
     }
 

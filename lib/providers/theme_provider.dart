@@ -90,6 +90,7 @@ class ThemeProvider extends ChangeNotifier {
     appBarTheme: AppBarTheme(
       //AppBar 위젯의 테마를 설정
       color: Colors.white,
+      elevation: 0, // 스크롤 시 그림자 제거
       iconTheme: IconThemeData(color: Colors.black),
       titleTextStyle: TextStyle(color: Colors.black),
     ),
@@ -136,6 +137,7 @@ class ThemeProvider extends ChangeNotifier {
         surface: Colors.grey[300], //카드와 같은 표면 색상, 하단 네브바
         onSurface: Colors.black, //드롭박스, 사이드바
         brightness: Brightness.light),
+    useMaterial3: false, // Material 3 사용 비활성화 (elevationOverlayColor 비활성화)
   );
 
   final ThemeData darkTheme = ThemeData(
@@ -307,7 +309,7 @@ class ThemeProvider extends ChangeNotifier {
         onSecondary: Color(0xFF0D2514), // 캘렌더 컬러박스 글씨
         surface: Color(0xFF19411C), //카드와 같은 표면 색상, 하단 네브바
         onSurface: Color(0xFFA7AFAB), //드롭박스, 사이드바
-        brightness: Brightness.light),
+        brightness: Brightness.dark),
   );
 
   final ThemeData brownTheme = ThemeData(

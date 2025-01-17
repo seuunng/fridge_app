@@ -69,6 +69,7 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                 : '확인되지 않음',
             'status': doc.data().containsKey('status') ? doc['status'] : '미처리',
             'content': doc.data().containsKey('content') ? doc['content'] : '내용이 없습니다.',
+            'postTitle': doc.data().containsKey('postTitle') ? doc['postTitle'] : '신고대상 없음',
           };
         }).toList();
 
@@ -178,6 +179,7 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                                 postType: row['postType'] ?? '기타',
                                 feedbackType: row['feedbackType'] ?? '기타',
                                 category: row['category'] ?? '기타',
+                                postTitle: row['postTitle'] ?? '기타',
                               ),
                             ),
                           );
