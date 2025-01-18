@@ -359,6 +359,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
   // 삭제 모드에서 선택된 아이템들을 삭제하는 함수
   void _deleteSelectedItems() async {
+    final fridgeId = selected_fridgeId;
     if (selectedItems == null || selectedItems.isEmpty) {
       print("선택된 아이템이 없습니다. 삭제할 수 없습니다.");
       return;
@@ -371,7 +372,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
         final snapshot = await FirebaseFirestore.instance
             .collection('fridge_items')
             .where('items', isEqualTo: item) // 선택된 아이템 이름과 일치하는 문서 검색
-            .where('FridgeId', isEqualTo: selectedFridge) // 선택된 냉장고 ID 필터
+            .where('FridgeId', isEqualTo: fridgeId) // 선택된 냉장고 ID 필터
             .where('userId', isEqualTo: userId)
             .get();
 
@@ -382,6 +383,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
                 .doc(doc.id) // 문서 ID로 삭제
                 .delete();
           }
+        } else {
+          print('삭제할 문서를 찾을 수 없습니다.');
         }
       }
 
@@ -394,7 +397,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
         selectedItems.clear();
         isDeletedMode = false;
       });
-
+      await _loadFridgeCategoriesFromFirestore(selected_fridgeId);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('선택된 아이템이 삭제되었습니다.')),
       );

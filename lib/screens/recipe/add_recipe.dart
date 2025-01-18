@@ -232,6 +232,14 @@ class _AddRecipeState extends State<AddRecipe> {
   // 저장 버튼 누르면 레시피 추가 또는 수정 처리
   void _saveRecipe() async {
     try {
+      // 레시피 이름이 비어있는지 확인
+      if (recipeNameController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('레시피 제목을 작성해주세요')),
+        );
+        return; // 저장 동작 중단
+      }
+      
       final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
       if (mainImages.isEmpty) {
@@ -243,6 +251,24 @@ class _AddRecipeState extends State<AddRecipe> {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('조리 단계를 최소 1개 이상 추가해주세요')));
         return;
+      }
+      if (selectedDifficulty.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('난이도를 작성해주세요')),
+        );
+        return; // 저장 동작 중단
+      }
+      if (servingsController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('인원 수를 작성해주세요')),
+        );
+        return; // 저장 동작 중단
+      }
+      if (minuteController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('조리시간을 작성해주세요')),
+        );
+        return; // 저장 동작 중단
       }
 
       if (widget.recipeData == null) {
@@ -315,7 +341,18 @@ class _AddRecipeState extends State<AddRecipe> {
       return '';
     }
   }
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
+    if (pickedFile != null) {
+      setState(() {
+        _imageFiles = [pickedFile.path]; // 하나의 이미지만 리스트에 저장
+      });
+    } else {
+      print('이미지 선택이 취소되었습니다.');
+    }
+  }
   Future<String> uploadMainImage(File imageFile) async {
     try {
       File compressedFile = await _compressImage(imageFile);
@@ -378,24 +415,36 @@ class _AddRecipeState extends State<AddRecipe> {
   void _pickMainImages() async {
     final ImagePicker picker = ImagePicker();
     final List<XFile>? pickedFiles = await picker.pickMultiImage();
-
-    if (pickedFiles != null && pickedFiles.length + mainImages.length > 4) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('최대 4장까지 이미지를 선택할 수 있습니다.'),
-      ));
-      return;
-    }
-
     if (pickedFiles != null) {
-      for (XFile file in pickedFiles) {
-        String imageUrl = await uploadMainImage(File(file.path));
-        if (imageUrl.isNotEmpty) {
-          setState(() {
-            mainImages.add(imageUrl); // 이미지 URL을 mainImages 리스트에 추가
-          });
-        }
+      // 새로운 이미지 중복 필터링
+      List<String> newImages = pickedFiles.where((file) {
+        final imagePath = file.path;
+        return !mainImages.contains(imagePath); // 중복 이미지 걸러내기
+      }).map((file) => file.path).toList();
+
+      // 초과 이미지 제거
+      if (mainImages.length + newImages.length > 4) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('최대 4장까지 이미지를 선택할 수 있습니다.'),
+        ));
+
+        // 초과분을 자르기
+        newImages = newImages.sublist(0, 4 - mainImages.length);
       }
-    }
+    // if (pickedFiles != null) {
+    //   for (XFile file in pickedFiles) {
+    //     String imageUrl = await uploadMainImage(File(file.path));
+    //     if (imageUrl.isNotEmpty) {
+    //       setState(() {
+    //         mainImages.add(imageUrl); // 이미지 URL을 mainImages 리스트에 추가
+    //       });
+    //     }
+    //   }
+      // 중복 없는 새로운 이미지를 추가
+      setState(() {
+        mainImages.addAll(newImages);
+      });
+
   }
 
   Future<File> _compressImage(File file) async {
@@ -441,7 +490,7 @@ class _AddRecipeState extends State<AddRecipe> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTextField('레시피 이름', recipeNameController),
+            _buildTextField('레시피 이름', recipeNameController, maxLength: 20),
             _buildMainImagePicker(),
             Row(
               children: [
@@ -459,7 +508,7 @@ class _AddRecipeState extends State<AddRecipe> {
                 Expanded(
                   flex: 1,
                   child:
-                      _buildTextField('인원', servingsController, isNumber: true),
+                      _buildTextField('인원', servingsController, isNumber: true, maxLength: 2),
                 ),
                 SizedBox(width: 5),
                 Icon(Icons.emoji_events, size: 25,
@@ -488,9 +537,10 @@ class _AddRecipeState extends State<AddRecipe> {
                 });
               },
               'ingredients',
+              20
             ),
             SizedBox(height: 10),
-            _buildselectedItems(selectedIngredients), // 선택된 재료 표시
+            _buildselectedItems(selectedIngredients,10), // 선택된 재료 표시
             SizedBox(height: 10),
 
             _buildHorizontalScrollSection(
@@ -505,9 +555,10 @@ class _AddRecipeState extends State<AddRecipe> {
                 });
               },
               'methods',
+              5
             ),
             SizedBox(height: 10),
-            _buildselectedItems(selectedMethods),
+            _buildselectedItems(selectedMethods,10),
             SizedBox(height: 10),
 
             _buildHorizontalScrollSection(
@@ -520,9 +571,10 @@ class _AddRecipeState extends State<AddRecipe> {
               setState(() {
                 selectedThemes.add(selectedItem);
               });
-            }, 'themes'),
+            }, 'themes',
+            5),
             SizedBox(height: 10),
-            _buildselectedItems(selectedThemes),
+            _buildselectedItems(selectedThemes,10),
 
             SizedBox(height: 10),
             _buildStepsWithImagesSection(),
@@ -598,6 +650,7 @@ class _AddRecipeState extends State<AddRecipe> {
     TextEditingController searchController,
     Function(String) onItemSelected,
     String type,
+      int maxCount,
   ) {
     final theme = Theme.of(context);
     return Column(
@@ -647,6 +700,12 @@ class _AddRecipeState extends State<AddRecipe> {
                 final bool isSelected = selectedIngredients.contains(item);
                 return GestureDetector(
                   onTap: () {
+                    if (!isSelected && selectedIngredients.length >= maxCount) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('$title는 최대 $maxCount개까지만 선택 가능합니다.')),
+                      );
+                      return;
+                    }
                     onItemSelected(item);
                     searchController.clear();
                     setState(() {
@@ -683,7 +742,7 @@ class _AddRecipeState extends State<AddRecipe> {
   }
 
 // 선택된 재료 목록을 표시
-  Widget _buildselectedItems(List<String> selectedItems) {
+  Widget _buildselectedItems(List<String> selectedItems, int maxCount) {
     final theme = Theme.of(context);
     return Wrap(
       spacing: 8,
@@ -708,16 +767,18 @@ class _AddRecipeState extends State<AddRecipe> {
 
   // 입력필드
   Widget _buildTextField(String label, TextEditingController controller,
-      {bool isNumber = false}) {
+      {bool isNumber = false, int? maxLength}) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextField(
         controller: controller,
+        maxLength: maxLength,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         style: TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
         decoration: InputDecoration(
           labelText: label,
+          counterText: '', // 이 부분을 추가하면 maxLength 카운터가 숨겨짐
           // border: OutlineInputBorder(),
           contentPadding: EdgeInsets.symmetric(
             horizontal: 8.0, // 텍스트 필드 내부 좌우 여백 조절
@@ -737,6 +798,7 @@ class _AddRecipeState extends State<AddRecipe> {
     List<String> selectedItems,
     Function(String) onItemSelected,
     String type,
+      int maxCount,
   ) {
     final theme = Theme.of(context);
     return Column(
@@ -778,6 +840,13 @@ class _AddRecipeState extends State<AddRecipe> {
               final bool isSelected = selectedItems.contains(item);
               return GestureDetector(
                 onTap: () {
+                  if (!isSelected && selectedItems.length >= maxCount) {
+                    // 칩 선택 제한 경고
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('$title는 최대 $maxCount개까지만 선택 가능합니다.')),
+                    );
+                    return;
+                  }
                   if (!selectedItems.contains(item)) {
                     setState(() {
                       selectedItems.add(item);
@@ -816,7 +885,7 @@ class _AddRecipeState extends State<AddRecipe> {
 //시간입력 섹션
   Widget _buildTimeInputSection() {
     return Expanded(
-        child: _buildTextField('분', minuteController, isNumber: true));
+        child: _buildTextField('분', minuteController, isNumber: true, maxLength: 3));
   }
 
   // 난이도 드롭다운
@@ -942,15 +1011,22 @@ class _AddRecipeState extends State<AddRecipe> {
               IconButton(
                 icon: Icon(Icons.camera_alt_outlined,
                     color: theme.colorScheme.onSurface),
-                onPressed: _pickImages,
+                onPressed: _pickImage,
               ),
             Expanded(
-              child: _buildTextField('조리 과정 입력', stepDescriptionController),
+              child: _buildTextField('조리 과정 입력', stepDescriptionController, maxLength: 200),
             ),
             IconButton(
               icon: Icon(Icons.add,
                   color: theme.colorScheme.onSurface),
               onPressed: () async {
+                if (stepsWithImages.length >= 10) {
+                  // 조리 과정이 10개를 초과하면 경고 메시지 출력
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('조리 과정은 최대 10개까지만 추가할 수 있습니다.')),
+                  );
+                  return; // 추가 동작 중단
+                }
                 if (stepDescriptionController.text.isNotEmpty &&
                     _imageFiles != null &&
                     _imageFiles!.isNotEmpty) {

@@ -13,8 +13,8 @@ class FloatingAddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 50, // 원하는 높이로 설정
-      width: 50, // 원하는 너비로 설정
+      height: 43, // 원하는 높이로 설정
+      width: 43, // 원하는 너비로 설정
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(12), // 테두리 둥글기 값 조정
@@ -23,6 +23,9 @@ class FloatingAddButton extends StatelessWidget {
         heroTag: heroTag,
         onPressed: onPressed,
         child: Icon(Icons.add),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12), // 둥근 네모로 변경
+        ),
       ),
     );
   }
