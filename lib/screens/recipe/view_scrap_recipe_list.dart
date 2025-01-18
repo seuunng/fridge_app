@@ -85,12 +85,12 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
             .map((doc) => doc['scrapedGroupName'] as String)
             .toList();
 
-        // 기본값 설정: 첫 번째 그룹 선택
-        if (_scraped_groups.contains('기본함')) {
-          selectedFilter = '기본함';
-        } else {
-          _createDefaultGroup();
+        // 항상 `전체`와 `기본함` 포함
+        if (!_scraped_groups.contains('전체')) {
+          _scraped_groups.insert(0, '전체'); // 가장 앞에 추가
         }
+        // 기본값 설정
+        selectedFilter = '전체';
       });
     } catch (e) {
       print('Error loading scraped groups: $e');
@@ -99,7 +99,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
 
   // 레시피 목록 필터링 함수
   List<RecipeModel> getFilteredRecipes() {
-    if (selectedFilter == '기본함') {
+    if (selectedFilter == '전체') {
       return recipeList;
     }
     return myRecipeList;
@@ -109,7 +109,8 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
       QuerySnapshot snapshot;
-      if (selectedFilter == '기본함') {
+      print('선택된 필터: $selectedFilter');
+      if (selectedFilter == '전체') {
         snapshot = await _db
             .collection('scraped_recipes')
             .where('userId', isEqualTo: userId)
@@ -128,8 +129,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       // 각 문서의 recipeId로 레시피 정보를 불러옴
       recipeList.clear();
       for (var doc in snapshot.docs) {
-        Map<String, dynamic>? data = doc.data()
-            as Map<String, dynamic>?; // 데이터를 Map<String, dynamic>으로 캐스팅
+        Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?; // 데이터를 Map<String, dynamic>으로 캐스팅
         String? recipeId = data?['recipeId']; // null 안전하게 접근
         if (recipeId != null && recipeId.isNotEmpty) {
           DocumentSnapshot<Map<String, dynamic>> recipeSnapshot =
@@ -400,7 +400,9 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                         setState(() {});
                       },
                       onItemDeleted: (item) {
-                        _deleteCategory(item, _scraped_groups, '스크랩 그룹');
+                        if (item != '전체') {
+                          _deleteCategory(item, _scraped_groups, '스크랩 그룹');
+                        }
                       },
                       onAddNewItem: () {
                         _addNewGroup(_scraped_groups, '스크랩 그룹');

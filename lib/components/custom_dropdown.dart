@@ -62,16 +62,18 @@ class _CustomDropdownState extends State<CustomDropdown> {
                               fit: FlexFit.loose, // 자식이 가용한 공간을 최대한 덜 차지하도록 설정
                               child: Container(), // 여기에 원하는 위젯을 넣을 수 있습니다.
                             ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.close,
-                                color: theme.colorScheme.onPrimaryContainer,
-                                size: 16,
+                            if (_isDropdownOpen && item != '전체') ...[
+                              IconButton(
+                                icon: Icon(
+                                  Icons.close,
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                  size: 16,
+                                ),
+                                onPressed: () {
+                                  widget.onItemDeleted(item);
+                                },
                               ),
-                              onPressed: () {
-                                widget.onItemDeleted(item);
-                              },
-                            ),
+                            ],
                           ],
                         ],
                       );
