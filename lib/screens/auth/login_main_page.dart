@@ -28,20 +28,33 @@ class _LoginPageState extends State<LoginPage> {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final FocusNode _emailFocusNode = FocusNode(); // 이메일 입력 필드의 포커스 노드
+  final FocusNode _passwordFocusNode = FocusNode(); // 비밀번호 입력 필드의 포커스
   String errorMessage = '';
 
   final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  @override
+  void initState() {
+    super.initState();
 
-  bool _validateInputs() {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      setState(() {
-        errorMessage = '이메일과 비밀번호를 모두 입력해주세요.';
-      });
-      return false;
-    }
-    return true;
+    // 리스너 추가
+    _emailFocusNode.addListener(() {
+      setState(() {}); // 포커스 변경 시 상태 업데이트
+    });
+    _passwordFocusNode.addListener(() {
+      setState(() {}); // 포커스 변경 시 상태 업데이트
+    });
   }
 
+  @override
+  void dispose() {
+    // 컨트롤러 및 포커스 노드 해제
+    _emailController.dispose();
+    _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
   Future<void> addUserToFirestore(firebase_auth.User user,
       {String? nickname,
       String? email,
@@ -64,7 +77,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> signInWithEmailAndPassword() async {
-    if (!_validateInputs()) return;
+    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+      // 이메일 또는 비밀번호가 비어 있을 때 안내 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('이메일과 비밀번호를 모두 입력해주세요.'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     try {
       firebase_auth.UserCredential result =
           await _auth.signInWithEmailAndPassword(
@@ -79,16 +102,45 @@ class _LoginPageState extends State<LoginPage> {
         }
       } else {
         if (mounted) {
-          setState(() {
-            errorMessage = '로그인 실패: 사용자 정보를 가져올 수 없습니다.';
-          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('이메일 혹은 비밀번호가 일치하지 않습니다.'),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       }
     } on firebase_auth.FirebaseAuthException catch (e) {
+      String errorMsg;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMsg = '이메일 혹은 비밀번호가 일치하지 않습니다.';
+          break;
+        case 'wrong-password':
+          errorMsg = '이메일 혹은 비밀번호가 일치하지 않습니다.';
+          break;
+        case 'invalid-credential':
+          errorMsg = '이메일 혹은 비밀번호가 일치하지 않습니다.';
+          break;
+        case 'invalid-email':
+          errorMsg = '잘못된 이메일 형식입니다.';
+          break;
+        case 'weak-password':
+          errorMsg = '비밀번호는 6자리 이상이어야 합니다.';
+          break;
+        default:
+          errorMsg = '로그인 실패: ${e.message}';
+      }
+
       if (mounted) {
-        setState(() {
-          errorMessage = '로그인 실패: ${e.code} - ${e.message}';
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
       print('로그인 실패: ${e.code} - ${e.message}');
     } catch (e) {
@@ -100,7 +152,20 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> registerWithEmailAndPassword() async {
-    if (!_validateInputs()) return;
+    // if (!_validateInputs()) return;
+    // 입력 필드가 비어있는지 확인
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
+      // SnackBar로 경고 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('이메일과 비밀번호를 모두 입력해주세요.'),
+          duration: Duration(seconds: 2), // 스낵바 표시 시간
+          behavior: SnackBarBehavior.floating, // 화면에 떠있는 스낵바 스타일
+        ),
+      );
+      return; // 입력이 유효하지 않으므로 함수 종료
+    }
     try {
       firebase_auth.UserCredential result =
           await _auth.createUserWithEmailAndPassword(
@@ -131,6 +196,12 @@ class _LoginPageState extends State<LoginPage> {
       }
       setState(() {});
       print('회원가입 실패: ${e.code} - ${e.message}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage), // 발생한 오류를 스낵바로 표시
+          duration: Duration(seconds: 3),
+        ),
+      );
     } catch (e) {
       setState(() {
         errorMessage = '회원가입 실패: ${e.toString()}';
@@ -384,6 +455,8 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     TextField(
                       controller: _emailController,
+                      focusNode: _emailFocusNode, // 이메일 입력 필드와 포커스 노드 연결
+                      maxLength: 64, // 이메일 최대 길이 제한
                       style: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.white
@@ -393,6 +466,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     TextField(
                       controller: _passwordController,
+                      focusNode: _passwordFocusNode,
+                      maxLength: 32, // 이메일 최대 길이 제한
                       style: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.white
@@ -411,6 +486,26 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: registerWithEmailAndPassword,
                       child: Text('회원가입'),
                     ),
+                    if (_emailFocusNode.hasFocus)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          _emailController.text.trim().isNotEmpty
+                              ? '수신 가능한 이메일을 입력해주세요.'
+                              : '',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ),
+                    if (_passwordFocusNode.hasFocus)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          _passwordController.text.trim().isNotEmpty
+                              ? '비밀번호는 6자 이상으로 작성해주세요.'
+                              : '',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ),
                     Divider(),
                     SizedBox(height: 20),
                     LoginElevatedButton(

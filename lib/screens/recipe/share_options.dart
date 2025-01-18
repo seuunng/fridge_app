@@ -98,7 +98,7 @@ Future<void> sendEmail(String fromEmail, String toEmail, String nickname,
       },
       body: json.encode({
         'service_id': dotenv.env['EMAILJS_SERVICE_ID'],
-        'template_id': dotenv.env['EMAILJS_TEMPLATE_ID'],
+        'template_id': dotenv.env['RECIPE_TEMPLATE_ID'],
         'user_id': dotenv.env['EMAILJS_USER_ID'],
         'template_params': {
           'from_email': fromEmail,

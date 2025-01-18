@@ -156,7 +156,7 @@ class _AccountInformationState extends State<AccountInformation> {
       },
       body: json.encode({
         'service_id': dotenv.env['EMAILJS_SERVICE_ID'],
-        'template_id': dotenv.env['EMAILJS_TEMPLATE_ID'],
+        'template_id': dotenv.env['PASSWORD_TEMPLATE_ID'],
         'user_id': dotenv.env['EMAILJS_USER_ID'],
         'template_params': {
           'to_email': email,
