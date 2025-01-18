@@ -109,7 +109,6 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
       QuerySnapshot snapshot;
-      print('선택된 필터: $selectedFilter');
       if (selectedFilter == '전체') {
         snapshot = await _db
             .collection('scraped_recipes')

@@ -238,6 +238,8 @@ class _PreferredfoodscategoryTableState
 
   void _sortBy(String columnName, SortState currentState) {
     SortState newSortState;
+
+    // 현재 상태를 기준으로 새 상태 결정
     if (currentState == SortState.none) {
       newSortState = SortState.ascending;
     } else if (currentState == SortState.ascending) {
@@ -247,19 +249,24 @@ class _PreferredfoodscategoryTableState
     }
 
     setState(() {
+      // 선택한 열의 정렬 상태 업데이트
       for (var column in columns) {
         if (column['name'] == columnName) {
-          column['name'] = newSortState;
+          column['state'] = newSortState; // 정렬 상태 업데이트
         } else {
-          column['name'] = SortState.none;
+          column['state'] = SortState.none; // 다른 열은 정렬 상태 초기화
         }
       }
 
+      // 정렬 로직
       if (newSortState == SortState.none) {
-        userData = List.from(originalData);
+        userData = List.from(originalData); // 원본 데이터로 복원
       } else {
         userData.sort((a, b) {
-          int result = a[columnName].compareTo(b[columnName]);
+          var aValue = a[columnName] ?? '';
+          var bValue = b[columnName] ?? '';
+
+          int result = aValue.toString().compareTo(bValue.toString());
           return newSortState == SortState.ascending ? result : -result;
         });
       }
@@ -279,7 +286,8 @@ class _PreferredfoodscategoryTableState
             children: [
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(
+                      width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -297,7 +305,7 @@ class _PreferredfoodscategoryTableState
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                  width: 1, color: Colors.black), // 셀 아래 테두리 추가
+                                  width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                             ),
                           ),
                           child: column['name'] == '선택' ||
@@ -341,7 +349,7 @@ class _PreferredfoodscategoryTableState
               ),
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -355,7 +363,7 @@ class _PreferredfoodscategoryTableState
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                            width: 1, color: Colors.black), // 셀 아래 테두리 추가
+                            width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                       ),
                     ),
                     children: [
@@ -463,7 +471,7 @@ class _PreferredfoodscategoryTableState
               ),
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),

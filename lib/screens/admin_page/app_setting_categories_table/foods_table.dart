@@ -301,7 +301,7 @@ class _FoodsTableState extends State<FoodsTable> {
               // 제목이 있는 행
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40), // 체크박스 열 크기
@@ -322,7 +322,7 @@ class _FoodsTableState extends State<FoodsTable> {
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                  width: 1, color: Colors.black), // 셀 아래 테두리 추가
+                                  width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                             ),
                           ),
                           child: column['name'] == '선택' ||
@@ -368,7 +368,7 @@ class _FoodsTableState extends State<FoodsTable> {
               // 입력 필드들이 들어간 행
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -385,7 +385,7 @@ class _FoodsTableState extends State<FoodsTable> {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                            width: 1, color: Colors.black), // 셀 아래 테두리 추가
+                            width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                       ),
                     ),
                     children: [
@@ -395,7 +395,10 @@ class _FoodsTableState extends State<FoodsTable> {
                           child: Center(
                               child: Text('no',
                                   style: TextStyle(
-                                      color: theme.colorScheme.onSurface)))),
+                                      color: theme.colorScheme.onSurface)
+                              )
+                          )
+                      ),
                       TableCell(
                         child: DropdownButtonFormField<String>(
                           value: _selectedCategory,
@@ -593,7 +596,7 @@ class _FoodsTableState extends State<FoodsTable> {
               // 데이터가 추가되는 테이블
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),

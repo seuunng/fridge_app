@@ -184,7 +184,14 @@ class _ThemeTableState extends State<ThemeTable> {
         userData = List.from(originalData); // 원본 데이터로 복원
       } else {
         userData.sort((a, b) {
-          int result = a[columnName].compareTo(b[columnName]);
+          var aValue = a[columnName];
+          var bValue = b[columnName];
+
+          // 값이 null일 경우 처리
+          if (aValue == null) return 1;
+          if (bValue == null) return -1;
+
+          int result = aValue.toString().compareTo(bValue.toString());
           return newSortState == SortState.ascending ? result : -result;
         });
       }
@@ -214,7 +221,8 @@ class _ThemeTableState extends State<ThemeTable> {
               // 제목이 있는 행
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(
+                      width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -231,7 +239,7 @@ class _ThemeTableState extends State<ThemeTable> {
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                  width: 1, color: Colors.black), // 셀 아래 테두리 추가
+                                  width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                             ),
                           ),
                           child: column['name'] == '선택' ||
@@ -272,7 +280,7 @@ class _ThemeTableState extends State<ThemeTable> {
               ),
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -285,7 +293,7 @@ class _ThemeTableState extends State<ThemeTable> {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                            width: 1, color: Colors.black), // 셀 아래 테두리 추가
+                            width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                       ),
                     ),
                     children: [
@@ -360,7 +368,7 @@ class _ThemeTableState extends State<ThemeTable> {
               // 데이터가 추가되는 테이블
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),

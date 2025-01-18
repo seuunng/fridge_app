@@ -85,17 +85,41 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
     return formatter.format(dateTime);
   }
 
-  void _sortByField(String field, SortState sortState) {
+  void _sortByField(String field, SortState currentSortState, Function updateSortState) {
     setState(() {
-      if (sortState == SortState.none) {
-        feedbackData.sort((a, b) => a[field].compareTo(b[field]));
-        sortState = SortState.ascending;
-      } else if (sortState == SortState.ascending) {
-        feedbackData.sort((a, b) => b[field].compareTo(a[field]));
-        sortState = SortState.descending;
+      SortState newSortState;
+      if (currentSortState == SortState.none) {
+        newSortState = SortState.ascending;
+      } else if (currentSortState == SortState.ascending) {
+        newSortState = SortState.descending;
       } else {
-        feedbackData = List.from(originalData);
-        sortState = SortState.none;
+        newSortState = SortState.none;
+      }
+
+      // 정렬 상태 업데이트
+      updateSortState(newSortState);
+
+      // 데이터 정렬
+      if (newSortState == SortState.none) {
+        feedbackData = List.from(originalData); // 원본 데이터 복원
+      } else {
+        feedbackData.sort((a, b) {
+          final aValue = a[field];
+          final bValue = b[field];
+
+          if (aValue == null || bValue == null) return 0;
+
+          int compareResult;
+          if (aValue is String && bValue is String) {
+            compareResult = aValue.compareTo(bValue);
+          } else if (aValue is DateTime && bValue is DateTime) {
+            compareResult = aValue.compareTo(bValue);
+          } else {
+            compareResult = aValue.toString().compareTo(bValue.toString());
+          }
+
+          return newSortState == SortState.ascending ? compareResult : -compareResult;
+        });
       }
     });
   }
@@ -140,14 +164,40 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
               scrollDirection: Axis.vertical,
               child: DataTable(
                 columns: [
-                  _buildSortableColumn('날짜', 'timestamp', _dateSortState),
+                  _buildSortableColumn('날짜', 'timestamp', _dateSortState, (SortState newState) {
+                    setState(() {
+                      _dateSortState = newState;
+                    });
+                  }),
                   _buildSortableColumn(
-                      '구분', 'feedbackType', _feedbackTypeSortState),
-                  _buildSortableColumn('항목', 'category', _categorySortState),
-                  _buildSortableColumn('작성자', 'author', _authorSortState),
+                      '구분', 'feedbackType', _feedbackTypeSortState,
+                          (SortState newState) {
+                        setState(() {
+                          _feedbackTypeSortState = newState;
+                        });
+                      }),
+                  _buildSortableColumn('항목', 'category', _categorySortState, (SortState newState) {
+                    setState(() {
+                      _categorySortState = newState;
+                    });
+                  }),
+                  _buildSortableColumn('작성자', 'author', _authorSortState, (SortState newState) {
+                    setState(() {
+                      _authorSortState = newState;
+                    });
+                  }),
                   _buildSortableColumn(
-                      '확인사항', 'confirmationNote', _confirmationSortState),
-                  _buildSortableColumn('처리결과', 'status', _statusSortState),
+                      '확인사항', 'confirmationNote', _confirmationSortState,
+                          (SortState newState) {
+                        setState(() {
+                          _confirmationSortState = newState;
+                        });
+                      }),
+                  _buildSortableColumn('처리결과', 'status', _statusSortState, (SortState newState) {
+                    setState(() {
+                      _statusSortState = newState;
+                    });
+                  }),
                 ],
                 rows: filteredData.map((row) {
                   return DataRow(cells: [
@@ -208,11 +258,11 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
   }
 
   DataColumn _buildSortableColumn(
-      String title, String field, SortState sortState) {
+      String title, String field, SortState sortState, Function(SortState) updateSortState) {
     final theme = Theme.of(context);
     return DataColumn(
       label: GestureDetector(
-        onTap: () => _sortByField(field, sortState),
+        onTap: () => _sortByField(field, sortState, updateSortState),
         child: Row(
           children: [
             Text(title,

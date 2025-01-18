@@ -263,7 +263,8 @@ class _HowtocookTableState extends State<HowtocookTable> {
             children: [
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(
+                      width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -280,7 +281,7 @@ class _HowtocookTableState extends State<HowtocookTable> {
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                  width: 1, color: Colors.black), // 셀 아래 테두리 추가
+                                  width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                             ),
                           ),
                           child: column['name'] == '선택' ||
@@ -321,7 +322,7 @@ class _HowtocookTableState extends State<HowtocookTable> {
               ),
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -334,7 +335,7 @@ class _HowtocookTableState extends State<HowtocookTable> {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                            width: 1, color: Colors.black), // 셀 아래 테두리 추가
+                            width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                       ),
                     ),
                     children: [
@@ -404,7 +405,7 @@ class _HowtocookTableState extends State<HowtocookTable> {
               ),
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: Colors.black),
+                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
