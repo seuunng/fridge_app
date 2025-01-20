@@ -52,6 +52,7 @@ class _AddRecipeState extends State<AddRecipe> {
   List<String> selectedIngredients = [];
   List<String> selectedMethods = [];
   List<String> selectedThemes = []; // 선택된 재료 목록
+  int? _selectedStepIndex; // 현재 선택된 항목의 인덱스
 
   List<String>? _imageFiles = [];
   List<String> mainImages = [];
@@ -107,8 +108,8 @@ class _AddRecipeState extends State<AddRecipe> {
     _loadDataFromFirestore();
     _loadUserRole();
   }
-  void _loadUserRole() async {
 
+  void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -124,6 +125,7 @@ class _AddRecipeState extends State<AddRecipe> {
       print('Error loading user role: $e');
     }
   }
+
   Future<List<String>> _fetchIngredients() async {
     Set<String> userIngredients = {}; // 사용자가 추가한 재료
     List<String> allIngredients = [];
@@ -239,7 +241,7 @@ class _AddRecipeState extends State<AddRecipe> {
         );
         return; // 저장 동작 중단
       }
-      
+
       final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
       if (mainImages.isEmpty) {
@@ -341,9 +343,11 @@ class _AddRecipeState extends State<AddRecipe> {
       return '';
     }
   }
+
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
@@ -353,6 +357,7 @@ class _AddRecipeState extends State<AddRecipe> {
       print('이미지 선택이 취소되었습니다.');
     }
   }
+
   Future<String> uploadMainImage(File imageFile) async {
     try {
       File compressedFile = await _compressImage(imageFile);
@@ -417,10 +422,13 @@ class _AddRecipeState extends State<AddRecipe> {
     final List<XFile>? pickedFiles = await picker.pickMultiImage();
     if (pickedFiles != null) {
       // 새로운 이미지 중복 필터링
-      List<String> newImages = pickedFiles.where((file) {
-        final imagePath = file.path;
-        return !mainImages.contains(imagePath); // 중복 이미지 걸러내기
-      }).map((file) => file.path).toList();
+      List<String> newImages = pickedFiles
+          .where((file) {
+            final imagePath = file.path;
+            return !mainImages.contains(imagePath); // 중복 이미지 걸러내기
+          })
+          .map((file) => file.path)
+          .toList();
 
       // 초과 이미지 제거
       if (mainImages.length + newImages.length > 4) {
@@ -429,22 +437,23 @@ class _AddRecipeState extends State<AddRecipe> {
         ));
 
         // 초과분을 자르기
-        newImages = newImages.sublist(0, 4 - mainImages.length);
+        final int remainingSlots = 4 - mainImages.length;
+        newImages = newImages.sublist(0, remainingSlots);
       }
-    // if (pickedFiles != null) {
-    //   for (XFile file in pickedFiles) {
-    //     String imageUrl = await uploadMainImage(File(file.path));
-    //     if (imageUrl.isNotEmpty) {
-    //       setState(() {
-    //         mainImages.add(imageUrl); // 이미지 URL을 mainImages 리스트에 추가
-    //       });
-    //     }
-    //   }
+      // if (pickedFiles != null) {
+      //   for (XFile file in pickedFiles) {
+      //     String imageUrl = await uploadMainImage(File(file.path));
+      //     if (imageUrl.isNotEmpty) {
+      //       setState(() {
+      //         mainImages.add(imageUrl); // 이미지 URL을 mainImages 리스트에 추가
+      //       });
+      //     }
+      //   }
       // 중복 없는 새로운 이미지를 추가
       setState(() {
         mainImages.addAll(newImages);
       });
-
+    }
   }
 
   Future<File> _compressImage(File file) async {
@@ -468,120 +477,110 @@ class _AddRecipeState extends State<AddRecipe> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.recipeData == null ? '레시피 추가' : '레시피 수정'),
-        actions: [
-          TextButton(
-            child: Text(
-              '저장',
-              style: TextStyle(
-                fontSize: 20, // 글씨 크기를 20으로 설정
+        appBar: AppBar(
+          title: Text(widget.recipeData == null ? '레시피 추가' : '레시피 수정'),
+          actions: [
+            TextButton(
+              child: Text(
+                '저장',
+                style: TextStyle(
+                  fontSize: 20, // 글씨 크기를 20으로 설정
+                ),
               ),
+              onPressed: _saveRecipe,
             ),
-            onPressed: _saveRecipe,
-          ),
-          SizedBox(
-            width: 20,
-          )
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTextField('레시피 이름', recipeNameController, maxLength: 20),
-            _buildMainImagePicker(),
-            Row(
-              children: [
-                Icon(Icons.timer, size: 25,
-                    color: theme.colorScheme.onSurface), // 아이콘
-                SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
-                Container(
-                  // flex: 1,
-                  child: _buildTimeInputSection(),
-                ),
-                SizedBox(width: 5),
-                Icon(Icons.people, size: 25,
-                    color: theme.colorScheme.onSurface),
-                SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
-                Expanded(
-                  flex: 1,
-                  child:
-                      _buildTextField('인원', servingsController, isNumber: true, maxLength: 2),
-                ),
-                SizedBox(width: 5),
-                Icon(Icons.emoji_events, size: 25,
-                    color: theme.colorScheme.onSurface),
-                SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
-                Expanded(
-                  flex: 2,
-                  child: _buildDropdown(
-                      '난이도', ['상', '중', '하'], selectedDifficulty, (value) {
-                    setState(() {
-                      selectedDifficulty = value;
-                    });
-                  }),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            _buildSearchableDropdown(
-              '재료', // title
-              availableIngredients, // items
-              ingredientsSearchController,
-              (selectedItem) {
+            SizedBox(
+              width: 20,
+            )
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTextField('레시피 이름', recipeNameController, maxLength: 20),
+              _buildMainImagePicker(),
+              Row(
+                children: [
+                  Icon(Icons.timer,
+                      size: 25, color: theme.colorScheme.onSurface), // 아이콘
+                  SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
+                  Container(
+                    // flex: 1,
+                    child: _buildTimeInputSection(),
+                  ),
+                  SizedBox(width: 5),
+                  Icon(Icons.people,
+                      size: 25, color: theme.colorScheme.onSurface),
+                  SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
+                  Expanded(
+                    flex: 1,
+                    child: _buildTextField('인원', servingsController,
+                        isNumber: true, maxLength: 2),
+                  ),
+                  SizedBox(width: 5),
+                  Icon(Icons.emoji_events,
+                      size: 25, color: theme.colorScheme.onSurface),
+                  SizedBox(width: 5), // 아이콘과 입력 필드 사이 간격
+                  Expanded(
+                    flex: 2,
+                    child: _buildDropdown(
+                        '난이도', ['상', '중', '하'], selectedDifficulty, (value) {
+                      setState(() {
+                        selectedDifficulty = value;
+                      });
+                    }),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              _buildSearchableDropdown(
+                  '재료', // title
+                  availableIngredients, // items
+                  ingredientsSearchController, (selectedItem) {
                 // onItemSelected
                 setState(() {
                   selectedIngredients.add(selectedItem);
                 });
-              },
-              'ingredients',
-              20
-            ),
-            SizedBox(height: 10),
-            _buildselectedItems(selectedIngredients,10), // 선택된 재료 표시
-            SizedBox(height: 10),
+              }, 'ingredients', 20),
+              SizedBox(height: 10),
+              _buildselectedItems(selectedIngredients, 10), // 선택된 재료 표시
+              SizedBox(height: 10),
 
-            _buildHorizontalScrollSection(
-              '조리 방법',
-              availableMethods,
-              filteredMethods,
-              methodsSearchController,
-              selectedMethods,
-              (selectedItem) {
+              _buildHorizontalScrollSection(
+                  '조리 방법',
+                  availableMethods,
+                  filteredMethods,
+                  methodsSearchController,
+                  selectedMethods, (selectedItem) {
                 setState(() {
                   selectedMethods.add(selectedItem);
                 });
-              },
-              'methods',
-              5
-            ),
-            SizedBox(height: 10),
-            _buildselectedItems(selectedMethods,10),
-            SizedBox(height: 10),
+              }, 'methods', 5),
+              SizedBox(height: 10),
+              _buildselectedItems(selectedMethods, 10),
+              SizedBox(height: 10),
 
-            _buildHorizontalScrollSection(
-                '테마', // title
-                availableThemes,
-                filteredThemes,
-                themesSearchController,
-                selectedThemes, (selectedItem) {
-              // onItemSelected
-              setState(() {
-                selectedThemes.add(selectedItem);
-              });
-            }, 'themes',
-            5),
-            SizedBox(height: 10),
-            _buildselectedItems(selectedThemes,10),
+              _buildHorizontalScrollSection(
+                  '테마', // title
+                  availableThemes,
+                  filteredThemes,
+                  themesSearchController,
+                  selectedThemes, (selectedItem) {
+                // onItemSelected
+                setState(() {
+                  selectedThemes.add(selectedItem);
+                });
+              }, 'themes', 5),
+              SizedBox(height: 10),
+              _buildselectedItems(selectedThemes, 10),
 
-            SizedBox(height: 10),
-            _buildStepsWithImagesSection(),
-          ],
-
+              SizedBox(height: 10),
+              _buildStepsWithImagesSection(),
+            ],
+          ),
         ),
-      ),
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
           mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
@@ -592,8 +591,7 @@ class _AddRecipeState extends State<AddRecipe> {
                 child: BannerAdWidget(),
               ),
           ],
-        )
-    );
+        ));
   }
 
   Widget _buildMainImagePicker() {
@@ -610,37 +608,52 @@ class _AddRecipeState extends State<AddRecipe> {
                     color: theme.colorScheme.onSurface),
                 onPressed: _pickMainImages, // 이미지 선택 메서드 호출
               ),
-            ...mainImages.map((imageUrl) {
-              return Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Image.network(imageUrl,
-                        width: 50, height: 50, fit: BoxFit.cover),
-                  ),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          mainImages.remove(imageUrl); // 이미지 삭제
-                        });
-                      },
-                      child: Container(
-                        color: theme.colorScheme.primary,
-                        child: Icon(Icons.close,
-                            size: 18, color: theme.colorScheme.onPrimary),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: mainImages.map((imagePath) {
+                    return Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: buildImage(imagePath), // 이미지 경로에 따라 동적 처리
+                        ),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                mainImages.remove(imagePath); // 이미지 삭제
+                              });
+                            },
+                            child: Container(
+                              color: theme.colorScheme.primary,
+                              child: Icon(Icons.close,
+                                  size: 18, color: theme.colorScheme.onPrimary),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
           ],
         ),
       ],
     );
+  }
+
+  Widget buildImage(String imagePath) {
+    if (imagePath.startsWith('http')) {
+      return Image.network(imagePath, width: 50, height: 50, fit: BoxFit.cover);
+    } else {
+      return Image.file(File(imagePath),
+          width: 50, height: 50, fit: BoxFit.cover);
+    }
   }
 
   // 선택할 수 있는 검색 입력 필드
@@ -650,7 +663,7 @@ class _AddRecipeState extends State<AddRecipe> {
     TextEditingController searchController,
     Function(String) onItemSelected,
     String type,
-      int maxCount,
+    int maxCount,
   ) {
     final theme = Theme.of(context);
     return Column(
@@ -700,9 +713,18 @@ class _AddRecipeState extends State<AddRecipe> {
                 final bool isSelected = selectedIngredients.contains(item);
                 return GestureDetector(
                   onTap: () {
+                    if (isSelected) {
+                      // 이미 선택된 경우 알림 메시지 표시
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('$item은 이미 추가된 재료입니다.')),
+                      );
+                      return; // 추가 동작 중단
+                    }
                     if (!isSelected && selectedIngredients.length >= maxCount) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('$title는 최대 $maxCount개까지만 선택 가능합니다.')),
+                        SnackBar(
+                            content:
+                                Text('$title는 최대 $maxCount개까지만 선택 가능합니다.')),
                       );
                       return;
                     }
@@ -717,11 +739,10 @@ class _AddRecipeState extends State<AddRecipe> {
                     child: Chip(
                       label: Text(
                         item, // 선택된 항목은 글씨 색을 흰색으로
-                style: theme.textTheme.bodyMedium?.copyWith(
-                color: isSelected
-                ? theme.chipTheme.secondaryLabelStyle!.color
-                    : theme.chipTheme.labelStyle!
-                    .color,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: isSelected
+                              ? theme.chipTheme.secondaryLabelStyle!.color
+                              : theme.chipTheme.labelStyle!.color,
                         ),
                       ),
                       backgroundColor: isSelected
@@ -738,30 +759,6 @@ class _AddRecipeState extends State<AddRecipe> {
             ),
           ),
       ],
-    );
-  }
-
-// 선택된 재료 목록을 표시
-  Widget _buildselectedItems(List<String> selectedItems, int maxCount) {
-    final theme = Theme.of(context);
-    return Wrap(
-      spacing: 8,
-      children: selectedItems.map((item) {
-        return Chip(
-          label: Text(item,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.chipTheme.labelStyle!.color)),
-          padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
-          labelPadding: EdgeInsets.symmetric(horizontal: 1.0),
-          deleteIcon: Icon(Icons.close,
-              color: theme.colorScheme.onSurface),
-          onDeleted: () {
-            setState(() {
-              selectedItems.remove(item);
-            });
-          },
-        );
-      }).toList(),
     );
   }
 
@@ -789,6 +786,66 @@ class _AddRecipeState extends State<AddRecipe> {
     );
   }
 
+//시간입력 섹션
+  Widget _buildTimeInputSection() {
+    return Expanded(
+        child: _buildTextField('분', minuteController,
+            isNumber: true, maxLength: 3));
+  }
+
+  // 난이도 드롭다운
+  Widget _buildDropdown(String label, List<String> options, String currentValue,
+      Function(String) onChanged) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Text(label, style: TextStyle(color: theme.colorScheme.onSurface)),
+          SizedBox(width: 16),
+          DropdownButton<String>(
+            value: options.contains(currentValue) ? currentValue : options[0],
+            items: options.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value,
+                    style: TextStyle(color: theme.colorScheme.onSurface)),
+              );
+            }).toList(),
+            onChanged: (newValue) {
+              if (newValue != null) {
+                onChanged(newValue);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+// 선택된 재료 목록을 표시
+  Widget _buildselectedItems(List<String> selectedItems, int maxCount) {
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: 8,
+      children: selectedItems.map((item) {
+        return Chip(
+          label: Text(item,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.chipTheme.labelStyle!.color)),
+          padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
+          labelPadding: EdgeInsets.symmetric(horizontal: 1.0),
+          deleteIcon: Icon(Icons.close, color: theme.colorScheme.onSurface),
+          onDeleted: () {
+            setState(() {
+              selectedItems.remove(item);
+            });
+          },
+        );
+      }).toList(),
+    );
+  }
+
 // 가로 스크롤 가능한 섹션 (조리 방법 및 테마)
   Widget _buildHorizontalScrollSection(
     String title,
@@ -798,7 +855,7 @@ class _AddRecipeState extends State<AddRecipe> {
     List<String> selectedItems,
     Function(String) onItemSelected,
     String type,
-      int maxCount,
+    int maxCount,
   ) {
     final theme = Theme.of(context);
     return Column(
@@ -843,7 +900,8 @@ class _AddRecipeState extends State<AddRecipe> {
                   if (!isSelected && selectedItems.length >= maxCount) {
                     // 칩 선택 제한 경고
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('$title는 최대 $maxCount개까지만 선택 가능합니다.')),
+                      SnackBar(
+                          content: Text('$title는 최대 $maxCount개까지만 선택 가능합니다.')),
                     );
                     return;
                   }
@@ -882,42 +940,6 @@ class _AddRecipeState extends State<AddRecipe> {
     );
   }
 
-//시간입력 섹션
-  Widget _buildTimeInputSection() {
-    return Expanded(
-        child: _buildTextField('분', minuteController, isNumber: true, maxLength: 3));
-  }
-
-  // 난이도 드롭다운
-  Widget _buildDropdown(String label, List<String> options, String currentValue,
-      Function(String) onChanged) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Text(label, style: TextStyle(color: theme.colorScheme.onSurface)),
-          SizedBox(width: 16),
-          DropdownButton<String>(
-            value: options.contains(currentValue) ? currentValue : options[0],
-            items: options.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value,
-                    style: TextStyle(color: theme.colorScheme.onSurface)),
-              );
-            }).toList(),
-            onChanged: (newValue) {
-              if (newValue != null) {
-                onChanged(newValue);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   //조리방법과이미지 섹션
   Widget _buildStepsWithImagesSection() {
     final theme = Theme.of(context);
@@ -934,79 +956,123 @@ class _AddRecipeState extends State<AddRecipe> {
         SizedBox(height: 8.0),
         ListView.builder(
           shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
           itemCount: stepsWithImages.length,
           itemBuilder: (context, index) {
             return ListTile(
               title: Text(stepsWithImages[index]['description'] ?? ''),
               leading: stepsWithImages[index]['image'] != null &&
                       stepsWithImages[index]['image']!.isNotEmpty
-                  ? Image.network(stepsWithImages[index]['image']!,
-                      width: 50, height: 50, fit: BoxFit.cover)
-                  : Icon(Icons.image, size: 50,
-                  color: theme.colorScheme.onSurface),
+                  ? kIsWeb ||
+                          stepsWithImages[index]['image']!.startsWith('http')
+                      ? Image.network(
+                          stepsWithImages[index]['image']!,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(Icons.error,
+                                color: theme.colorScheme.onSurface);
+                          },
+                        )
+                      : Image.file(
+                          File(stepsWithImages[index]['image']!),
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        )
+                  : Icon(Icons.image,
+                      size: 50, color: theme.colorScheme.onSurface),
               trailing: GestureDetector(
                 onTap: () {
                   setState(() {
                     stepsWithImages.removeAt(index);
                   });
                 },
-                child: Icon(Icons.close, size: 18,
-                    color: theme.colorScheme.onSurface),
+                child: Icon(Icons.close,
+                    size: 18, color: theme.colorScheme.onSurface),
               ),
+              onTap: () {
+                setState(() {
+                  _selectedStepIndex = index; // 선택된 항목의 인덱스 저장
+                  stepDescriptionController.text = stepsWithImages[index]
+                          ['description'] ??
+                      ''; // 설명을 입력 필드에 채움
+                  _imageFiles = [
+                    stepsWithImages[index]['image']!
+                  ]; // 이미지 경로를 입력 필드에 채움
+                });
+              },
             );
           },
         ),
+
         SizedBox(height: 16.0),
         // 조리 단계와 이미지 추가 입력 필드
         Row(
           children: [
             if (_imageFiles != null && _imageFiles!.isNotEmpty)
-              ..._imageFiles!.map((imagePath) {
-                return Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: kIsWeb
-                          ? Image.network(
-                              imagePath,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.error,
-                                    color: theme.colorScheme.onSurface);
-                              },
-                            )
-                          : Image.file(
-                              File(imagePath), // 개별 이미지의 경로에 접근
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                            ),
-                    ),
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _imageFiles!.remove(imagePath);
-                          });
-                        },
-                        child: Container(
-                          // color: theme.chipTheme.selectedColor,
-                          child: Icon(
-                            Icons.close,
-                            size: 18,
-                              color: theme.colorScheme.onSurface
-                            // color: theme.chipTheme.labelStyle!.color,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _imageFiles!.map((imagePath) {
+                    return GestureDetector(
+                      onTap: () async {
+                        // 사진을 클릭했을 때 새로운 사진 선택
+                        await _pickImage();
+                        setState(() {
+                          if (_imageFiles != null && _imageFiles!.isNotEmpty) {
+                            // 기존 이미지를 새로운 이미지로 대체
+                            imagePath = _imageFiles!.first;
+                          }
+                        });
+                      },
+                      child: Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: kIsWeb || imagePath.startsWith('http')
+                                ? Image.network(
+                                    imagePath,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(Icons.error,
+                                          color: theme.colorScheme.onSurface);
+                                    },
+                                  )
+                                : Image.file(
+                                    File(imagePath), // 개별 이미지의 경로에 접근
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                  ),
                           ),
-                        ),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _imageFiles!.remove(imagePath);
+                                });
+                              },
+                              child: Container(
+                                // color: theme.chipTheme.selectedColor,
+                                child: Icon(Icons.close,
+                                    size: 18, color: theme.colorScheme.onSurface
+                                    // color: theme.chipTheme.labelStyle!.color,
+                                    ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                );
-              }).toList(),
+                    );
+                  }).toList(), // <-- 여기에 toList()를 추가
+                ),
+              ),
             if (_imageFiles == null || _imageFiles!.isEmpty)
               IconButton(
                 icon: Icon(Icons.camera_alt_outlined,
@@ -1014,48 +1080,75 @@ class _AddRecipeState extends State<AddRecipe> {
                 onPressed: _pickImage,
               ),
             Expanded(
-              child: _buildTextField('조리 과정 입력', stepDescriptionController, maxLength: 200),
+              child: _buildTextField('조리 과정 입력', stepDescriptionController,
+                  maxLength: 200),
             ),
             IconButton(
-              icon: Icon(Icons.add,
-                  color: theme.colorScheme.onSurface),
-              onPressed: () async {
-                if (stepsWithImages.length >= 10) {
-                  // 조리 과정이 10개를 초과하면 경고 메시지 출력
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('조리 과정은 최대 10개까지만 추가할 수 있습니다.')),
-                  );
-                  return; // 추가 동작 중단
-                }
-                if (stepDescriptionController.text.isNotEmpty &&
-                    _imageFiles != null &&
-                    _imageFiles!.isNotEmpty) {
-                  String imageUrl =
-                      await uploadStepsImage(File(_imageFiles!.first));
-
-                  if (imageUrl.isNotEmpty) {
-                    setState(() {
-                      stepsWithImages.add({
-                        'description': stepDescriptionController.text,
-                        'image': imageUrl,
-                      });
-                      stepDescriptionController.clear();
-                      _imageFiles!.clear();
-                    });
-                  } else {
-                    // 이미지 업로드 실패 메시지 출력
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text('이미지 업로드 실패')));
-                  }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('조리 과정과 이미지를 입력해 주세요.')));
-                }
-              },
+              icon: Icon(Icons.add, color: theme.colorScheme.onSurface),
+              onPressed: _addOrUpdateStep,
             ),
           ],
         ),
       ],
     );
+  }
+
+// 조리 단계 추가 또는 수정 메서드
+  void _addOrUpdateStep() async {
+    if (stepDescriptionController.text.isEmpty ||
+        (_imageFiles == null || _imageFiles!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('조리 과정과 이미지를 입력해 주세요.')),
+      );
+      return;
+    }
+
+    // 이미지 업로드
+    String imageUrl = '';
+    if (_imageFiles != null && _imageFiles!.isNotEmpty) {
+      String imagePath = _imageFiles!.first;
+
+      if (imagePath.startsWith('http') && _selectedStepIndex != null) {
+        // 기존 항목에서 이미 업로드된 이미지를 사용하고 사진 수정이 없을 경우
+        imageUrl = imagePath;
+      } else {
+        // 로컬 이미지 또는 새 이미지로 수정된 경우 업로드
+        imageUrl = await uploadStepsImage(File(imagePath));
+      }
+    }
+
+    if (imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이미지 업로드 실패')),
+      );
+      return;
+    }
+
+    setState(() {
+      if (_selectedStepIndex != null) {
+        // 기존 항목 수정
+        stepsWithImages[_selectedStepIndex!] = {
+          'description': stepDescriptionController.text,
+          'image': imageUrl,
+        };
+        _selectedStepIndex = null; // 선택 해제
+      } else {
+        // 새 항목 추가
+        if (stepsWithImages.length >= 10) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('조리 과정은 최대 10개까지만 추가할 수 있습니다.')),
+          );
+          return;
+        }
+        stepsWithImages.add({
+          'description': stepDescriptionController.text,
+          'image': imageUrl,
+        });
+      }
+
+      // 입력 필드 초기화
+      stepDescriptionController.clear();
+      _imageFiles!.clear();
+    });
   }
 }

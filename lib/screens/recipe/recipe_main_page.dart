@@ -37,6 +37,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
   List<String> filteredItems = [];
   List<String> fridgeIngredients = [];
   String userRole = '';
+  final user = FirebaseAuth.instance.currentUser;
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   final List<Tab> myTabs = <Tab>[
@@ -331,7 +332,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                         ), // 스크랩 아이콘 크기 조정
                         padding: EdgeInsets.zero, // 내부 패딩 제거
                         onPressed: () {
-                          if (userRole != 'admin' && userRole != 'paid_user') {
+                          if (user == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Column(

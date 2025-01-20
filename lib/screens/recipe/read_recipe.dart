@@ -446,6 +446,12 @@ class _ReadRecipeState extends State<ReadRecipe> {
                   }
 
                   Navigator.of(context).pop();
+                  // 상위 페이지로 결과 전달 및 페이지 나가기
+                  Navigator.of(context).pop(); // AlertDialog 닫기
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('레시피가 삭제되었습니다.'),
+                  ));
+                  Navigator.of(context).pop(true); // 삭제 성공 신호를 상위 페이지로 전달
                 } catch (e) {
                   print('레시피 삭제 실패: $e');
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(

@@ -69,7 +69,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
           snapshot.docs.map((doc) => doc['FridgeName'] as String).toList();
 
       if (fridgeList.isEmpty) {
-        await _createDefaultFridge(); // 기본 냉장고 추가
+        await createDefaultFridge(); // 기본 냉장고 추가
       }
 
       setState(() {
@@ -84,7 +84,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
     }
   }
 
-  Future<void> _createDefaultFridge() async {
+  Future<void> createDefaultFridge() async {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('fridges')
@@ -256,7 +256,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                       if (_categories_fridge.isNotEmpty) {
                         _selectedCategory_fridge = _categories_fridge.first;
                       } else {
-                        _createDefaultFridge(); // 모든 냉장고가 삭제되면 기본 냉장고 생성
+                        createDefaultFridge(); // 모든 냉장고가 삭제되면 기본 냉장고 생성
                       }
                     });
 

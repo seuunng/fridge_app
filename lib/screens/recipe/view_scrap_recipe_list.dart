@@ -213,7 +213,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     } catch (e) {
       print('Error creating default fridge: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 냉장고를 생성하는 데 실패했습니다.')),
+        SnackBar(content: Text('기본 보관함을 생성하는 데 실패했습니다.')),
       );
     }
   }

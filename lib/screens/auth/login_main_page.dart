@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
+import 'package:food_for_later_new/screens/auth/user_details_page.dart';
+import 'package:food_for_later_new/screens/settings/app_usage_settings.dart';
+import 'package:food_for_later_new/services/default_fridge_service.dart';
 import 'package:food_for_later_new/services/firebase_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -174,9 +177,13 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (result.user != null) {
         await addUserToFirestore(result.user!); // Firestore에 사용자 추가
+        await DefaultFridgeService().createDefaultFridge(result.user!.uid);
         assignRandomAvatarToUser(result.user!.uid);
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => UserDetailsPage()),
+          );
         }
       }
     } on firebase_auth.FirebaseAuthException catch (e) {

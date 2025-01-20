@@ -292,6 +292,7 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
                   SizedBox(height: 16),
                   Wrap(
                     spacing: 10,
+                    runSpacing: 10,
                     children: selectedImages.map((imagePath) {
                       return Stack(
                         children: [
