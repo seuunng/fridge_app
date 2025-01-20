@@ -111,9 +111,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
       await _loadFridgeCategoriesFromFirestore(selected_fridgeId!); // ✅ 냉장고 ID가 설정된 후 아이템 불러오기
     }
   }
-  void _loadCategoriesAndFridgeData() async {
-    await _loadCategoriesFromFirestore();
-  }
 
   Future<String?> fetchFridgeId(String fridgeName) async {
     try {

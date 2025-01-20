@@ -23,14 +23,22 @@ class _RecipeReviewState extends State<RecipeReview> {
 
   bool isAdmin = false;
   TextEditingController reviewContentController = TextEditingController();
+  int likedCount = 0;   // 좋아요 수
 
   @override
   void initState() {
     super.initState();
     _loadReviewsFromFirestore();
     _checkAdminRole();
+    _loadScrapedAndLikedCounts();
   }
+  void _loadScrapedAndLikedCounts() async {
+    int liked = await _getLikedCount(widget.recipeId);
 
+    setState(() {
+      likedCount = liked;
+    });
+  }
   void _loadReviewsFromFirestore() async {
     List<Map<String, dynamic>> fetchedReviews = await fetchRecipeReviews();
     setState(() {
@@ -160,7 +168,20 @@ class _RecipeReviewState extends State<RecipeReview> {
       ));
     }
   }
-
+  Future<int> _getLikedCount(String recipeId) async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+          .instance
+          .collection('niced_reviews')
+          .where('reviewId', isEqualTo: recipeId)
+          .where('isNiced', isEqualTo: true)
+          .get();
+      return snapshot.docs.length; // 좋아요된 문서 수 반환
+    } catch (e) {
+      print('Error fetching liked count: $e');
+      return 0; // 에러 시 0 반환
+    }
+  }
   Future<void> _deleteReview(int index) async {
     String docId = recipeReviews[index]['docId'];
     bool isNiced = recipeReviews[index]['isNiced'] ?? false;
@@ -348,15 +369,33 @@ class _RecipeReviewState extends State<RecipeReview> {
                                 ),
                                 Spacer(),
                                 Row(children: [
-                                  GestureDetector(
+                                  Column(
+                                    children: [
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min, // 최소 공간만 차지하도록 설정
+                                        children: [
+                                    GestureDetector(
                                     onTap: () => _toggleNiced(index),
                                     child: Icon(
-                                        isNiced
-                                            ? Icons.thumb_up
-                                            : Icons.thumb_up_alt_outlined,
-                                        size: 12,
-                                        color: theme.colorScheme.onSurface),
+                                                isNiced
+                                                    ? Icons.thumb_up
+                                                    : Icons.thumb_up_alt_outlined,
+                                                size: 12,
+                                                color: theme.colorScheme.onSurface),
+                    ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            '$likedCount',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: theme.colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
+
                                   SizedBox(width: 10),
                                   GestureDetector(
                                     onTap: () {

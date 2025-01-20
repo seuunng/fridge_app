@@ -25,7 +25,10 @@ class ViewResearchList extends StatefulWidget {
 class _ViewResearchListState extends State<ViewResearchList> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
+  bool useFridgeIngredientsState = false;
+  // String? category = widget.category.isNotEmpty ? widget.category[0] : null;
+  String userRole = '';
+  TextEditingController _searchController = TextEditingController();
   String? selectedCategory;
   List<String> keywords = [];
   List<RecipeModel> matchingRecipes = [];
@@ -60,11 +63,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
     "디저트/빵류": 1,
   };
 
-  TextEditingController _searchController = TextEditingController();
-  bool useFridgeIngredientsState = false;
-  // String? category = widget.category.isNotEmpty ? widget.category[0] : null;
-
-  String userRole = '';
 
   @override
   void initState() {
@@ -75,65 +73,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
     _loadPreferredFoodsByCategory().then((_) {
       _initializeSearch();
     });
-    _initializeTopIngredients();
     _loadSearchSettingsFromLocal();
     _loadFridgeItemsFromFirestore();
-
     _loadUserRole();
+    _initializeFridgeData();
+
   }
-  void _loadUserRole() async {
-
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-
-      if (userDoc.exists) {
-        setState(() {
-          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
-        });
-      }
-    } catch (e) {
-      print('Error loading user role: $e');
-    }
-  }
-  // 검색 상세설정 값 불러오기
-  Future<void> _loadSearchSettingsFromLocal() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      selectedCookingMethods =
-          prefs.getStringList('selectedCookingMethods') ?? [];
-      selectedPreferredFoodCategory =
-          prefs.getStringList('selectedPreferredFoodCategories') ?? [];
-      excludeKeywords = prefs.getStringList('excludeKeywords') ?? [];
-      selectedCookingMethods!.forEach((method) {
-        if (!keywords.contains(method)) {
-          keywords.add(method);
-        }
-      });
-    });
-  }
-
-  // 냉장고 재료 불러오기
-  Future<void> _loadFridgeItemsFromFirestore() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('fridge_items')
-          .where('userId', isEqualTo: userId)
-          .where('FridgeId', isEqualTo: selected_fridgeId)
-          .get();
-
-      setState(() {
-        fridgeIngredients =
-            snapshot.docs.map((doc) => doc['items'] as String).toList();
-      });
-    } catch (e) {
-      print('Error loading fridge items: $e');
-    }
-  }
-
-  void _loadSelectedFridge() async {
+  //선택된 냉장고 불러오기
+  Future<void> _loadSelectedFridge() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
@@ -144,7 +91,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       selected_fridgeId = await fetchFridgeId(selectedFridge!);
     }
   }
-
+  //선택된 냉장고의 Id불러오기
   Future<String?> fetchFridgeId(String fridgeName) async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -164,37 +111,58 @@ class _ViewResearchListState extends State<ViewResearchList> {
       return null;
     }
   }
-
-  // 냉장고 재료 우선순위에 따라 10개 추리기
-  Future<List<String>> _applyCategoryPriority(
-      List<String> fridgeIngredients) async {
-    Map<String, String> ingredientToCategory =
-        await _loadIngredientCategoriesFromFirestore();
-
-    List<MapEntry<String, int>> prioritizedIngredients =
-        fridgeIngredients.map((ingredient) {
-      String category = ingredientToCategory[ingredient] ?? "";
-      int priority = categoryPriority[category] ?? 0;
-      return MapEntry(ingredient, priority);
-    }).toList();
-
-    prioritizedIngredients.sort((a, b) => b.value.compareTo(a.value));
-    List<String> topIngredients =
-        prioritizedIngredients.map((entry) => entry.key).take(10).toList();
-    return topIngredients;
-  }
-
-  Future<void> _initializeTopIngredients() async {
-    if (widget.useFridgeIngredients) {
-      try {
-        await _loadFridgeItemsFromFirestore();
-        topIngredients = await _applyCategoryPriority(fridgeIngredients);
-      } catch (error) {
-        print('Error initializing fridge ingredients: $error');
-      }
+  //순차적으로 식품카테고리 불러오기
+  Future<Map<String, String>> _loadIngredientCategoriesFromFirestore() async {
+    try {
+      return await _fetchIngredients();
+    } catch (e) {
+      print("Error loading ingredient categories: $e");
+      return {};
     }
   }
+  //사용자정의식품+기본식품 불러오기
+  Future<Map<String, String>> _fetchIngredients() async {
+    Set<String> userIngredients = {}; // 사용자가 추가한 재료
+    Map<String, String> ingredientToCategory = {};
 
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    try {
+      // ✅ 1. 사용자 정의 foods 데이터 가져오기
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('foods')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      for (var doc in userSnapshot.docs) {
+        final foodName = doc['foodsName'] as String?;
+        final category = doc['defaultCategory'] as String?;
+        if (foodName != null) {
+          userIngredients.add(foodName);
+          if (category != null) {
+            ingredientToCategory[foodName] = category;
+          }
+        }
+      }
+
+      // ✅ 2. 기본 식재료(default_foods) 가져오기
+      final defaultSnapshot =
+      await FirebaseFirestore.instance.collection('default_foods').get();
+
+      for (var doc in defaultSnapshot.docs) {
+        final foodName = doc['foodsName'] as String?;
+        final category = doc['defaultCategory'] as String?;
+        if (foodName != null && !userIngredients.contains(foodName)) {
+          ingredientToCategory[foodName] = category ?? "기타";
+        }
+      }
+
+      return ingredientToCategory;
+    } catch (e) {
+      print("Error fetching ingredients: $e");
+      return {};
+    }
+  }
   // 선호카테고리 불러오기
   Future<void> _loadPreferredFoodsByCategory() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -213,7 +181,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final Map<String, dynamic>? categories =
-            data['category'] as Map<String, dynamic>?;
+        data['category'] as Map<String, dynamic>?;
 
         if (categories != null) {
           categories.forEach((categoryName, items) {
@@ -239,11 +207,95 @@ class _ViewResearchListState extends State<ViewResearchList> {
       print('Error loading preferred foods by category: $e');
     }
   }
+  //순차적으로 냉장고속아이템 불러오기
+  Future<void> _initializeFridgeData() async {
+    await _loadSelectedFridge(); // selected_fridgeId를 먼저 로드
+    if (selected_fridgeId != null) {
+      await _loadFridgeItemsFromFirestore(); // selected_fridgeId를 사용해 데이터 로드
+    } else {
+      print('selected_fridgeId is null. Cannot load fridge items.');
+    }
+    if (useFridgeIngredientsState) {
+      try {
+        await _loadFridgeItemsFromFirestore();
+        topIngredients = await _applyCategoryPriority(fridgeIngredients);
+      } catch (error) {
+        print('Error initializing fridge ingredients: $error');
+      }
+    }
+  }
+  // 냉장고 재료 불러오기
+  Future<void> _loadFridgeItemsFromFirestore() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridge_items')
+          .where('userId', isEqualTo: userId)
+          .where('FridgeId', isEqualTo: selected_fridgeId)
+          .get();
 
+      setState(() {
+        fridgeIngredients =
+            snapshot.docs.map((doc) => doc['items'] as String).toList();
+      });
+      print('1 냉장고속재료 $fridgeIngredients');
+    } catch (e) {
+      print('Error loading fridge items: $e');
+    }
+  }
+  // 냉장고 재료 우선순위에 따라 10개 추리기
+  Future<List<String>> _applyCategoryPriority(List<String> fridgeIngredients) async {
+    print('fridgeIngredients $fridgeIngredients');
+    Map<String, String> ingredientToCategory =
+        await _loadIngredientCategoriesFromFirestore();
+
+    List<MapEntry<String, int>> prioritizedIngredients =
+        fridgeIngredients.map((ingredient) {
+      String category = ingredientToCategory[ingredient] ?? "";
+      int priority = categoryPriority[category] ?? 0;
+      return MapEntry(ingredient, priority);
+    }).toList();
+
+    prioritizedIngredients.sort((a, b) => b.value.compareTo(a.value));
+    List<String> topIngredients =
+        prioritizedIngredients.map((entry) => entry.key).take(10).toList();
+    print('topIngredients $topIngredients');
+    return topIngredients;
+  }
+  // 검색 상세설정 값 불러오기
+  Future<void> _loadSearchSettingsFromLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      selectedCookingMethods =
+          prefs.getStringList('selectedCookingMethods') ?? [];
+      selectedPreferredFoodCategory =
+          prefs.getStringList('selectedPreferredFoodCategories') ?? [];
+      excludeKeywords = prefs.getStringList('excludeKeywords') ?? [];
+      selectedCookingMethods!.forEach((method) {
+        if (!keywords.contains(method)) {
+          keywords.add(method);
+        }
+      });
+    });
+  }
+
+  //순차적으로 냉장고아이템중 10개 정하고 선호식품카테고리 가져와서 레시피 검색하기
+  Future<void> _initializeSearch() async {
+    await _loadSearchSettingsFromLocal();
+
+    if (selectedPreferredFoodCategory != null &&
+        selectedPreferredFoodCategory!.isNotEmpty) {
+      await loadRecipesByPreferredFoodsCategory();
+    }
+    await fetchRecipes(
+        keywords: keywords,
+        topIngredients: topIngredients,
+        cookingMethods: this.selectedCookingMethods);
+  }
+  //선호카테고리에 따른 레시피 불러오기
   Future<void> loadRecipesByPreferredFoodsCategory() async {
     try {
       List<String> allPreferredItems =
-          itemsByCategory.values.expand((list) => list).toList();
+      itemsByCategory.values.expand((list) => list).toList();
 
       setState(() {
         excludeKeywords = [...?excludeKeywords, ...allPreferredItems];
@@ -257,25 +309,23 @@ class _ViewResearchListState extends State<ViewResearchList> {
       print('Error loading recipes by preferred foods category: $e');
     }
   }
+  //제외검색어 검색하기
+  List<DocumentSnapshot> _filterExcludedItems({
+    required List<DocumentSnapshot> docs,
+    required List<String> excludeKeywords,
+  }) {
+    return docs.where((doc) {
+      List<String> foods = List<String>.from(doc['foods'] ?? []);
+      List<String> methods = List<String>.from(doc['methods'] ?? []);
+      List<String> themes = List<String>.from(doc['themes'] ?? []);
 
-  Future<void> _initializeSearch() async {
-    await _loadSearchSettingsFromLocal();
-
-    if (widget.useFridgeIngredients) {
-      await _initializeTopIngredients();
-    }
-
-    if (selectedPreferredFoodCategory != null &&
-        selectedPreferredFoodCategory!.isNotEmpty) {
-      await loadRecipesByPreferredFoodsCategory();
-    }
-
-    await fetchRecipes(
-        keywords: keywords,
-        topIngredients: topIngredients,
-        cookingMethods: this.selectedCookingMethods);
+      return !excludeKeywords.any((exclude) =>
+      foods.contains(exclude) ||
+          methods.contains(exclude) ||
+          themes.contains(exclude));
+    }).toList();
   }
-
+  //레시피검색하기
   Future<void> fetchRecipes({
     List<String>? keywords,
     List<String>? topIngredients,
@@ -414,97 +464,23 @@ class _ViewResearchListState extends State<ViewResearchList> {
     }
   }
 
-  List<DocumentSnapshot> _filterExcludedItems({
-    required List<DocumentSnapshot> docs,
-    required List<String> excludeKeywords,
-  }) {
-    return docs.where((doc) {
-      List<String> foods = List<String>.from(doc['foods'] ?? []);
-      List<String> methods = List<String>.from(doc['methods'] ?? []);
-      List<String> themes = List<String>.from(doc['themes'] ?? []);
-
-      return !excludeKeywords.any((exclude) =>
-          foods.contains(exclude) ||
-          methods.contains(exclude) ||
-          themes.contains(exclude));
-    }).toList();
-  }
-
-  Future<Map<String, String>> _fetchIngredients() async {
-    Set<String> userIngredients = {}; // 사용자가 추가한 재료
-    Map<String, String> ingredientToCategory = {};
-
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
+  // 사용자의 역할 불러오기
+  void _loadUserRole() async {
     try {
-      // ✅ 1. 사용자 정의 foods 데이터 가져오기
-      final userSnapshot = await FirebaseFirestore.instance
-          .collection('foods')
-          .where('userId', isEqualTo: userId)
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
           .get();
-
-      for (var doc in userSnapshot.docs) {
-        final foodName = doc['foodsName'] as String?;
-        final category = doc['defaultCategory'] as String?;
-        if (foodName != null) {
-          userIngredients.add(foodName);
-          if (category != null) {
-            ingredientToCategory[foodName] = category;
-          }
-        }
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
       }
-
-      // ✅ 2. 기본 식재료(default_foods) 가져오기
-      final defaultSnapshot =
-      await FirebaseFirestore.instance.collection('default_foods').get();
-
-      for (var doc in defaultSnapshot.docs) {
-        final foodName = doc['foodsName'] as String?;
-        final category = doc['defaultCategory'] as String?;
-        if (foodName != null && !userIngredients.contains(foodName)) {
-          ingredientToCategory[foodName] = category ?? "기타";
-        }
-      }
-
-      return ingredientToCategory;
     } catch (e) {
-      print("Error fetching ingredients: $e");
-      return {};
+      print('Error loading user role: $e');
     }
   }
-
-
-  Future<Map<String, String>> _loadIngredientCategoriesFromFirestore() async {
-    try {
-      return await _fetchIngredients();
-    } catch (e) {
-      print("Error loading ingredient categories: $e");
-      return {};
-    }
-  }
-
-  // Future<List<RecipeModel>> fetchRecipesByKeyword(String searchKeyword) async {
-  //   try {
-  //     if (searchKeyword.isNotEmpty) {
-  //       List<RecipeModel> filteredRecipes = matchingRecipes.where((recipe) {
-  //         bool containsInFoods = recipe.foods.any((food) =>
-  //             food.toLowerCase().contains(searchKeyword.toLowerCase()));
-  //         bool containsInMethods = recipe.methods.any((method) =>
-  //             method.toLowerCase().contains(searchKeyword.toLowerCase()));
-  //         bool containsInThemes = recipe.themes.any((theme) =>
-  //             theme.toLowerCase().contains(searchKeyword.toLowerCase()));
-  //         return containsInFoods || containsInMethods || containsInThemes;
-  //       }).toList();
-  //       return filteredRecipes;
-  //     } else {
-  //       return matchingRecipes;
-  //     }
-  //   } catch (e) {
-  //     print('Error filtering recipes: $e');
-  //     return [];
-  //   }
-  // }
-
+  // 스크랩 여부 데이타 불러오기
   Future<bool> loadScrapedData(recipeId) async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
@@ -524,7 +500,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       return false;
     }
   }
-
+  // 스크랩하기/해제하기
   void _toggleScraped(String recipeId) async {
     bool newState = await ScrapedRecipeService.toggleScraped(
       context,
@@ -536,7 +512,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       },
     );
   }
-
+  // 검색한 키워드 저장하기
   void _saveSearchKeyword(String keyword) async {
     final searchRef = FirebaseFirestore.instance.collection('search_keywords');
 
@@ -559,7 +535,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       print('검색어 저장 중 오류 발생: $e');
     }
   }
-
+  // 레시피 다시 렌더링하기
   void _refreshRecipeData() {
     fetchRecipes(
         keywords: keywords,
@@ -891,7 +867,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
                                                 vertical: 2.0, horizontal: 4.0),
                                             decoration: BoxDecoration(
                                               color: isKeyword ||
-                                                      isFromPreferredFoods
+                                                      isFromPreferredFoods ||
+                                                  topIngredients.contains(ingredient) // 추가된 조건
                                                   ? Colors.lightGreen
                                                   : inFridge
                                                       ? Colors.grey

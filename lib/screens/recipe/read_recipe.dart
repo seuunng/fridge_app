@@ -31,7 +31,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
   late String fromEmail;
   late String toEmail;
   late String nickname;
-
+  int scrapedCount = 0; // 스크랩 수
+  int likedCount = 0;
 
   List<String> ingredients = []; // 재료 목록
   String recipeName = '';
@@ -77,6 +78,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
     _loadUserRole();
     _pageController = PageController(initialPage: 0);
     recipeUrl = 'https://food-for-later.web.app/recipe/${widget.recipeId}';
+    _loadScrapedAndLikedCounts();
   }
 
   @override
@@ -116,7 +118,15 @@ class _ReadRecipeState extends State<ReadRecipe> {
       }
     }
   }
+  void _loadScrapedAndLikedCounts() async {
+    int scraped = await _getScrapedCount(widget.recipeId);
+    int liked = await _getLikedCount(widget.recipeId);
 
+    setState(() {
+      scrapedCount = scraped;
+      likedCount = liked;
+    });
+  }
   Future<void> _checkAdminRole() async {
     try {
       DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore
@@ -500,6 +510,36 @@ class _ReadRecipeState extends State<ReadRecipe> {
     return allImages;
   }
 
+  Future<int> _getScrapedCount(String recipeId) async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+          .instance
+          .collection('scraped_recipes')
+          .where('recipeId', isEqualTo: recipeId)
+          .where('isScraped', isEqualTo: true)
+          .get();
+      return snapshot.docs.length; // 스크랩된 문서 수 반환
+    } catch (e) {
+      print('Error fetching scraped count: $e');
+      return 0; // 에러 시 0 반환
+    }
+  }
+
+  Future<int> _getLikedCount(String recipeId) async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+          .instance
+          .collection('liked_recipes')
+          .where('recipeId', isEqualTo: recipeId)
+          .where('isLiked', isEqualTo: true)
+          .get();
+      return snapshot.docs.length; // 좋아요된 문서 수 반환
+    } catch (e) {
+      print('Error fetching liked count: $e');
+      return 0; // 에러 시 0 반환
+    }
+  }
+
   void _refreshRecipeData() async {
     var newData = await fetchRecipeData(widget.recipeId);
 
@@ -527,14 +567,51 @@ class _ReadRecipeState extends State<ReadRecipe> {
                 overflow: TextOverflow.ellipsis, // 넘칠 경우 말줄임표로 표시
               ),
             ),
-            IconButton(
-              visualDensity: const VisualDensity(horizontal: -4),
-              icon: Icon(
-                  isLiked
-                      ? Icons.favorite
-                      : Icons.favorite_border, // 상태에 따라 아이콘 변경
-                  size: 26), // 스크랩 아이콘 크기 조정
-              onPressed: _toggleLike,
+            Column(
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min, // 최소 공간만 차지하도록 설정
+                  children: [
+                    IconButton(
+                      visualDensity: const VisualDensity(horizontal: -4),
+                      icon: Icon(
+                        isLiked ? Icons.favorite : Icons.favorite_border, // 상태에 따라 아이콘 변경
+                        size: 26, // 아이콘 크기
+                      ),
+                      onPressed: _toggleLike,
+                    ), // 아이콘과 텍스트 사이 간격 조정
+                    Text(
+                      '$likedCount',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Column(
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min, // 최소 공간만 차지하도록 설정
+                  children: [
+                    IconButton(
+                      visualDensity: const VisualDensity(horizontal: -4),
+                      icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
+                          size: 26), // 스크랩 아이콘 크기 조정
+                      onPressed: () => _toggleScraped(widget.recipeId),
+                    ), // 아이콘과 텍스트 사이 간격 조정
+                    Text(
+                      '$scrapedCount',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
             IconButton(
               visualDensity: const VisualDensity(horizontal: -4),
@@ -542,12 +619,6 @@ class _ReadRecipeState extends State<ReadRecipe> {
               onPressed: () {
                 showShareOptions(context, fromEmail, toEmail, nickname, recipeName, recipeUrl);
               },
-            ),
-            IconButton(
-              visualDensity: const VisualDensity(horizontal: -4),
-              icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
-                  size: 26), // 스크랩 아이콘 크기 조정
-              onPressed: () => _toggleScraped(widget.recipeId),
             ),
           ],
         ),

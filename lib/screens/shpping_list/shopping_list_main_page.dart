@@ -8,6 +8,7 @@ import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/screens/home_screen.dart';
+import 'package:food_for_later_new/services/default_fridge_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ShoppingListMainPage extends StatefulWidget {
@@ -212,7 +213,8 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           snapshot.docs.map((doc) => doc['FridgeName'] as String).toList();
 
       if (fridgeList.isEmpty) {
-        await _createDefaultFridge(); // 기본 냉장고 추가
+        await DefaultFridgeService().createDefaultFridge(userId);
+
       }
       if (!mounted) return;
 
@@ -223,30 +225,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       print('Error loading fridge categories: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('냉장고 목록을 불러오는 데 실패했습니다.')),
-      );
-    }
-  }
-
-  Future<void> _createDefaultFridge() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('fridges')
-          .where('FridgeName', isEqualTo: '기본 냉장고')
-          .where('userId', isEqualTo: userId)
-          .get();
-
-      if (snapshot.docs.isEmpty) {
-        await FirebaseFirestore.instance.collection('fridges').add({
-          'FridgeName': '기본 냉장고',
-          'userId': userId,
-        });
-      } else {
-        print('기본 냉장고가 이미 존재합니다.');
-      }
-    } catch (e) {
-      print('Error creating default fridge: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 냉장고를 생성하는 데 실패했습니다.')),
       );
     }
   }

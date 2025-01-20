@@ -6,6 +6,7 @@ import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/components/custom_dropdown.dart';
+import 'package:food_for_later_new/services/default_fridge_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppUsageSettings extends StatefulWidget {
@@ -69,7 +70,8 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
           snapshot.docs.map((doc) => doc['FridgeName'] as String).toList();
 
       if (fridgeList.isEmpty) {
-        await createDefaultFridge(); // 기본 냉장고 추가
+        await DefaultFridgeService().createDefaultFridge(userId);
+
       }
 
       setState(() {
@@ -80,36 +82,6 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       print('Error loading fridge categories: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('냉장고 목록을 불러오는 데 실패했습니다.')),
-      );
-    }
-  }
-
-  Future<void> createDefaultFridge() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('fridges')
-          .where('FridgeName', isEqualTo: '기본 냉장고')
-          .where('userId', isEqualTo: userId)
-          .get();
-
-      if (snapshot.docs.isEmpty) {
-        // Firestore에 기본 냉장고 추가
-        await FirebaseFirestore.instance.collection('fridges').add({
-          'FridgeName': '기본 냉장고',
-          'userId': userId,
-        });
-      } else {
-        print('기본 냉장고가 이미 존재합니다.');
-      }
-      // UI 업데이트
-      setState(() {
-        _categories_fridge.add('기본 냉장고');
-        _selectedCategory_fridge = '기본 냉장고';
-      });
-    } catch (e) {
-      print('Error creating default fridge: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 냉장고를 생성하는 데 실패했습니다.')),
       );
     }
   }
@@ -256,7 +228,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                       if (_categories_fridge.isNotEmpty) {
                         _selectedCategory_fridge = _categories_fridge.first;
                       } else {
-                        createDefaultFridge(); // 모든 냉장고가 삭제되면 기본 냉장고 생성
+                        DefaultFridgeService().createDefaultFridge(userId);
                       }
                     });
 

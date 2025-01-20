@@ -43,9 +43,6 @@ class PreferredFoodsService {
       // 데이터 다시 로드
       reloadCategories();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 선호 카테고리가 추가되었습니다.')),
-      );
     } catch (e) {
       print('Error adding default preferred categories: $e');
       ScaffoldMessenger.of(context).showSnackBar(
