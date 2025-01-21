@@ -1,11 +1,18 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
+import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:food_for_later_new/screens/recipe/web_search_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:webview_flutter/webview_flutter.dart'; // HTTP 요청 처리
 
 class ViewResearchList extends StatefulWidget {
   final List<String>? category;
@@ -29,6 +36,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
   // String? category = widget.category.isNotEmpty ? widget.category[0] : null;
   String userRole = '';
   TextEditingController _searchController = TextEditingController();
+  WebViewController? _controller;
   String? selectedCategory;
   List<String> keywords = [];
   List<RecipeModel> matchingRecipes = [];
@@ -47,6 +55,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
   String searchKeyword = '';
   double rating = 0.0;
   bool isScraped = false;
+  List<dynamic> _results = []; // 웹 검색 결과 저장
 
   Map<String, int> categoryPriority = {
     "육류": 10,
@@ -77,6 +86,27 @@ class _ViewResearchListState extends State<ViewResearchList> {
     _loadFridgeItemsFromFirestore();
     _loadUserRole();
     _initializeFridgeData();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000)) // 투명 배경 설정
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url) {
+            print('Page started loading: $url');
+          },
+          onPageFinished: (url) {
+            print('Page finished loading: $url');
+          },
+          onNavigationRequest: (request) {
+            if (request.url.startsWith('https://www.blockedsite.com')) {
+              print('Blocking navigation to ${request.url}');
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse('https://flutter.dev'));
 
   }
   //선택된 냉장고 불러오기
@@ -237,7 +267,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
         fridgeIngredients =
             snapshot.docs.map((doc) => doc['items'] as String).toList();
       });
-      print('1 냉장고속재료 $fridgeIngredients');
     } catch (e) {
       print('Error loading fridge items: $e');
     }
@@ -258,7 +287,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
     prioritizedIngredients.sort((a, b) => b.value.compareTo(a.value));
     List<String> topIngredients =
         prioritizedIngredients.map((entry) => entry.key).take(10).toList();
-    print('topIngredients $topIngredients');
+
     return topIngredients;
   }
   // 검색 상세설정 값 불러오기
@@ -340,7 +369,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
           (topIngredients == null || topIngredients.isEmpty) &&
           (excludeKeywords == null || excludeKeywords!.isEmpty) &&
           searchKeyword.isEmpty) {
-        final querySnapshot = await _db.collection('recipe').get();
+        final querySnapshot = await _db.collection('recipe')
+            .orderBy('date', descending: true)
+            .get();
         setState(() {
           matchingRecipes = querySnapshot.docs
               .map((doc) =>
@@ -452,6 +483,29 @@ class _ViewResearchListState extends State<ViewResearchList> {
           );
         }
 
+      // 정렬 추가: 최신순 -> 조회수 높은 순 -> 좋아요 많은 순
+      combinedResults.sort((a, b) {
+        final createdAtA = a['date'] as Timestamp?;
+        final createdAtB = b['date'] as Timestamp?;
+        final viewCountA = a['views'] as int? ?? 0;
+        final viewCountB = b['views'] as int? ?? 0;
+        final likeCountA = (a['rating'] as num?)?.toDouble() ?? 0.0; // 수정된 부분
+        final likeCountB = (b['rating'] as num?)?.toDouble() ?? 0.0; // 수정된 부분
+
+        // 최신순
+        if (createdAtA != null && createdAtB != null) {
+          final createdAtComparison =
+          createdAtB.compareTo(createdAtA); // 내림차순
+          if (createdAtComparison != 0) return createdAtComparison;
+        }
+
+        // 조회수 높은 순
+        final viewCountComparison = viewCountB.compareTo(viewCountA);
+        if (viewCountComparison != 0) return viewCountComparison;
+
+        // 좋아요 많은 순
+        return likeCountB.compareTo(likeCountA);
+      });
         // 상태 업데이트
         setState(() {
           matchingRecipes = combinedResults
@@ -543,9 +597,35 @@ class _ViewResearchListState extends State<ViewResearchList> {
         cookingMethods: this.selectedCookingMethods); // 레시피 목록을 다시 불러오는 메서드
   }
 
+  Future<void> fetchSearchResultsFromWeb(String query) async {
+
+    final String apiKey = dotenv.env['GOOGLE_API_KEY'] ?? '';
+    const String cx = '36f9f7dce6df14fa0'; // Custom Search Engine ID
+    final String url =
+        'https://www.googleapis.com/customsearch/v1?q=$query&key=$apiKey&cx=$cx';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _results = data['items'] ?? []; // 웹 검색 결과를 상태 변수에 저장
+        });
+      } else {
+        throw Exception('웹 검색 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("웹 검색 중 오류 발생: $e");
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final queryKeywords = [...keywords];
+
+    // "레시피"와 "만드는법" 키워드 추가
+    if (!queryKeywords.contains("레시피")) queryKeywords.add("레시피");
+    if (!queryKeywords.contains("만드는법")) queryKeywords.add("만드는법");
     return Scaffold(
       appBar: AppBar(
         title: Text('레시피 검색'),
@@ -590,7 +670,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
                             }
                           }),
                     ),
-                    SizedBox(width: 10),
                   ]),
             ),
             Padding(
@@ -608,6 +687,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
               padding: const EdgeInsets.all(3.0),
               child: _buildCategoryGrid(),
             ),
+            if (_results.isNotEmpty) _buildWebSearchResults(),
           ],
         ),
       ),
@@ -615,6 +695,25 @@ class _ViewResearchListState extends State<ViewResearchList> {
         mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
     mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              if (matchingRecipes.length < 30 && _results.isEmpty)
+              Container(
+                color: Colors.transparent,
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: NavbarButton(
+                    buttonTitle: '웹으로 검색하기',
+                    onPressed: () async {
+                      if (keywords.isNotEmpty) {
+                        final query = queryKeywords.join(" "); // 키워드를 공백으로 연결
+                        await fetchSearchResultsFromWeb(query); // 웹 검색 함수 호출
+                      } else {
+                        print("검색할 키워드가 없습니다.");
+                      }
+                    },
+                  ),
+                ),
+              ),
             if (userRole != 'admin' && userRole != 'paid_user')
       SafeArea(
       bottom: false, // 하단 여백 제거
@@ -684,7 +783,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
         ),
         deleteIcon: Icon(Icons.close, size: 16.0),
         onDeleted: () {
-          print('keywords $keywords');
           setState(() {
             useFridgeIngredientsState = false;
             keywords.remove(fridgeIngredients);
@@ -708,12 +806,13 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
 
   Widget _buildCategoryGrid() {
-    if (matchingRecipes.isEmpty) {
+    final theme = Theme.of(context);
+    if (matchingRecipes.isEmpty && _results.isEmpty) {
       return Center(
         child: Text(
           '조건에 맞는 레시피가 없습니다.',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 14, color: theme.chipTheme.labelStyle!.color
           ),
         ),
       );
@@ -938,6 +1037,121 @@ class _ViewResearchListState extends State<ViewResearchList> {
           );
         }
       }),
+    );
+  }
+
+  Widget _buildWebSearchResults() {
+    final theme = Theme.of(context);
+    if (_results.isEmpty) {
+      return Center(child: Text('웹 검색 결과가 없습니다.',
+        style: TextStyle(
+            fontSize: 14, color: theme.chipTheme.labelStyle!.color
+        ),));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 1, // 한 줄에 하나씩 표시
+          crossAxisSpacing: 8.0, // 아이템 간 가로 간격
+          mainAxisSpacing: 8.0, // 아이템 간 세로 간격
+          childAspectRatio: 3.0, // 세로 비율 조정
+        ),
+        itemCount: _results.length,
+        itemBuilder: (context, index) {
+          final result = _results[index];
+          final title = result['title'] ?? 'No title';
+          final snippet = result['snippet'] ?? 'No description';
+          final link = result['link'] ?? '';
+          final imageUrl = result['pagemap']?['cse_thumbnail']?[0]?['src'] ??
+              'https://via.placeholder.com/150'; // 기본 이미지 URL
+
+          return GestureDetector(
+            onTap: () {
+              if (link.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Scaffold(
+                      appBar: AppBar(title: Text(title)),
+                      body: WebViewWidget(
+                        controller: WebViewController()
+                          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                          ..loadRequest(Uri.parse(link)),
+                      ),
+                    ),
+                  ),
+                );
+              }
+            },
+            child: Container(
+              padding: EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 3), // 그림자의 위치 조정
+                  ),
+                ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 왼쪽 이미지
+                  Container(
+                    width: 80.0,
+                    height: 80.0,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.0),
+                      color: Colors.grey[300],
+                      image: DecorationImage(
+                        image: NetworkImage(imageUrl),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10.0), // 이미지와 텍스트 간격
+                  // 텍스트 영역
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 8.0),
+                        Text(
+                          snippet,
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

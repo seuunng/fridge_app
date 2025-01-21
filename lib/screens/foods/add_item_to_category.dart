@@ -32,6 +32,20 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
 
   DateTime currentDate = DateTime.now();
 
+  List<String> predefinedCategoryFridge = [
+    '채소',
+    '과일',
+    '육류',
+    '수산물',
+    '유제품',
+    '가공식품',
+    '곡류',
+    '견과류',
+    '양념',
+    '음료/주류',
+    '즉석식품',
+    '디저트/빵류',
+  ];
   @override
   void initState() {
     super.initState();
@@ -67,7 +81,14 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
 
       // 🔹 중복 제거된 리스트 변환
       final uniqueCategories = uniqueCategoriesMap.values.toList();
+      uniqueCategories.sort((a, b) {
+        final indexA = predefinedCategoryFridge.indexOf(a.defaultCategory);
+        final indexB = predefinedCategoryFridge.indexOf(b.defaultCategory);
 
+        // indexOf가 -1인 경우 리스트의 마지막으로 이동
+        return (indexA == -1 ? predefinedCategoryFridge.length : indexA)
+            .compareTo(indexB == -1 ? predefinedCategoryFridge.length : indexB);
+      });
       setState(() {
         foodsCategories = uniqueCategories;
 
@@ -110,6 +131,7 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
   Future<void> _loadShoppingListCategoriesFromFirestore() async {
     final snapshot = await FirebaseFirestore.instance
         .collection('shopping_categories')
+        .orderBy('priority', descending: false)
         .get();
 
     final categories = snapshot.docs.map((doc) {

@@ -20,7 +20,6 @@ class _RecipeGridState extends State<RecipeGrid> {
 
   // 선택된 아이템 상태를 관리할 리스트
   List<String> selectedItems = [];
-
   @override
   void initState() {
     super.initState();
@@ -28,6 +27,7 @@ class _RecipeGridState extends State<RecipeGrid> {
     if (widget.categories.isEmpty && widget.itemsByCategory.isNotEmpty) {
       selectedCategory = widget.itemsByCategory.keys.first;
     }
+
   }
 
   @override

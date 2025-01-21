@@ -295,7 +295,7 @@ class _AddRecipeState extends State<AddRecipe> {
         Navigator.pop(context);
       } else {
         String? recipeId = widget.recipeData?['id'];
-        print(recipeId);
+
         if (recipeId == null && widget.recipeData != null) {
           DocumentReference docRef =
               _db.collection('recipe').doc(widget.recipeData!['id']);

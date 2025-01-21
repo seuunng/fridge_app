@@ -64,7 +64,20 @@ class _AddItemState extends State<AddItem> {
   double webGridMaxExtent = 200; // 웹에서 최대 크기
   double gridSpacing = 8.0;
   String userRole = '';
-
+  List<String> predefinedCategoryFridge = [
+    '채소',
+    '과일',
+    '육류',
+    '수산물',
+    '유제품',
+    '가공식품',
+    '곡류',
+    '견과류',
+    '양념',
+    '음료/주류',
+    '즉석식품',
+    '디저트/빵류',
+  ];
   @override
   void initState() {
     super.initState();
@@ -163,6 +176,17 @@ class _AddItemState extends State<AddItem> {
             itemsByCategory[food.defaultCategory] = [food];
           }
         }
+        final sortedKeys = itemsByCategory.keys.toList()
+          ..sort((a, b) {
+            final indexA = predefinedCategoryFridge.indexOf(a);
+            final indexB = predefinedCategoryFridge.indexOf(b);
+            return (indexA == -1 ? predefinedCategoryFridge.length : indexA)
+                .compareTo(indexB == -1 ? predefinedCategoryFridge.length : indexB);
+          });
+
+        itemsByCategory = Map.fromEntries(
+          sortedKeys.map((key) => MapEntry(key, itemsByCategory[key]!)),
+        );
       });
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');

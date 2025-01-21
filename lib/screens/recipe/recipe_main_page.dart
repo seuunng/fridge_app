@@ -54,6 +54,20 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     "유제품": 6
   };
 
+  List<String> predefinedCategoryFridge = [
+    '채소',
+    '과일',
+    '육류',
+    '수산물',
+    '유제품',
+    '가공식품',
+    '곡류',
+    '견과류',
+    '양념',
+    '음료/주류',
+    '즉석식품',
+    '디저트/빵류',
+  ];
   @override
   void initState() {
     super.initState();
@@ -139,6 +153,18 @@ class _RecipeMainPageState extends State<RecipeMainPage>
   void _loadCategoriesFromFirestore() async {
     try {
       final categoryMap = await _fetchFoods(); // ✅ 사용자 + 기본 데이터 포함된 목록 가져오기
+      // ✅ 카테고리를 predefinedCategoryFridge 순서로 정렬
+      final sortedCategories = categoryMap.keys.toList()
+        ..sort((a, b) {
+          final indexA = predefinedCategoryFridge.indexOf(a);
+          final indexB = predefinedCategoryFridge.indexOf(b);
+          return (indexA == -1 ? predefinedCategoryFridge.length : indexA)
+              .compareTo(indexB == -1 ? predefinedCategoryFridge.length : indexB);
+        });
+
+      final sortedItemsByCategory = Map.fromEntries(
+        sortedCategories.map((category) => MapEntry(category, categoryMap[category]!)),
+      );
 
       setState(() {
         this.categories = categoryMap.keys.toList();
