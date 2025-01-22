@@ -450,6 +450,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text('로그인')),
       body:  SingleChildScrollView(
@@ -465,22 +466,20 @@ class _LoginPageState extends State<LoginPage> {
                       focusNode: _emailFocusNode, // 이메일 입력 필드와 포커스 노드 연결
                       maxLength: 64, // 이메일 최대 길이 제한
                       style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : Colors.black,
+                          color: theme.chipTheme.labelStyle!.color
                       ),
-                      decoration: InputDecoration(labelText: '이메일'),
+                      decoration: InputDecoration(
+                          labelText: '이메일',
+                        counterText: '',),
                     ),
                     TextField(
                       controller: _passwordController,
                       focusNode: _passwordFocusNode,
                       maxLength: 32, // 이메일 최대 길이 제한
                       style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : Colors.black,
+                          color: theme.chipTheme.labelStyle!.color
                       ),
-                      decoration: InputDecoration(labelText: '비밀번호'),
+                      decoration: InputDecoration(labelText: '비밀번호',counterText: '',),
                       obscureText: true,
                     ),
                     SizedBox(height: 12),

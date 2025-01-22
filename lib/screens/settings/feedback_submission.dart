@@ -25,14 +25,15 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
   String? postTitle;
 
   // 🔹 "제안"과 "신고"를 위한 라디오 버튼 선택 변수
-  String _selectedType = '제안'; // 기본값은 "제안"
+  String _selectedType = '제안/문의'; // 기본값은 "제안"
 
   // 🔹 "제안" 선택 시 드롭다운
   String _selectedCategoryProposal = '수정 제안'; // 기본 선택값
   final List<String> _categoriesProposal = [
     '오류 수정 제안',
     '기능 수정 제안',
-    '기능 신설 요청'
+    '기능 신설 요청',
+    '문의'
   ]; // "제안" 드롭다운 리스트
 
   // 🔹 "신고" 선택 시 드롭다운
@@ -45,7 +46,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
     if (widget.postType != null && widget.postType!.isNotEmpty) {
       _selectedType = '신고';
     } else {
-      _selectedType = '제안';
+      _selectedType = '제안/문의';
     }
     fetchPostTitle(); // 🔹 레시피명 또는 리뷰내용 가져오기
     _loadUserRole();
@@ -92,7 +93,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
   // 의견 제출 함수
   void _submitFeedback() async {
     String content = _contentController.text;
-    String selectedCategory = _selectedType == '제안'
+    String selectedCategory = _selectedType == '제안/문의'
         ? _selectedCategoryProposal
         : _selectedCategoryReport;
     postTitle=_postTitleController.text;
@@ -166,7 +167,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
                   child: Row(
                     children: [
                       Radio<String>(
-                        value: '제안',
+                        value: '제안/문의',
                         groupValue: _selectedType,
                         onChanged: (value) {
                           setState(() {
@@ -176,7 +177,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
                       ),
                       SizedBox(width: 2), // 버튼과 텍스트 사이 간격
                       Text(
-                        '제안',
+                        '제안/문의',
                         style: TextStyle(color: theme.colorScheme.onSurface),
                       ),
                     ],
@@ -206,12 +207,12 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
             ),
 
             // 🔹 "제안"을 선택했을 때만 "수정 제안, 기능 요청" 드롭다운 표시
-            if (_selectedType == '제안') ...[
+            if (_selectedType == '제안/문의') ...[
               SizedBox(height: 8),
               Row(
                 children: [
                   Text(
-                    '제안 종류',
+                    '제안/문의 종류',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

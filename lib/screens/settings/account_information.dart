@@ -235,7 +235,7 @@ class _AccountInformationState extends State<AccountInformation> {
                     ),
                   ),
                 ),
-
+                SizedBox(height: 50,)
               ],
             ),
             Text(

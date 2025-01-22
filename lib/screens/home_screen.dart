@@ -12,8 +12,10 @@ import 'package:food_for_later_new/screens/records/record_search_settings.dart';
 import 'package:food_for_later_new/screens/records/view_record_main.dart';
 import 'package:food_for_later_new/screens/settings/account_information.dart';
 import 'package:food_for_later_new/screens/settings/app_environment_settings.dart';
+import 'package:food_for_later_new/screens/settings/app_info_page.dart';
 import 'package:food_for_later_new/screens/settings/app_usage_settings.dart';
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
+import 'package:food_for_later_new/screens/settings/notice_page.dart';
 import 'package:food_for_later_new/screens/shpping_list/shopping_list_main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -267,6 +269,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               ListTile(
+                leading: Icon(Icons.campaign,
+                    color: Theme.of(context).colorScheme.onSurface),
+                title: Text('공지사항'),
+                onTap: () {
+                  Navigator.pop(context); // 사이드바 닫기
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NoticePage(),), // 계정 정보 페이지로 이동
+                  );
+                },
+              ),
+              ListTile(
                 leading: Icon(Icons.person,
                     color: Theme.of(context).colorScheme.onSurface),
                 title: Text('계정 정보'),
@@ -311,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Icons.send,
                     color: Theme.of(context).colorScheme.onSurface),
-                title: Text('의견보내기'),
+                title: Text('문의하기'),
                 onTap: () {
                   final user = FirebaseAuth.instance.currentUser;
 
@@ -346,6 +361,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               Spacer(),
+              ListTile(
+                leading: Icon(Icons.star,
+                    color: Theme.of(context).colorScheme.onSurface),
+                title: Text('어플 소개'),
+                onTap: () {
+                  Navigator.pop(context); // 사이드바 닫기
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => AppInfoPage()), // 계정 정보 페이지로 이동
+                  );
+                },
+              ),
               if (isAdmin)
                 ListTile(
                   leading: Icon(Icons.verified_user,
