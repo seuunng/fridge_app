@@ -116,7 +116,8 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
               decoration: InputDecoration(
                 hintText: '닉네임을 입력하세요',
                 border: OutlineInputBorder(),
-              ),
+              ),style:
+            TextStyle(color: theme.chipTheme.labelStyle!.color),
             ),
             SizedBox(height: 16),
             Text('성별 선택',
@@ -184,7 +185,8 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                   children: [
                     Text(
                       _birthYear == null ? '선택하지 않음' : '$_birthYear',
-                      style: TextStyle(fontSize: 18),
+                      style: TextStyle(fontSize: 18,
+                        color: theme.chipTheme.labelStyle!.color,),
                     ),
                     Icon(Icons.arrow_drop_down),
                   ],

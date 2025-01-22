@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AppInfoPage extends StatelessWidget {
   @override
@@ -95,6 +96,35 @@ class AppInfoPage extends StatelessWidget {
           style: TextStyle(fontSize: 16,
               color: theme.colorScheme.onSurface),
         ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: _launchPrivacyPolicy,
+                  child: Text('개인정보방침'),
+                ),
+                SizedBox(width: 8), // 버튼과 구분자 사이 여백 추가
+                Text(
+                  '|',
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+                SizedBox(width: 8),
+                TextButton(
+                  onPressed: _launchTermsOfService,
+                  child: Text('서비스약관'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -145,5 +175,19 @@ class AppInfoPage extends StatelessWidget {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+}
+Future<void> _launchPrivacyPolicy() async {
+  final Uri url = Uri.parse(
+      'https://seuunng.github.io/food_for_later_policy/privacy-policy.html');
+  if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+    throw Exception('Could not launch $url');
+  }
+}
+Future<void> _launchTermsOfService() async {
+  final Uri url = Uri.parse(
+      'https://seuunng.github.io/food_for_later_policy/terms-of-service.html');
+  if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+    throw Exception('Could not launch $url');
   }
 }

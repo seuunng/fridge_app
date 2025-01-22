@@ -34,7 +34,7 @@ class _CreateRecordState extends State<CreateRecord> {
 
   late String selectedCategory = '식단';
   late String selectedField = '아침';
-  late Color selectedColor = Colors.grey;
+  late Color selectedColor = categoryFieldMap[selectedCategory]?['color'] ?? Color(0xFFFFC1CC);
   late String selectedContents = '양배추 참치덮밥';
   late List<Map<String, dynamic>> recordsWithImages = <Map<String, dynamic>>[];
   DateTime selectedDate = DateTime.now();
@@ -139,10 +139,15 @@ class _CreateRecordState extends State<CreateRecord> {
               }
           };
           // 🔹 기존에 선택된 `selectedCategory` 유지
-          if (!categoryFieldMap.containsKey(selectedCategory)) {
+          if (categoryFieldMap.containsKey(selectedCategory)) {
+            selectedColor = categoryFieldMap[selectedCategory]!['color'];
+          } else {
+            // 기본값 설정
             selectedCategory = categoryFieldMap.keys.isNotEmpty
                 ? categoryFieldMap.keys.first
                 : '식단';
+            selectedColor = categoryFieldMap[selectedCategory]?['color'] ??
+                Color(0xFFFFC1CC); // 기본 색상
           }
 
           // 🔹 기존에 선택된 `selectedField` 유지
@@ -246,7 +251,9 @@ class _CreateRecordState extends State<CreateRecord> {
           );
           break;
         }
-        _imageFiles!.add(file.path); // 새로 추가된 이미지를 리스트에 반영
+        if (!_imageFiles!.contains(file.path)) { // 중복 체크 추가
+          _imageFiles!.add(file.path); // 새로 추가된 이미지를 리스트에 반영
+        }
       }
 
       if (pickedFiles != null && pickedFiles.isNotEmpty) {
@@ -256,10 +263,17 @@ class _CreateRecordState extends State<CreateRecord> {
                 recordsWithImages[selectedRecordIndex!]['images'] ?? [];
             recordsWithImages[selectedRecordIndex!]['images'] = [
               ...images,
-              ...pickedFiles.map((file) => file.path).toList(),
+              ...pickedFiles
+                  .where((file) => !images.contains(file.path))
+                  .map((file) => file.path)
+                  .toList(),
             ];
           } else {
-            _imageFiles?.addAll(pickedFiles.map((file) => file.path).toList());
+            _imageFiles?.addAll(pickedFiles
+                .map((file) => file.path)
+                .where((path) => !_imageFiles!
+                .contains(path)).toList());
+
           }
         });
       } else {
@@ -307,13 +321,6 @@ class _CreateRecordState extends State<CreateRecord> {
   void _saveRecord() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-    if (selectedField.isEmpty || selectedContents.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('필수 입력 항목을 입력하세요.')),
-      );
-      return;
-    }
-
     List<String> imageUrls = await _uploadImages();
 
     if (imageUrls.isEmpty && _imageFiles!.isNotEmpty) {
@@ -331,6 +338,12 @@ class _CreateRecordState extends State<CreateRecord> {
       );
     }).toList();
 
+    if (recordDetails.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('내용을 입력하세요.')),
+      );
+      return;
+    }
     final record = RecordModel(
       id: widget.recordId ?? Uuid().v4(),
       // 고유 ID 생성, 수정 모드일 때 기존 ID 사용
@@ -340,7 +353,7 @@ class _CreateRecordState extends State<CreateRecord> {
       records: recordDetails,
       userId: userId,
     );
-
+    print('_saveRecord Selected color: ${selectedColor.value.toRadixString(16)}');
     try {
       // Firestore에 Record 객체를 저장
       await FirebaseFirestore.instance
@@ -349,10 +362,6 @@ class _CreateRecordState extends State<CreateRecord> {
           .set(record.toMap(),
               SetOptions(merge: true)); // Record 객체를 Map으로 변환하여 저장
 
-      // 성공 메시지 표시 및 이전 화면으로 이동
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기록이 저장되었습니다.')),
-      );
       Navigator.pop(context);
     } catch (e) {
       // 에러 메시지 표시
@@ -423,7 +432,7 @@ class _CreateRecordState extends State<CreateRecord> {
                                 ? availableFields.first
                                 : '');
                         selectedColor =
-                            categoryFieldMap[selectedCategory]!['color'];
+                            categoryFieldMap[selectedCategory]?['color'] ?? Colors.grey;
                         // fieldController.text = selectedField;
                       });
                     },
@@ -742,7 +751,7 @@ class _CreateRecordState extends State<CreateRecord> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('기록 내용을 입력하세요.'),
+                      content: Text('내용을 입력하세요.'),
                     ),
                   );
                 }

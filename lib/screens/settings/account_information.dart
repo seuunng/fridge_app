@@ -51,6 +51,7 @@ class _AccountInformationState extends State<AccountInformation> {
       print('Error loading user role: $e');
     }
   }
+
   void _loadUserInfo() async {
     if (user != null) {
       final userDoc = await FirebaseFirestore.instance
@@ -77,43 +78,61 @@ class _AccountInformationState extends State<AccountInformation> {
 
   Future<void> _deleteAccount() async {
     try {
-      if (user != null) {
-        // 최근 인증이 필요할 경우 재인증 수행
-        await user?.reauthenticateWithCredential(
-            firebase_auth.EmailAuthProvider.credential(
-          email: user?.email ?? '',
-          password: 'your_password_here', // 사용자가 입력한 비밀번호
-        ));
+      // 재인증 수행
+      await _reauthenticateUser();
 
-        // 계정 삭제
-        await user?.delete();
+      // Firestore에서 사용자 문서 삭제
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user?.uid)
+          .delete();
 
-        // 성공 메시지 및 로그아웃 후 로그인 페이지로 이동
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.')),
-        );
-        if (context.mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-      }
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      if (e.code == 'requires-recent-login') {
-        // 재인증이 필요한 경우의 오류 처리
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('최근 로그인한 기록이 없어 다시 로그인해주세요.')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다: ${e.message}')),
-        );
-      }
-    } catch (e) {
+      // Firebase Authentication 계정 삭제
+      await user?.delete();
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다: $e')),
+        SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    } catch (e) {
+      print('계정 삭제 중 오류 발생: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다.')),
       );
     }
   }
-
+  Future<void> _reauthenticateUser() async {
+    try {
+      if (user!.providerData[0].providerId == 'google.com') {
+        // Google 인증 흐름
+        final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+        if (googleUser == null) {
+          throw Exception('Google 인증이 취소되었습니다.');
+        }
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final credential = firebase_auth.GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        await user?.reauthenticateWithCredential(credential);
+      } else if (user!.providerData[0].providerId == 'password') {
+        // 이메일/비밀번호 인증 흐름
+        final credential = firebase_auth.EmailAuthProvider.credential(
+          email: user!.email ?? '',
+          password: _passwordController.text.trim(),
+        );
+        await user?.reauthenticateWithCredential(credential);
+      } else {
+        throw Exception('지원하지 않는 인증 제공자입니다.');
+      }
+    } catch (e) {
+      print('재인증 실패: $e');
+      rethrow;
+    }
+  }
   Future<void> googleLogout() async {
     try {
       await _googleSignIn.signOut();
@@ -272,16 +291,18 @@ class _AccountInformationState extends State<AccountInformation> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               // 버튼 사이 간격을 균등하게 설정
               children: [
-                // Expanded(
-                //   child: NavbarButton(
-                //     buttonTitle: '회원탈퇴',
-                //     onPressed: () {
-                //       // 람다식으로 함수 전달
-                //       _withdrawAlertDialog();
-                //     },
-                //   ),
-                // ),
-                // SizedBox(width: 20), // 두 버튼 사이 간격
+                Expanded(
+                  child: (user != null || user?.email != 'guest@foodforlater.com')
+                      ? NavbarButton(
+                    buttonTitle: '탈퇴하기',
+                    onPressed: () {
+                      // 람다식으로 함수 전달
+                      _withdrawAlertDialog();
+                    },
+                  ):
+                  SizedBox.shrink(),
+                ),
+                SizedBox(width: 10), // 두 버튼 사이 간격
                 Expanded(
                   child: NavbarButton(
                       buttonTitle:
@@ -502,11 +523,31 @@ class _AccountInformationState extends State<AccountInformation> {
   }
 
   void _withdrawAlertDialog() async {
+    final theme = Theme.of(context);
+    TextEditingController _confirmationController = TextEditingController();
     await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('탈퇴를 진행할까요?'),
+          title: Text('😢정말로 탈퇴를 하실껀가요?',
+            style: TextStyle(
+                color: theme.colorScheme.onSurface
+            ),),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _passwordController,
+                obscureText: true, // 비밀번호 감추기
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: '비밀번호를 입력해주세요',
+                ),
+                style:
+                TextStyle(color: theme.chipTheme.labelStyle!.color),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
               child: Text('취소'),
@@ -515,10 +556,20 @@ class _AccountInformationState extends State<AccountInformation> {
               },
             ),
             TextButton(
-              child: Text('탈퇴'),
+              child: Text('정말로 탈퇴하기',
+        style: TextStyle(
+        color: Colors.red
+        ),),
               onPressed: () async {
-                Navigator.pop(context);
-                await _deleteAccount();
+                if (_passwordController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('비밀번호를 입력해주세요.'),
+                      behavior: SnackBarBehavior.floating,),
+                  );
+                  return;
+                }
+                Navigator.pop(context); // 다이얼로그 닫기
+                await _deleteAccount(); // 계정 삭제 시도
               },
             ),
           ],
