@@ -214,7 +214,15 @@ class _AccountInformationState extends State<AccountInformation> {
                   },
                   child: CircleAvatar(
                     radius: 20, // 아바타 크기
-                    backgroundImage: AssetImage(_avatar),
+                    backgroundImage: _avatar.startsWith('http')
+                        ? NetworkImage(_avatar)
+                        : AssetImage(_avatar) as ImageProvider,
+                    onBackgroundImageError: (_, __) {
+                      // URL이 잘못된 경우 기본 아바타 표시
+                      setState(() {
+                        _avatar = 'assets/avatar/avatar-01.png'; // 기본 아바타로 설정
+                      });
+                    },
                   ),
                 ),
                 SizedBox(width: 10),
@@ -291,38 +299,39 @@ class _AccountInformationState extends State<AccountInformation> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               // 버튼 사이 간격을 균등하게 설정
               children: [
-                Expanded(
-                  child: (user != null || user?.email != 'guest@foodforlater.com')
-                      ? NavbarButton(
-                    buttonTitle: '탈퇴하기',
-                    onPressed: () {
-                      // 람다식으로 함수 전달
-                      _withdrawAlertDialog();
-                    },
-                  ):
-                  SizedBox.shrink(),
-                ),
-                SizedBox(width: 10), // 두 버튼 사이 간격
-                Expanded(
-                  child: NavbarButton(
-                      buttonTitle:
-                          (user == null || user?.email == 'guest@foodforlater.com')
-                              ? '로그인' // 🔹 게스트 계정이면 "로그인" 버튼
-                              : '로그아웃', // 🔹 로그인된 계정이면 "로그아웃" 버튼
+                if (user != null && user?.email != 'guest@foodforlater.com') ...[
+                  // 계정이 있을 때 탈퇴하기 버튼
+                  Expanded(
+                    child: NavbarButton(
+                      buttonTitle: '탈퇴하기',
                       onPressed: () {
-                        if (user == null ||
-                            user?.email == 'guest@foodforlater.com') {
-                          // 🔹 게스트일 경우, 로그인 페이지로 이동 (다이얼로그 없이)
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => LoginPage()),
-                          );
-                        } else {
-                          // 🔹 로그인된 계정일 경우, 로그아웃 기능 실행
-                          _logoutAlertDialog();
-                        }
-                      }),
-                ),
+                        _withdrawAlertDialog();
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 10), // 두 버튼 사이 간격
+                  // 로그아웃 버튼
+                  Expanded(
+                    child: NavbarButton(
+                      buttonTitle: '로그아웃',
+                      onPressed: () {
+                        _logoutAlertDialog();
+                      },
+                    ),
+                  ),
+                ] else
+                // 계정이 없을 때 로그인 버튼이 전체 크기를 차지
+                  Expanded(
+                    child: NavbarButton(
+                      buttonTitle: '로그인',
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => LoginPage()),
+                        );
+                      },
+                    ),
+                  ),
               ],
             ),
           ),

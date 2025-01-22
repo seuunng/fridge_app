@@ -1,8 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppInfoPage extends StatelessWidget {
+
+  Future<void> sendKakaoMessage() async {
+    try {
+      if (await isKakaoTalkInstalled()) {
+        // 카카오톡 설치된 경우 간편 로그인 시도
+        await UserApi.instance.loginWithKakaoTalk();
+        print("카카오톡으로 로그인 성공");
+      } else {
+        // 카카오톡 미설치된 경우 웹 로그인 시도
+        await UserApi.instance.loginWithKakaoAccount();
+        print("카카오 계정으로 로그인 성공");
+      }
+
+      // 사용자 정의 템플릿 ID
+      int templateId = 116665;
+      // 전송할 URL
+      String url = "https://play.google.com/store/apps/details?id=com.seuunng.foodforlater";
+
+      // 카카오톡 API를 통해 나에게 메시지 보내기
+      await TalkApi.instance.sendScrapMemo(
+        url: url,
+        templateId: templateId,
+      );
+
+      print('나에게 보내기 성공');
+    } catch (error) {
+      print('나에게 보내기 실패 $error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -140,9 +171,8 @@ class AppInfoPage extends StatelessWidget {
           // 어플 추천하기 버튼
           Expanded(
             child: NavbarButton(
-              onPressed: () {
-                // 어플 추천하기 로직
-                _showSnackbar(context, "어플을 추천했습니다!");
+              onPressed: () async{
+                await sendKakaoMessage();
               },
               // icon: Icon(Icons.thumb_up),
               buttonTitle: '어플 추천하기',
