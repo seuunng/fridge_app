@@ -27,6 +27,8 @@ class _UserStatisticsState extends State<UserStatistics> {
 
   Future<void> _fetchUserStats() async {
     final snapshot = await FirebaseFirestore.instance.collection('users').get();
+
+    print('Firestore 데이터 가져오기 성공: ${snapshot.docs.length}개 문서');
     Map<String, int> dateCount = {};
     Map<String, int> dormantCount = {}; // 🔴 휴면 계정 카운트 추가
 
@@ -35,6 +37,7 @@ class _UserStatisticsState extends State<UserStatistics> {
 
     for (var doc in snapshot.docs) {
       final signUpDateRaw = doc.data()['signupdate'];
+      print('문서 ID: ${doc.id}, signupdate: $signUpDateRaw');
       final signUpDate = signUpDateRaw is Timestamp
           ? signUpDateRaw.toDate()
           : DateTime.parse(signUpDateRaw.toString());
@@ -74,7 +77,8 @@ class _UserStatisticsState extends State<UserStatistics> {
       completeDateCount[dateKey] = dateCount[dateKey] ?? 0;
       completeDormantCount[dateKey] = dormantCount[dateKey] ?? 0; // 휴면 계정 추가
     }
-
+    print('누적 데이터: $completeDateCount');
+    print('누적 휴면 데이터: $completeDormantCount');
     List<FlSpot> spots = [];
     List<FlSpot> dormantSpots = []; // 🔴 휴면 계정 Spot 추가
     int cumulativeCount = 0;

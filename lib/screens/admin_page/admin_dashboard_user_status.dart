@@ -24,6 +24,64 @@ class _AdminDashboardUserStatusState extends State<AdminDashboardUserStatus> {
           Row(
             children: [
               SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  '목표 총 사용자',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface),
+                ),
+              ),
+                SizedBox(width: 10,),
+      Text(
+        '1000명',
+        style: TextStyle(fontSize: 18,
+            color: theme.colorScheme.onSurface),
+      ),SizedBox(width: 10,),
+              Expanded(
+                child: Text(
+                  '현재까지 등록 사용자',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface),
+                ),
+              ),
+              SizedBox(width: 10,),
+              Text(
+                '120명(12% 달성)',
+                style: TextStyle(fontSize: 18,
+                    color: theme.colorScheme.onSurface),
+              ),//
+               //
+            ],
+          ),
+
+          Row(
+            children: [
+              SizedBox(width: 16),
+              Text(
+                '목표 하루 이용자',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ), // 텍스트와 드롭다운 사이 간격
+              Text(
+                '1000명',
+                style: TextStyle(fontSize: 18,
+                    color: theme.colorScheme.onSurface),
+              ), //
+              Text(
+                '어제 하루 사용자',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface),
+              ), //
+              Text(
+                '100명(10%)',
+                style: TextStyle(fontSize: 18,
+                    color: theme.colorScheme.onSurface),
+              ), //
+            ],
+          ),
+          Row(
+            children: [
+              SizedBox(width: 16),
               Text(
                 '사용자 수 현황',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,

@@ -28,7 +28,7 @@ class _UserTableState extends State<UserTable> {
       final signUpDateRaw = data['signupdate'];
       final signUpDate = signUpDateRaw is Timestamp
           ? signUpDateRaw.toDate()
-          : DateTime.parse(signUpDateRaw.toString());
+          : (signUpDateRaw != null ? DateTime.parse(signUpDateRaw) : now);
       final formattedDate = DateFormat('yyyy-MM-dd').format(signUpDate);
       final userId = entry.value.id;
       // 🔹 마지막 접속 날짜 가져오기
@@ -51,19 +51,22 @@ class _UserTableState extends State<UserTable> {
           .collection('recipe')
           .where('userID', isEqualTo: userId)
           .get()
-          .then((snapshot) => snapshot.size);
+          .then((snapshot) => snapshot.size)
+          .catchError((_) => 0);
 
       final recordCount = await FirebaseFirestore.instance
           .collection('record')
           .where('userId', isEqualTo: userId)
           .get()
-          .then((snapshot) => snapshot.size);
+          .then((snapshot) => snapshot.size)
+          .catchError((_) => 0);
 
       final scrapCount = await FirebaseFirestore.instance
           .collection('scraped_recipes')
           .where('userId', isEqualTo: userId)
           .get()
-          .then((snapshot) => snapshot.size);
+          .then((snapshot) => snapshot.size)
+          .catchError((_) => 0);
 
       // 앱 접속 횟수 및 사용 시간 데이터 (가정된 필드명 예시)
       final openCount = openSessions.length; // 접속 횟수는 세션의 개수로 계산
@@ -106,7 +109,7 @@ class _UserTableState extends State<UserTable> {
     {'name': '닉네임', 'state': SortState.none},
     {'name': '가입일', 'state': SortState.none},
     {'name': '성별', 'state': SortState.none},
-    {'name': '생년월일', 'state': SortState.none},
+    {'name': '출생연도', 'state': SortState.none},
     {'name': '접속횟수', 'state': SortState.none},
     {'name': '사용시간(h)', 'state': SortState.none},
     {'name': '레시피', 'state': SortState.none},
