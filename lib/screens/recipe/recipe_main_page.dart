@@ -180,7 +180,9 @@ class _RecipeMainPageState extends State<RecipeMainPage>
 
   void _loadThemaFromFirestore() async {
     try {
-      final snapshot = await _db.collection('recipe_thema_categories').get();
+      final snapshot = await _db.collection('recipe_thema_categories')
+          .orderBy('priority', descending: false)
+          .get();
       final themaCategories = snapshot.docs.map((doc) {
         return RecipeThemaModel.fromFirestore(doc);
       }).toList();
