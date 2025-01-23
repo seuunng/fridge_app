@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/services/friend_selection_page.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -75,7 +76,46 @@ class _AppInfoPageState extends State<AppInfoPage> {
       print('나에게 보내기 실패 $error');
     }
   }
+  Future<void> shareToKakaoTalk(String title, String description, String imageUrl, String webUrl) async {
+    bool isKakaoTalkSharingAvailable =
+    await ShareClient.instance.isKakaoTalkSharingAvailable();
 
+    if (isKakaoTalkSharingAvailable) {
+      try {
+        // 메시지 템플릿 작성
+        Uri uri = await ShareClient.instance.shareDefault(
+          template: FeedTemplate(
+            content: Content(
+              title: title, // 제목
+              description: description, // 설명
+              imageUrl: Uri.parse(imageUrl), // 이미지 URL
+              link: Link(
+                webUrl: Uri.parse(webUrl), // 웹 링크
+                mobileWebUrl: Uri.parse(webUrl), // 모바일 링크
+              ),
+            ),
+            buttons: [
+              Button(
+                title: '다운로드',
+                link: Link(
+                  webUrl: Uri.parse(webUrl), // 웹 링크
+                  mobileWebUrl: Uri.parse(webUrl), // 모바일 링크
+                ),
+              ),
+            ],
+          ),
+        );
+
+        // 카카오톡 실행
+        await ShareClient.instance.launchKakaoTalk(uri);
+        print("카카오톡 공유 성공");
+      } catch (error) {
+        print("카카오톡 공유 실패: $error");
+      }
+    } else {
+      print('카카오톡이 설치되어 있지 않습니다.');
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -217,9 +257,13 @@ class _AppInfoPageState extends State<AppInfoPage> {
           Expanded(
             child: NavbarButton(
               onPressed: () async{
-                await sendKakaoMessage();
+                // 친구 선택 페이지로 이동
+                shareToKakaoTalk( '이따 뭐먹지? 고민될 때', // 제목
+                '이 앱으로 당신의 냉장고를 계획하세요!', // 설명
+                'https://seuunng.github.io/food_for_later_policy/favicon.png', // 이미지 URL
+                'https://play.google.com/store/apps/details?id=com.seuunng.foodforlater', // 웹 URL
+                    );
               },
-              // icon: Icon(Icons.thumb_up),
               buttonTitle: '어플 추천하기',
             ),
           ),
