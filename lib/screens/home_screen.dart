@@ -269,19 +269,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               ListTile(
-                leading: Icon(Icons.campaign,
-                    color: Theme.of(context).colorScheme.onSurface),
-                title: Text('공지사항'),
-                onTap: () {
-                  Navigator.pop(context); // 사이드바 닫기
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => NoticePage(),), // 계정 정보 페이지로 이동
-                  );
-                },
-              ),
-              ListTile(
                 leading: Icon(Icons.person,
                     color: Theme.of(context).colorScheme.onSurface),
                 title: Text('계정 정보'),
@@ -310,20 +297,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.language,
-                    color: Theme.of(context).colorScheme.onSurface),
-                title: Text('어플 환경 설정'),
-                onTap: () {
-                  Navigator.pop(context); // 사이드바 닫기
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            AppEnvironmentSettings()), // 계정 정보 페이지로 이동
-                  );
-                },
-              ),
-              ListTile(
                 leading: Icon(Icons.send,
                     color: Theme.of(context).colorScheme.onSurface),
                 title: Text('문의하기'),
@@ -346,6 +319,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
+              Spacer(),
+              ListTile(
+                leading: Icon(Icons.campaign,
+                    color: Theme.of(context).colorScheme.onSurface),
+                title: Text('공지사항'),
+                onTap: () {
+                  Navigator.pop(context); // 사이드바 닫기
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NoticePage(),), // 계정 정보 페이지로 이동
+                  );
+                },
+              ),
               ListTile(
                 leading: Icon(Icons.workspace_premium_outlined,
                     color: Theme.of(context).colorScheme.onSurface),
@@ -360,9 +347,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-              Spacer(),
               ListTile(
-                leading: Icon(Icons.star,
+                leading: Icon(Icons.apartment,
                     color: Theme.of(context).colorScheme.onSurface),
                 title: Text('어플 소개'),
                 onTap: () {

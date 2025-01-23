@@ -42,6 +42,7 @@ dependencies:
   google_sign_in: ^6.2.1
   flutter_dotenv: ^5.0.2 # .env 파일로 민감 정보를 관리
   kakao_flutter_sdk: ^1.2.2
+  package_info_plus: ^4.0.0
   http: ^1.2.2 # 네이버 OAuth 요청을 위해 필요
   webview_flutter: ^4.0.1
   flutter_naver_login: ^2.0.0

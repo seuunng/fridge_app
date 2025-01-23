@@ -51,42 +51,45 @@ class NoticeDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    print(MediaQuery.of(context).size);
     return Scaffold(
       appBar: AppBar(
-        title: Text("공지사항 상세"),
+        title: Text("공지사항"),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                notice.title,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 제목
+            Text(
+              notice.title,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
               ),
-              SizedBox(height: 8),
-              Text(
-                "작성일: ${notice.date.year}-${notice.date.month.toString().padLeft(2, '0')}-${notice.date.day.toString().padLeft(2, '0')}",
-                style: TextStyle(color: Colors.grey),
-              ),
-              SizedBox(height: 16),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: 0,
-                  maxHeight: MediaQuery.of(context).size.height - 200,
-                ),
-                child: Markdown(
-                  data: notice.content,
-                  styleSheet: MarkdownStyleSheet(
-                    p: TextStyle(fontSize: 16,
-                        color: theme.colorScheme.onSurface),
+            ),
+            SizedBox(height: 8),
+            // 작성일
+            Text(
+              "작성일: ${notice.date.year}-${notice.date.month.toString().padLeft(2, '0')}-${notice.date.day.toString().padLeft(2, '0')}",
+              style: TextStyle(color: Colors.grey),
+            ),
+            SizedBox(height: 16),
+            // 내용 부분을 스크롤 가능하도록 설정
+            Flexible(
+              child: Markdown(
+                data: notice.content,
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStyle(
+                    fontSize: 16,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

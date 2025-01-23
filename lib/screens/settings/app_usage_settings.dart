@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/providers/font_provider.dart';
+import 'package:food_for_later_new/providers/theme_provider.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/components/custom_dropdown.dart';
 import 'package:food_for_later_new/services/default_fridge_service.dart';
+import 'package:food_for_later_new/themes/custom_theme_mode.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppUsageSettings extends StatefulWidget {
@@ -23,6 +27,12 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   final List<String> _categories_records = ['앨범형', '달력형', '목록형']; // 카테고리 리스트
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   String userRole = '';
+  // 드롭다운 선택을 위한 변수
+  CustomThemeMode _tempTheme = CustomThemeMode.light; // 임시 테마 값
+  // final List<String> _categories_them = ['Light', 'Dark']; // 카테고리 리스트
+  String _selectedCategory_font = 'NanumGothic'; // 기본 선택값
+  List<String> _categories_font = [];
+
 
   @override
   void initState() {
@@ -30,6 +40,8 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
     _loadFridgeCategoriesFromFirestore(); // 초기화 시 Firestore에서 데이터를 불러옴
     _loadSelectedFridge();
     _loadUserRole();
+    _loadSelectedEnvironmentSettingValue();
+    _loadFonts();
   }
   void _loadUserRole() async {
     try {
@@ -85,7 +97,29 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       );
     }
   }
-
+  void _loadFonts() async {
+    final fontProvider = FontProvider();
+    await fontProvider.loadFonts();
+    setState(() {
+      _categories_font = fontProvider.fonts.toSet().toList(); // 중복 제거
+      // _selectedCategory_font가 _categories_font에 없는 경우 초기화
+      if (!_categories_font.contains(_selectedCategory_font)) {
+        _selectedCategory_font =
+        _categories_font.isNotEmpty ? _categories_font.first : 'Arial';
+      }
+    });
+  }
+  void _loadSelectedEnvironmentSettingValue() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
+    setState(() {
+      _tempTheme = CustomThemeMode.values.firstWhere(
+              (mode) =>
+          mode.toString().split('.').last == prefs.getString('themeMode'),
+          orElse: () => CustomThemeMode.light);
+      _selectedCategory_font = prefs.getString('fontType') ?? 'NanumGothic';
+    });
+  }
   Future<void> _addNewFridgeToFirestore(String newFridgeName) async {
     final fridgeRef = FirebaseFirestore.instance.collection('fridges');
     try {
@@ -263,6 +297,12 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
     await prefs.setString(
         'selectedFoodStatusManagement', _selectedCategory_foods);
     Navigator.pop(context);
+    await prefs.setString('themeMode', _tempTheme.toString().split('.').last);
+    await prefs.setString('fontType', _selectedCategory_font); // 저장할 때만 테마를 변경
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    themeProvider.setThemeMode(_tempTheme);
+    themeProvider.setFontType(_selectedCategory_font);
+
   }
 
   @override
@@ -418,6 +458,71 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
               ),
               Text('가장 자주 보는 기록유형을 대표 유형으로 설정하세요',
                   style: TextStyle(color: theme.colorScheme.onSurface)),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Text(
+                    '테마',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface),
+                  ),
+                  Spacer(), // 텍스트와 드롭다운 사이 간격
+                  Expanded(
+                    child: DropdownButton<CustomThemeMode>(
+                      value: _tempTheme,
+                      isExpanded: true, // 드롭다운이 화면 너비에 맞게 확장되도록 설정
+                      // value: Provider.of<ThemeProvider>(context, listen: false).themeMode == ThemeMode.light ? 'Light' : 'Dark',
+                      items: CustomThemeMode.values.map((mode) {
+                        return DropdownMenuItem<CustomThemeMode>(
+                          value: mode,
+                          child: Text(mode.toString().split('.').last,
+                              style: TextStyle(color: theme.colorScheme.onSurface)),
+                        );
+                      }).toList(),
+                      onChanged: (CustomThemeMode? newValue) {
+                        setState(() {
+                          _tempTheme = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Text(
+                    '폰트',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface),
+                  ),
+                  Spacer(), // 텍스트와 드롭다운 사이 간격
+                  Expanded(
+                    child: DropdownButton<String>(
+                      value: _selectedCategory_font,
+                      isExpanded: true, // 드롭다운이 화면 너비에 맞게 확장되도록 설정
+                      items: _categories_font.map((String font) {
+                        return DropdownMenuItem<String>(
+                          value: font,
+                          child: Text(font,
+                              style: TextStyle(
+                                  fontFamily: font,
+                                  color: theme.colorScheme.onSurface)),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedCategory_font = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
