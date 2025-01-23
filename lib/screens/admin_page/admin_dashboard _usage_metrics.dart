@@ -350,12 +350,12 @@ class _AdminDashboardUsageMetricsState
                           [DataCell(Text('${totals['recipe']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
                       ),
                       DataRow(cells: [
-                        DataCell(Text('기록', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
+                        DataCell(Text('스크랩', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
                           List.generate(12, (index) {
                             String monthKey = '2024-${(index + 1).toString().padLeft(2, '0')}';
-                            return DataCell(Text('${allData['record']?[monthKey] ?? 0}', style: TextStyle(color: theme.colorScheme.onSurface)));
+                            return DataCell(Text('${allData['scraped_recipes']?[monthKey] ?? 0}', style: TextStyle(color: theme.colorScheme.onSurface)));
                           }) +
-                          [DataCell(Text('${totals['record']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
+                          [DataCell(Text('${totals['scraped']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
                       ),
                       DataRow(cells: [
                         DataCell(Text('리뷰', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
@@ -366,12 +366,12 @@ class _AdminDashboardUsageMetricsState
                           [DataCell(Text('${totals['review']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
                       ),
                       DataRow(cells: [
-                        DataCell(Text('스크랩', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
+                        DataCell(Text('기록', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))] +
                           List.generate(12, (index) {
                             String monthKey = '2024-${(index + 1).toString().padLeft(2, '0')}';
-                            return DataCell(Text('${allData['scraped_recipes']?[monthKey] ?? 0}', style: TextStyle(color: theme.colorScheme.onSurface)));
+                            return DataCell(Text('${allData['record']?[monthKey] ?? 0}', style: TextStyle(color: theme.colorScheme.onSurface)));
                           }) +
-                          [DataCell(Text('${totals['scraped']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
+                          [DataCell(Text('${totals['record']}', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))]
                       ),
                       // 📌 **합계 행 추가**
                       DataRow(cells: [
