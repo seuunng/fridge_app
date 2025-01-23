@@ -46,8 +46,17 @@ class UserAgeState extends State<UserAge> {
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
+
         if (data.containsKey('birthYear') && data.containsKey('gender')) {
-          int birthYear = int.tryParse(data['birthYear']) ?? currentYear;
+          final dynamic birthYearRaw = data['birthYear'];
+          int birthYear;
+          if (birthYearRaw is int) {
+            birthYear = birthYearRaw; // 이미 int인 경우
+          } else if (birthYearRaw is String) {
+            birthYear = int.tryParse(birthYearRaw) ?? currentYear; // String을 int로 변환
+          } else {
+            birthYear = currentYear; // 잘못된 데이터는 현재 연도로 처리
+          }
           String gender = data['gender'];
           int age = currentYear - birthYear;
 

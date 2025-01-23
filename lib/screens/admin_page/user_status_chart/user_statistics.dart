@@ -28,7 +28,6 @@ class _UserStatisticsState extends State<UserStatistics> {
   Future<void> _fetchUserStats() async {
     final snapshot = await FirebaseFirestore.instance.collection('users').get();
 
-    print('Firestore 데이터 가져오기 성공: ${snapshot.docs.length}개 문서');
     Map<String, int> dateCount = {};
     Map<String, int> dormantCount = {}; // 🔴 휴면 계정 카운트 추가
 
@@ -37,10 +36,13 @@ class _UserStatisticsState extends State<UserStatistics> {
 
     for (var doc in snapshot.docs) {
       final signUpDateRaw = doc.data()['signupdate'];
-      print('문서 ID: ${doc.id}, signupdate: $signUpDateRaw');
+
+
       final signUpDate = signUpDateRaw is Timestamp
           ? signUpDateRaw.toDate()
-          : DateTime.parse(signUpDateRaw.toString());
+          : (signUpDateRaw != null && signUpDateRaw.toString().isNotEmpty
+          ? DateTime.tryParse(signUpDateRaw.toString()) ?? DateTime.now()
+          : DateTime.now());
 
       final List<dynamic> openSessions = doc.data()['openSessions'] ?? [];
       DateTime? lastAccessDate;
@@ -66,7 +68,6 @@ class _UserStatisticsState extends State<UserStatistics> {
         }
       }
     }
-
     // **누락된 월 보완**
     Map<String, int> completeDateCount = {};
     Map<String, int> completeDormantCount = {}; // 🔴 휴면 계정 카운트도 보완
@@ -77,8 +78,7 @@ class _UserStatisticsState extends State<UserStatistics> {
       completeDateCount[dateKey] = dateCount[dateKey] ?? 0;
       completeDormantCount[dateKey] = dormantCount[dateKey] ?? 0; // 휴면 계정 추가
     }
-    print('누적 데이터: $completeDateCount');
-    print('누적 휴면 데이터: $completeDormantCount');
+
     List<FlSpot> spots = [];
     List<FlSpot> dormantSpots = []; // 🔴 휴면 계정 Spot 추가
     int cumulativeCount = 0;
@@ -159,6 +159,33 @@ class _UserStatisticsState extends State<UserStatistics> {
               ),
               borderData: FlBorderData(show: false),
               lineBarsData: [
+
+                LineChartBarData(
+                  spots: _dormantStats,
+                  isCurved: true,
+                  gradient: LinearGradient(
+                    colors: [Colors.red, Colors.deepOrange],
+                  ),
+                  barWidth: 4,
+                  isStrokeCapRound: true,
+                  belowBarData: BarAreaData(
+                    show: false,
+                    gradient: LinearGradient(
+                      colors: [Colors.red.withOpacity(0.3), Colors.deepOrange.withOpacity(0.3)],
+                    ),
+                  ),
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 6,
+                        color: Colors.white,
+                        strokeWidth: 2,
+                        strokeColor: Colors.red,
+                      );
+                    },
+                  ),
+                ),
                 LineChartBarData(
                   spots: _userStats,
                   isCurved: true,
@@ -168,7 +195,7 @@ class _UserStatisticsState extends State<UserStatistics> {
                   barWidth: 4,
                   isStrokeCapRound: true,
                   belowBarData: BarAreaData(
-                    show: true,
+                    show: false,
                     gradient: LinearGradient(
                       colors: gradientColors
                           .map((color) => color.withOpacity(0.3))
@@ -183,32 +210,6 @@ class _UserStatisticsState extends State<UserStatistics> {
                         color: Colors.white,
                         strokeWidth: 2,
                         strokeColor: Colors.blue,
-                      );
-                    },
-                  ),
-                ),
-                LineChartBarData(
-                  spots: _dormantStats,
-                  isCurved: true,
-                  gradient: LinearGradient(
-                    colors: [Colors.red, Colors.deepOrange],
-                  ),
-                  barWidth: 4,
-                  isStrokeCapRound: true,
-                  belowBarData: BarAreaData(
-                    show: true,
-                    gradient: LinearGradient(
-                      colors: [Colors.red.withOpacity(0.3), Colors.deepOrange.withOpacity(0.3)],
-                    ),
-                  ),
-                  dotData: FlDotData(
-                    show: true,
-                    getDotPainter: (spot, percent, barData, index) {
-                      return FlDotCirclePainter(
-                        radius: 6,
-                        color: Colors.white,
-                        strokeWidth: 2,
-                        strokeColor: Colors.red,
                       );
                     },
                   ),
