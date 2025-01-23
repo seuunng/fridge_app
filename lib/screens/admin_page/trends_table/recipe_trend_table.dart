@@ -214,7 +214,7 @@ class _RecipeTrendTableState extends State<RecipeTrendTable> {
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '따라하기' 필드 사용
                 DataCell(Text(row['공유'].toString(),
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '공유' 필드 사용
-                DataCell(Text(row['별점'].toString(),
+                DataCell(Text(row['별점'].toStringAsFixed(1),
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '공유' 필드 사용
                 DataCell(Text(row['작성일'].toString(),
                     style: TextStyle(color: theme.colorScheme.onSurface))), // '작성일' 필드 사용

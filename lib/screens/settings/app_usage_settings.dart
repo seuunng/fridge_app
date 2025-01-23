@@ -278,6 +278,16 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Text(
+                    '냉장고 선택',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface),
+                  ),
+              Spacer(),
               CustomDropdown(
                 title: '냉장고 선택',
                 items: _categories_fridge,
@@ -296,6 +306,8 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                 onAddNewItem: () {
                   _addNewCategory(_categories_fridge, '냉장고');
                 },
+              ),
+                ],
               ),
               Text('가장 자주 보는 냉장고를 기본냉장고로 설정하세요',
                   style: TextStyle(color: theme.colorScheme.onSurface)),

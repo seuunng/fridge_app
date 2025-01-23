@@ -17,7 +17,26 @@ class _UserTargetProgressState extends State<UserTargetProgress> {
   @override
   void initState() {
     super.initState();
+    _fetchTargetSettings();
     _fetchUserStatistics(); // Firestore에서 데이터 가져오기
+  }
+  Future<void> _fetchTargetSettings() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('setting')
+          .doc('userTargets')
+          .get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        setState(() {
+          totalTarget = data?['totalTarget'] ?? totalTarget; // 기본값 유지
+          dailyTarget = data?['dailyTarget'] ?? dailyTarget; // 기본값 유지
+        });
+      }
+    } catch (e) {
+      print('❌ Firestore 설정 값 불러오기 실패: $e');
+    }
   }
 
   Future<void> _fetchUserStatistics() async {
@@ -58,7 +77,7 @@ class _UserTargetProgressState extends State<UserTargetProgress> {
 
   void _updateTarget(String field, int value) async {
     // Firestore에 목표 업데이트
-    await FirebaseFirestore.instance.collection('settings').doc('userTargets').set(
+    await FirebaseFirestore.instance.collection('setting').doc('userTargets').set(
       {field: value},
       SetOptions(merge: true),
     );

@@ -223,7 +223,7 @@ class _AdminDashboardUsageMetricsState
                 //       ],
                 //     )),
                 Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(0.0),
                   child: FutureBuilder<List<LineChartBarData>>(
                     future: buildCumulativeChartData(allData), // ✅ 데이터 전달
                     builder: (context, chartSnapshot) {
@@ -315,14 +315,17 @@ class _AdminDashboardUsageMetricsState
                             color: Colors.green,
                             text: '레시피',
                             value: totals['recipe'] ?? 0),
+                        SizedBox(width: 8,),
                         LegendItem(
                             color: Colors.cyan,
                             text: '스크랩',
                             value: totals['scraped'] ?? 0),
+                        SizedBox(width: 8,),
                         LegendItem(
                             color: Colors.yellow,
                             text: '리뷰',
                             value: totals['review'] ?? 0),
+                        SizedBox(width: 8,),
                         LegendItem(
                             color: Colors.pink,
                             text: '기록',

@@ -27,7 +27,8 @@ class InAppPurchaseService {
       return [];
     }
 
-    Set<String> productIds = {'premium_upgrade', 'remove_ads'};
+    Set<String> productIds = {'premium_upgrade'};
+
     final ProductDetailsResponse response =
     await _iap.queryProductDetails(productIds);
 

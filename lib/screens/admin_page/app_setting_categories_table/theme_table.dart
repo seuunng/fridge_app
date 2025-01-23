@@ -37,6 +37,7 @@ class _ThemeTableState extends State<ThemeTable> {
   Future<void> _loadThemesData() async {
     final snapshot = await FirebaseFirestore.instance
         .collection('recipe_thema_categories')
+        .orderBy('priority', descending: false)
         .get();
 
     List<Map<String, dynamic>> themes = [];

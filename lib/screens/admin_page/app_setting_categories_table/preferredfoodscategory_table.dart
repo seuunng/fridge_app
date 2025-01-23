@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
+import 'package:food_for_later_new/components/custom_dropdown.dart';
 import 'package:food_for_later_new/models/preferred_food_model.dart';
 import 'package:food_for_later_new/services/preferred_foods_service.dart';
 
@@ -34,6 +35,7 @@ class _PreferredfoodscategoryTableState
   String? _selectedCategory;
 
   final TextEditingController _foodNameController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
 
   @override
   void initState() {
@@ -102,6 +104,48 @@ class _PreferredfoodscategoryTableState
     );
   }
 
+  Future<void> _addCategory(String category) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('default_prefered_foods_categories')
+          .get();
+
+      bool categoryExists = false;
+
+      // 카테고리가 이미 존재하는지 확인
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        if (data.containsKey('category')) {
+          Map<String, dynamic> categoryMap =
+              Map<String, dynamic>.from(data['category']);
+          if (categoryMap.containsKey(category)) {
+            categoryExists = true;
+            break;
+          }
+        }
+      }
+
+      // 카테고리가 없으면 Firestore에 추가
+      if (!categoryExists) {
+        await FirebaseFirestore.instance
+            .collection('default_prefered_foods_categories')
+            .add({
+          'category': {category: []},
+          'isDefault': true,
+        });
+        print('✅ 새 카테고리 Firestore에 추가 완료: $category');
+      }
+
+      // 로컬 상태 업데이트
+      setState(() {
+        categoryOptions.add(category);
+        _categoryController.clear();
+      });
+    } catch (e) {
+      print('❌ 새 카테고리 추가 중 오류 발생: $e');
+    }
+  }
+
   void _editFood(int index) {
     setState(() {
       Map<String, dynamic> selectedFood = userData[index];
@@ -111,6 +155,45 @@ class _PreferredfoodscategoryTableState
       isEditing = true;
       selectedFoodIndex = index;
     });
+  }
+
+  Future<void> _addFoodToCategory(String category, String foodName) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('default_prefered_foods_categories')
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+
+        if (data.containsKey('category') &&
+            data['category'] is Map<String, dynamic>) {
+          Map<String, dynamic> categoryMap =
+              Map<String, dynamic>.from(data['category']);
+          if (categoryMap.containsKey(category)) {
+            List<String> foodList = List<String>.from(categoryMap[category]);
+
+            if (!foodList.contains(foodName)) {
+              foodList.add(foodName);
+
+              // Firestore 업데이트
+              categoryMap[category] = foodList;
+              await doc.reference.update({'category': categoryMap});
+
+              print('✅ $category 카테고리에 $foodName 추가 완료');
+              await _loadFoodsData(); // 데이터 다시 불러오기
+            } else {
+              print('⚠️ 이미 해당 식품이 카테고리에 존재합니다.');
+            }
+            return; // 작업 완료 후 함수 종료
+          }
+        }
+      }
+
+      print('⚠️ 카테고리를 찾을 수 없습니다.');
+    } catch (e) {
+      print('❌ 식품 추가 중 오류 발생: $e');
+    }
   }
 
   Future<void> _updateFoodInCategory(
@@ -125,8 +208,10 @@ class _PreferredfoodscategoryTableState
       for (var doc in querySnapshot.docs) {
         final data = doc.data();
 
-        if (data.containsKey('category') && data['category'] is Map<String, dynamic>) {
-          Map<String, dynamic> categoryMap = Map<String, dynamic>.from(data['category']);
+        if (data.containsKey('category') &&
+            data['category'] is Map<String, dynamic>) {
+          Map<String, dynamic> categoryMap =
+              Map<String, dynamic>.from(data['category']);
           if (categoryMap.containsKey(category)) {
             found = true;
 
@@ -157,7 +242,6 @@ class _PreferredfoodscategoryTableState
         SnackBar(content: Text('데이터 삭제 중 오류가 발생했습니다. 다시 시도해주세요.')),
       );
     }
-
   }
 
   Future<void> _deleteFoodFromCategory(String category, String foodName) async {
@@ -195,8 +279,10 @@ class _PreferredfoodscategoryTableState
         for (var doc in querySnapshot.docs) {
           final data = doc.data();
 
-          if (data.containsKey('category') && data['category'] is Map<String, dynamic>) {
-            Map<String, dynamic> categoryMap = Map<String, dynamic>.from(data['category']);
+          if (data.containsKey('category') &&
+              data['category'] is Map<String, dynamic>) {
+            Map<String, dynamic> categoryMap =
+                Map<String, dynamic>.from(data['category']);
 
             if (categoryMap.containsKey(category)) {
               found = true;
@@ -233,6 +319,43 @@ class _PreferredfoodscategoryTableState
           SnackBar(content: Text('데이터 삭제 중 오류가 발생했습니다. 다시 시도해주세요.')),
         );
       }
+    }
+  }
+
+  Future<void> _deleteCategory(String category) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('default_prefered_foods_categories')
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+
+        if (data.containsKey('category') &&
+            data['category'] is Map<String, dynamic>) {
+          Map<String, dynamic> categoryMap =
+              Map<String, dynamic>.from(data['category']);
+
+          if (categoryMap.containsKey(category)) {
+            categoryMap.remove(category); // 카테고리 삭제
+
+            // Firestore 업데이트
+            if (categoryMap.isEmpty) {
+              await doc.reference.delete(); // 문서 자체를 삭제
+            } else {
+              await doc.reference.update({'category': categoryMap}); // 문서 업데이트
+            }
+
+            print('✅ 카테고리 삭제 완료: $category');
+            await _loadFoodsData(); // UI 업데이트
+            return;
+          }
+        }
+      }
+
+      print('⚠️ 삭제할 카테고리를 찾을 수 없습니다.');
+    } catch (e) {
+      print('❌ 카테고리 삭제 중 오류 발생: $e');
     }
   }
 
@@ -286,13 +409,13 @@ class _PreferredfoodscategoryTableState
             children: [
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(
-                      width: 1, color: theme.colorScheme.onSurface),
+                  horizontalInside:
+                      BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(180),
+                  2: FixedColumnWidth(250),
                   3: FixedColumnWidth(120),
                   4: FixedColumnWidth(100),
                 },
@@ -305,7 +428,9 @@ class _PreferredfoodscategoryTableState
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                  width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
+                                  width: 1,
+                                  color: theme
+                                      .colorScheme.onSurface), // 셀 아래 테두리 추가
                             ),
                           ),
                           child: column['name'] == '선택' ||
@@ -328,15 +453,15 @@ class _PreferredfoodscategoryTableState
                                                 color: theme
                                                     .colorScheme.onSurface)),
                                         Icon(
-                                          column['state'] == SortState.ascending
-                                              ? Icons.arrow_upward
-                                              : column['state'] ==
-                                                      SortState.descending
-                                                  ? Icons.arrow_downward
-                                                  : Icons.sort,
-                                          size: 12,
-                                            color: theme.colorScheme.onSurface
-                                        ),
+                                            column['state'] ==
+                                                    SortState.ascending
+                                                ? Icons.arrow_upward
+                                                : column['state'] ==
+                                                        SortState.descending
+                                                    ? Icons.arrow_downward
+                                                    : Icons.sort,
+                                            size: 12,
+                                            color: theme.colorScheme.onSurface),
                                       ],
                                     ),
                                   ),
@@ -349,12 +474,13 @@ class _PreferredfoodscategoryTableState
               ),
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
+                  horizontalInside:
+                      BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(180),
+                  2: FixedColumnWidth(250),
                   3: FixedColumnWidth(120),
                   4: FixedColumnWidth(100),
                 },
@@ -363,7 +489,8 @@ class _PreferredfoodscategoryTableState
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                            width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
+                            width: 1,
+                            color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                       ),
                     ),
                     children: [
@@ -375,32 +502,25 @@ class _PreferredfoodscategoryTableState
                                   style: TextStyle(
                                       color: theme.colorScheme.onSurface)))),
                       TableCell(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedCategory,
-                          onChanged: (value) {
+                        child: CustomDropdown(
+                          title: '선호식품 카테고리',
+                          items: categoryOptions,
+                          selectedItem: _selectedCategory ?? '',
+                          onItemChanged: (value) {
+                              setState(() {
+                                _selectedCategory = value;
+                              });
+                          },
+                          onItemDeleted: (item) async {
+                            await _deleteCategory(item); // Function to delete the category
                             setState(() {
-                              _selectedCategory = value;
+                              categoryOptions
+                                  .remove(item); // Update UI after deletion
                             });
                           },
-                          items: categoryOptions.map((String category) {
-                            return DropdownMenuItem<String>(
-                              value: category,
-                              child: Text(category,
-                                  style: TextStyle(
-                                      color: theme.colorScheme.onSurface)),
-                            );
-                          }).toList(),
-                          decoration: InputDecoration(
-                            hintText: '선호식품 카테고리',
-                            hintStyle: TextStyle(
-                              fontSize: 14, // 글씨 크기 줄이기
-                              color: Colors.grey, // 글씨 색상 회색으로
-                            ),
-                            contentPadding:
-                                EdgeInsets.only(bottom: 13, left: 20),
-                          ),
-                          style: theme.textTheme.bodyMedium,
-                          alignment: Alignment.bottomCenter,
+                          onAddNewItem: () {
+                            _showAddCategoryDialog();
+                          },
                         ),
                       ),
                       TableCell(
@@ -449,7 +569,8 @@ class _PreferredfoodscategoryTableState
                                 _updateFoodInCategory(_selectedCategory!,
                                     oldFoodName, updatedFoodName);
                               } else {
-                                _addDefaultPreferredCategories();
+                                _addFoodToCategory(_selectedCategory!,
+                                    _foodNameController.text);
                               }
 
                               // 필드 초기화 및 수정 모드 해제
@@ -471,12 +592,13 @@ class _PreferredfoodscategoryTableState
               ),
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
+                  horizontalInside:
+                      BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
                   1: FixedColumnWidth(40),
-                  2: FixedColumnWidth(180),
+                  2: FixedColumnWidth(250),
                   3: FixedColumnWidth(120),
                   4: FixedColumnWidth(100),
                 },
@@ -572,6 +694,45 @@ class _PreferredfoodscategoryTableState
           ),
         ),
       ),
+    );
+  }
+
+  void _showAddCategoryDialog() {
+    final theme = Theme.of(context);
+    final TextEditingController categoryController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            '새 카테고리 추가',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
+          content: TextField(
+            controller: categoryController,
+            decoration: InputDecoration(hintText: '카테고리 이름 입력'),
+            style: TextStyle(color: theme.chipTheme.labelStyle!.color),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+              },
+              child: Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (categoryController.text.isNotEmpty) {
+                  await _addCategory(categoryController.text);
+                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                }
+              },
+              child: Text('추가'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
