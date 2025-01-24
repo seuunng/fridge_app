@@ -280,7 +280,6 @@ class _AddItemState extends State<AddItem> {
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final fridgeId = selected_fridgeId;
-    ; // 여기에 실제 유저 ID를 추가하세요
 
     try {
       for (String itemName in selectedItems) {
@@ -290,7 +289,7 @@ class _AddItemState extends State<AddItem> {
                 id: 'unknown',
                 foodsName: itemName,
                 defaultCategory: '기타',
-                defaultFridgeCategory: '기타',
+                defaultFridgeCategory: '냉장',
                 shoppingListCategory: '기타',
                 shelfLife: 0,
               ),
@@ -308,7 +307,7 @@ class _AddItemState extends State<AddItem> {
           await FirebaseFirestore.instance.collection('fridge_items').add({
             'items': itemName,
             'FridgeId': fridgeId, // Firestore에 저장할 필드
-            'fridgeCategoryId': fridgeCategoryId,
+            'fridgeCategoryId': fridgeCategoryId ?? '냉장',
             'registrationDate': Timestamp.fromDate(DateTime.now()),
             'userId': userId,
           });
@@ -346,7 +345,6 @@ class _AddItemState extends State<AddItem> {
       return; // 🚫 게스트 사용자는 추가 불가
     }
 
-
     try {
       for (String itemName in selectedItems) {
         final existingItemSnapshot = await FirebaseFirestore.instance
@@ -363,9 +361,9 @@ class _AddItemState extends State<AddItem> {
             'isChecked': false, // 장바구니에 추가된 아이템은 기본적으로 체크되지 않음
           });
         } else {
-          print("이미 냉장고에 존재하는 아이템: $itemName");
+          print("이미 장바구니에 존재하는 아이템: $itemName");
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('이미 냉장고에 존재하는 아이템입니다.')),
+            SnackBar(content: Text('$itemName은 이미 장바구니에 존재합니다.')),
           );
         }
       }
@@ -674,7 +672,9 @@ class _AddItemState extends State<AddItem> {
                 child: Center(
                   child: Text(
                     '$searchKeyword',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: selectedItems.contains(searchKeyword)
+                        ? theme.chipTheme.secondaryLabelStyle!.color
+                        : Colors.white),
                   ),
                 ),
               ),
@@ -698,6 +698,7 @@ class _AddItemState extends State<AddItem> {
                   color: selectedItems.contains(itemName)
                       ? theme.chipTheme.selectedColor
                       : theme.chipTheme.backgroundColor,
+
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: Center(

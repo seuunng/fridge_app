@@ -186,8 +186,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
           if (!mounted) return;
 
-          if (foodsData != null) {
-            int shelfLife = foodsData['shelfLife'] ?? 0;
+            int shelfLife = foodsData?['shelfLife'] ?? 365;
 
             int index = storageSections.indexWhere(
                 (section) => section.categoryName == fridgeCategoryId);
@@ -203,9 +202,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
             } else {
               print("Category not found: $fridgeCategoryId");
             }
-          } else {
-            print("Item not found in foods collection: $itemName");
-          }
         } catch (e) {
           print('Error fetching or processing food data for $itemName: $e');
         }
@@ -743,6 +739,9 @@ class FridgeMainPageState extends State<FridgeMainPage>
                             ),
                           );
                         } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('아이템의 상세내용이 없습니다.')),
+                          );
                           print(
                               "Item not found in foods collection: $currentItem");
                         }
