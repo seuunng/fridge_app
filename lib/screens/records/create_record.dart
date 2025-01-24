@@ -588,7 +588,7 @@ class _CreateRecordState extends State<CreateRecord> {
                 ],
               ),
               subtitle: Wrap(
-                spacing: 8.0,
+                spacing: 3.0,
                 runSpacing: 8.0,
                 children: (recordsWithImages[index]['images'] as List<dynamic>)
                     .map((imagePath) {
@@ -653,23 +653,24 @@ class _CreateRecordState extends State<CreateRecord> {
           ],
         ),
         // 조리 단계와 이미지 추가 입력 필드
-        Row(
-          children: [
-            IconButton(
-              icon: Icon(Icons.camera_alt_outlined,
-                  color: theme.colorScheme.onSurface),
-              onPressed: _pickImages, // _pickImages 메서드 호출
-            ),
-            if (_imageFiles != null && _imageFiles!.isNotEmpty) ...[
-              Expanded(
-                child: Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal, // 가로 스크롤 추가(
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.camera_alt_outlined,
+                    color: theme.colorScheme.onSurface),
+                onPressed: _pickImages, // _pickImages 메서드 호출
+              ),
+              if (_imageFiles != null && _imageFiles!.isNotEmpty) ...[
+                Wrap(
+                  spacing: 1.0,
+                  runSpacing: 1.0,
                   children: _imageFiles!.map((imagePath) {
                     return Stack(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.all(4.0),
+                          padding: const EdgeInsets.all(1.0),
                           child: kIsWeb
                               ? Image.network(
                                   imagePath,
@@ -709,55 +710,55 @@ class _CreateRecordState extends State<CreateRecord> {
                     );
                   }).toList(),
                 ),
+              ],
+              // Spacer(),
+              IconButton(
+                icon: Icon(Icons.add, color: theme.colorScheme.onSurface),
+                onPressed: () {
+                  if (recordsWithImages.length >= 10) {
+                    // 최대 10개의 기록만 추가 가능하도록 제한
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('기록은 최대 10개까지만 추가할 수 있습니다.'),
+                      ),
+                    );
+                    return;
+                  }
+                  if (contentsController.text.isNotEmpty) {
+                    setState(() {
+                      final newRecord = {
+                        'field': selectedField,
+                        'contents': contentsController.text,
+                        'images':
+                            List<String>.from(_imageFiles ?? []), // 명시적 타입 변환
+                      };
+
+                      if (selectedRecordIndex != null) {
+                        // 선택된 항목 업데이트
+                        recordsWithImages[selectedRecordIndex!] =
+                            Map<String, Object>.from(newRecord);
+                        selectedRecordIndex = null;
+                      } else {
+                        // 새로운 항목 추가
+                        recordsWithImages
+                            .add(Map<String, Object>.from(newRecord));
+                      }
+
+                      // 입력 필드와 이미지 초기화
+                      contentsController.clear();
+                      _imageFiles = [];
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('내용을 입력하세요.'),
+                      ),
+                    );
+                  }
+                },
               ),
             ],
-            Spacer(),
-            IconButton(
-              icon: Icon(Icons.add, color: theme.colorScheme.onSurface),
-              onPressed: () {
-                if (recordsWithImages.length >= 10) {
-                  // 최대 10개의 기록만 추가 가능하도록 제한
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('기록은 최대 10개까지만 추가할 수 있습니다.'),
-                    ),
-                  );
-                  return;
-                }
-                if (contentsController.text.isNotEmpty) {
-                  setState(() {
-                    final newRecord = {
-                      'field': selectedField,
-                      'contents': contentsController.text,
-                      'images':
-                          List<String>.from(_imageFiles ?? []), // 명시적 타입 변환
-                    };
-
-                    if (selectedRecordIndex != null) {
-                      // 선택된 항목 업데이트
-                      recordsWithImages[selectedRecordIndex!] =
-                          Map<String, Object>.from(newRecord);
-                      selectedRecordIndex = null;
-                    } else {
-                      // 새로운 항목 추가
-                      recordsWithImages
-                          .add(Map<String, Object>.from(newRecord));
-                    }
-
-                    // 입력 필드와 이미지 초기화
-                    contentsController.clear();
-                    _imageFiles = [];
-                  });
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('내용을 입력하세요.'),
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
+          ),
         ),
       ],
     );

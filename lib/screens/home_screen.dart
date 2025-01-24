@@ -11,7 +11,6 @@ import 'package:food_for_later_new/screens/records/edit_record_categories.dart';
 import 'package:food_for_later_new/screens/records/record_search_settings.dart';
 import 'package:food_for_later_new/screens/records/view_record_main.dart';
 import 'package:food_for_later_new/screens/settings/account_information.dart';
-import 'package:food_for_later_new/screens/settings/app_environment_settings.dart';
 import 'package:food_for_later_new/screens/settings/app_info_page.dart';
 import 'package:food_for_later_new/screens/settings/app_usage_settings.dart';
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';

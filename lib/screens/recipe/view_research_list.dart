@@ -621,11 +621,13 @@ class _ViewResearchListState extends State<ViewResearchList> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final queryKeywords = [...keywords];
-
+    final queryKeywords = [...keywords, ...topIngredients];
+print(queryKeywords);
     // "레시피"와 "만드는법" 키워드 추가
     if (!queryKeywords.contains("레시피")) queryKeywords.add("레시피");
     if (!queryKeywords.contains("만드는법")) queryKeywords.add("만드는법");
+    if (!queryKeywords.contains("만들기")) queryKeywords.add("만들기");
+    if (!queryKeywords.contains("세프")) queryKeywords.add("세프");
     return Scaffold(
       appBar: AppBar(
         title: Text('레시피 검색'),

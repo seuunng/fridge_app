@@ -329,6 +329,10 @@ class _RecordsListViewState extends State<RecordsListView> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      ...records.map((rec) {
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
                                       // 🔹 unit (아침, 점심 등) 제목
                                       Row(
                                         children: [
@@ -339,21 +343,24 @@ class _RecordsListViewState extends State<RecordsListView> {
                                                 fontWeight: FontWeight.w600,
                                                 color: theme.colorScheme.onSurface),
                                           ),
+                                          SizedBox( width: 4),
+                                          Text(
+                                            '|',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: theme.colorScheme.onSurface),
+                                          ),
+                                          SizedBox( width: 4),
+                                          Text(
+                                            rec.contents ?? 'Unknown contents',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: theme.colorScheme.onSurface),
+                                          ),
                                         ],
                                       ),
                                       SizedBox(height: 4),
-
-                                      // 🔹 같은 unit에 속하는 여러 개의 내용 출력
-                                      ...records.map((rec) {
-                                        return Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              rec.contents ?? 'Unknown contents',
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: theme.colorScheme.onSurface),
-                                            ),
                                             // 🔹 이미지 목록 출력
                                             if (rec.images != null && rec.images!.isNotEmpty)
                                               Wrap(
