@@ -144,11 +144,9 @@ class _ReadRecipeState extends State<ReadRecipe> {
       print("Error checking admin role: $e");
     }
   }
-
   Future<Map<String, dynamic>> _fetchRecipeData() async {
     return await fetchRecipeData(widget.recipeId); // Firestore에서 데이터 가져오기
   }
-
   Future<Map<String, dynamic>> fetchRecipeData(String recipeId) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
@@ -163,7 +161,6 @@ class _ReadRecipeState extends State<ReadRecipe> {
       return {};
     }
   }
-
   Future<void> _fetchInitialRecipeName() async {
     var data = await fetchRecipeData(widget.recipeId);
     setState(() {
@@ -172,7 +169,6 @@ class _ReadRecipeState extends State<ReadRecipe> {
           List<String>.from(data['mainImages'] ?? []); // mainImages 업데이트
     });
   }
-
   Future<void> loadScrapedData(String recipeId) async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
@@ -190,7 +186,6 @@ class _ReadRecipeState extends State<ReadRecipe> {
       print("Error fetching recipe isScraped data: $e");
     }
   }
-
   Future<void> loadLikedData(String recipeId) async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
@@ -209,74 +204,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
     }
   }
 
-  void _toggleLike() async {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null || user.email == 'guest@foodforlater.com') {
-      // 🔹 방문자(게스트) 계정이면 스크랩 차단 및 안내 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('로그인 후 레시피를 좋아요 할 수 있습니다.')),
-      );
-      return; // 🚫 여기서 함수 종료 (스크랩 기능 실행 안 함)
-    }
-
-    final userId = user.uid;
-
-    try {
-      // 스크랩 상태 확인을 위한 쿼리
-      QuerySnapshot<Map<String, dynamic>> existingScrapedRecipes =
-          await FirebaseFirestore.instance
-              .collection('liked_recipes')
-              .where('recipeId', isEqualTo: widget.recipeId)
-              .where('userId', isEqualTo: userId)
-              .get();
-
-      if (existingScrapedRecipes.docs.isEmpty) {
-        // 스크랩이 존재하지 않으면 새로 추가
-        await FirebaseFirestore.instance.collection('liked_recipes').add({
-          'userId': userId,
-          'recipeId': widget.recipeId,
-          'isLiked': true,
-        });
-
-        setState(() {
-          isLiked = true; // 스크랩 상태로 변경
-        });
-      } else {
-        DocumentSnapshot<Map<String, dynamic>> doc =
-            existingScrapedRecipes.docs.first;
-        bool currentIsScraped = doc.data()?['isLiked'] ?? false;
-
-        await FirebaseFirestore.instance
-            .collection('liked_recipes')
-            .doc(doc.id)
-            .update({'isLiked': !currentIsScraped});
-
-        setState(() {
-          isLiked = !currentIsScraped; // 스크랩 상태 변경
-        });
-      }
-    } catch (e) {
-      print('Error scraping recipe: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('레시피 스크랩 중 오류가 발생했습니다.'),
-      ));
-    }
-  }
-
-  void _toggleScraped(String recipeId) async {
-    bool newState = await ScrapedRecipeService.toggleScraped(
-      context,
-      recipeId,
-          (bool state) {
-        setState(() {
-          isScraped = state;
-        });
-      },
-    );
-  }
-
-  void _addToShoppingListDialog() async {
+  void _addToShoppingList() async {
+    // 아이템을 컬렉션에 저장
     Future<void> _addToShoppingList(List<String> ingredients) async {
       final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
       try {
@@ -309,7 +238,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
         ));
       }
     }
-
+    //장바구니에 넣을 아이템 선택하는 다이어로그 UI
     void _showAddToShoppingListDialog(List<String> ingredients) {
       showDialog(
         context: context,
@@ -354,9 +283,15 @@ class _ReadRecipeState extends State<ReadRecipe> {
                     onPressed: () {
                       _addToShoppingList(ingredients);
                       Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('선택한 재료를 장바구니에 추가했습니다.'),
-                      ));
+                      if (selectedIngredients.any((selected) => selected)) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('선택한 재료를 장바구니에 추가했습니다.'),
+                        ));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('추가할 재료가 없습니다.'),
+                        ));
+                      }
                     },
                   ),
                 ],
@@ -476,10 +411,21 @@ class _ReadRecipeState extends State<ReadRecipe> {
     );
   }
 
+  List<String> _collectAllImages(
+      List<String> mainImages, List<Map<String, String>> steps) {
+    List<String> allImages = [];
+    allImages.addAll(mainImages); // 메인 이미지 추가
+    for (var step in steps) {
+      if (step['image'] != null && step['image']!.isNotEmpty) {
+        allImages.add(step['image']!); // 조리 과정 이미지 추가
+      }
+    }
+    return allImages;
+  }
   Future<void> _increaseViewCount(String recipeId) async {
     try {
       DocumentReference recipeDoc =
-          FirebaseFirestore.instance.collection('recipe').doc(recipeId);
+      FirebaseFirestore.instance.collection('recipe').doc(recipeId);
 
       FirebaseFirestore.instance.runTransaction((transaction) async {
         DocumentSnapshot snapshot = await transaction.get(recipeDoc);
@@ -498,16 +444,71 @@ class _ReadRecipeState extends State<ReadRecipe> {
     }
   }
 
-  List<String> _collectAllImages(
-      List<String> mainImages, List<Map<String, String>> steps) {
-    List<String> allImages = [];
-    allImages.addAll(mainImages); // 메인 이미지 추가
-    for (var step in steps) {
-      if (step['image'] != null && step['image']!.isNotEmpty) {
-        allImages.add(step['image']!); // 조리 과정 이미지 추가
-      }
+  void _toggleLike() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null || user.email == 'guest@foodforlater.com') {
+      // 🔹 방문자(게스트) 계정이면 스크랩 차단 및 안내 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 후 레시피를 좋아요 할 수 있습니다.')),
+      );
+      return; // 🚫 여기서 함수 종료 (스크랩 기능 실행 안 함)
     }
-    return allImages;
+
+    final userId = user.uid;
+
+    try {
+      // 스크랩 상태 확인을 위한 쿼리
+      QuerySnapshot<Map<String, dynamic>> existingScrapedRecipes =
+      await FirebaseFirestore.instance
+          .collection('liked_recipes')
+          .where('recipeId', isEqualTo: widget.recipeId)
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      if (existingScrapedRecipes.docs.isEmpty) {
+        // 스크랩이 존재하지 않으면 새로 추가
+        await FirebaseFirestore.instance.collection('liked_recipes').add({
+          'userId': userId,
+          'recipeId': widget.recipeId,
+          'isLiked': true,
+        });
+
+        setState(() {
+          isLiked = true; // 스크랩 상태로 변경
+        });
+      } else {
+        DocumentSnapshot<Map<String, dynamic>> doc =
+            existingScrapedRecipes.docs.first;
+        bool currentIsScraped = doc.data()?['isLiked'] ?? false;
+
+        await FirebaseFirestore.instance
+            .collection('liked_recipes')
+            .doc(doc.id)
+            .update({'isLiked': !currentIsScraped});
+
+        setState(() {
+          isLiked = !currentIsScraped; // 스크랩 상태 변경
+        });
+      }
+    } catch (e) {
+      print('Error scraping recipe: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('레시피 스크랩 중 오류가 발생했습니다.'),
+      ));
+    }
+  }
+
+  void _toggleScraped(String recipeId) async {
+    bool newState = await ScrapedRecipeService.toggleScraped(
+      context,
+      recipeId,
+          (bool state) {
+        setState(() {
+          isScraped = state;
+        });
+      },
+    );
   }
 
   Future<int> _getScrapedCount(String recipeId) async {
@@ -997,7 +998,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
     return IconButton(
       icon: Icon(Icons.add_shopping_cart,
           color: theme.colorScheme.onSurface),
-      onPressed: _addToShoppingListDialog, // 팝업 다이얼로그 호출
+      onPressed: _addToShoppingList, // 팝업 다이얼로그 호출
     );
   }
 

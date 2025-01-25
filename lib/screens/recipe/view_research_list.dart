@@ -263,9 +263,35 @@ class _ViewResearchListState extends State<ViewResearchList> {
           .where('FridgeId', isEqualTo: selected_fridgeId)
           .get();
 
+      List<String> validIngredients = [];
+
+      for (var doc in snapshot.docs) {
+        String itemName = doc['items'] as String;
+
+        // 🔹 `foods`에서 먼저 조회
+        final foodsSnapshot = await FirebaseFirestore.instance
+            .collection('foods')
+            .where('foodsName', isEqualTo: itemName)
+            .get();
+
+        if (foodsSnapshot.docs.isNotEmpty) {
+          validIngredients.add(itemName); // foods에 있으면 추가
+          continue;
+        }
+
+        // 🔹 `default_foods`에서 조회
+        final defaultFoodsSnapshot = await FirebaseFirestore.instance
+            .collection('default_foods')
+            .where('foodsName', isEqualTo: itemName)
+            .get();
+
+        if (defaultFoodsSnapshot.docs.isNotEmpty) {
+          validIngredients.add(itemName); // default_foods에 있으면 추가
+        }
+      }
+
       setState(() {
-        fridgeIngredients =
-            snapshot.docs.map((doc) => doc['items'] as String).toList();
+        fridgeIngredients = validIngredients; // 유효한 아이템만 fridgeIngredients에 추가
       });
     } catch (e) {
       print('Error loading fridge items: $e');
@@ -287,7 +313,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
     prioritizedIngredients.sort((a, b) => b.value.compareTo(a.value));
     List<String> topIngredients =
         prioritizedIngredients.map((entry) => entry.key).take(10).toList();
-
+    print('topIngredients $topIngredients');
     return topIngredients;
   }
   // 검색 상세설정 값 불러오기
@@ -365,21 +391,21 @@ class _ViewResearchListState extends State<ViewResearchList> {
       keywords =
           keywords?.where((keyword) => keyword.trim().isNotEmpty).toList() ??
               [];
-      if ((keywords.isEmpty) &&
-          (topIngredients == null || topIngredients.isEmpty) &&
-          (excludeKeywords == null || excludeKeywords!.isEmpty) &&
-          searchKeyword.isEmpty) {
-        final querySnapshot = await _db.collection('recipe')
-            .orderBy('date', descending: true)
-            .get();
-        setState(() {
-          matchingRecipes = querySnapshot.docs
-              .map((doc) =>
-                  RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
-              .toList();
-        });
-        return;
-      }
+      // if ((keywords.isEmpty) &&
+      //     (topIngredients == null || topIngredients.isEmpty) &&
+      //     (excludeKeywords == null || excludeKeywords!.isEmpty) &&
+      //     searchKeyword.isEmpty) {
+      //   final querySnapshot = await _db.collection('recipe')
+      //       .orderBy('date', descending: true)
+      //       .get();
+      //   setState(() {
+      //     matchingRecipes = querySnapshot.docs
+      //         .map((doc) =>
+      //             RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
+      //         .toList();
+      //   });
+      //   return;
+      // }
       final ingredientToCategory = await _loadIngredientCategoriesFromFirestore();
 
       final cleanedKeywords =
@@ -622,12 +648,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final queryKeywords = [...keywords, ...topIngredients];
-print(queryKeywords);
+
     // "레시피"와 "만드는법" 키워드 추가
     if (!queryKeywords.contains("레시피")) queryKeywords.add("레시피");
+    if (!queryKeywords.contains("요리")) queryKeywords.add("요리");
     if (!queryKeywords.contains("만드는법")) queryKeywords.add("만드는법");
+    if (!queryKeywords.contains("만드는 방법")) queryKeywords.add("만드는 방법");
     if (!queryKeywords.contains("만들기")) queryKeywords.add("만들기");
-    if (!queryKeywords.contains("세프")) queryKeywords.add("세프");
+    print('queryKeywords $queryKeywords');
     return Scaffold(
       appBar: AppBar(
         title: Text('레시피 검색'),
@@ -706,7 +734,7 @@ print(queryKeywords);
                   child: NavbarButton(
                     buttonTitle: '웹으로 검색하기',
                     onPressed: () async {
-                      if (keywords.isNotEmpty) {
+                      if (keywords.isNotEmpty || topIngredients.isNotEmpty) {
                         final query = queryKeywords.join(" "); // 키워드를 공백으로 연결
                         await fetchSearchResultsFromWeb(query); // 웹 검색 함수 호출
                       } else {
@@ -1055,7 +1083,7 @@ print(queryKeywords);
       padding: const EdgeInsets.all(8.0),
       child: GridView.builder(
         shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
+        physics: BouncingScrollPhysics(), // 스크롤 가능하게 설정
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 1, // 한 줄에 하나씩 표시
           crossAxisSpacing: 8.0, // 아이템 간 가로 간격
@@ -1135,7 +1163,7 @@ print(queryKeywords);
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: 8.0),
+                        // SizedBox(height: 8.0),
                         Text(
                           snippet,
                           style: TextStyle(

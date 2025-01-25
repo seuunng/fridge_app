@@ -246,170 +246,172 @@ class _RecordsListViewState extends State<RecordsListView> {
             .where((record) => record != null)
             .toList();
 
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          itemCount: recordsList.length,
-          itemBuilder: (context, index) {
-            final record = recordsList[index];
-            // 🔹 같은 unit을 그룹화
-            Map<String, List<RecordDetail>> groupedRecords = {};
-            for (var rec in record?.records ?? []) {
-              if (!groupedRecords.containsKey(rec.unit)) {
-                groupedRecords[rec.unit] = [];
+        return SingleChildScrollView(
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: recordsList.length,
+            itemBuilder: (context, index) {
+              final record = recordsList[index];
+              // 🔹 같은 unit을 그룹화
+              Map<String, List<RecordDetail>> groupedRecords = {};
+              for (var rec in record?.records ?? []) {
+                if (!groupedRecords.containsKey(rec.unit)) {
+                  groupedRecords[rec.unit] = [];
+                }
+                groupedRecords[rec.unit]?.add(rec);
               }
-              groupedRecords[rec.unit]?.add(rec);
-            }
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 🔹 컬러 바 추가
-                      Container(
-                        width: 4,
-                        height: 50, // 컬러 바 높이
-                        color: _convertColor(record?.color ?? '#FFFFFF'),
-                      ),
-                      SizedBox(width: 8), // 컬러 바와 텍스트 사이 간격
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 🔹 zone | 날짜 표시
-                            Row(
-                              children: [
-                                Text(
-                                  record?.zone ?? 'Unknown zone',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: theme.colorScheme.onSurface),
-                                ),
-                                SizedBox(width: 4),
-                                Text('|',
-                                  style: TextStyle(
-                                      color: theme.colorScheme.onSurface
-                                  ),),
-                                SizedBox(width: 4),
-                                Text(
-                                  record?.date != null
-                                      ? DateFormat('yyyy-MM-dd').format(record!.date!)
-                                      : 'Unknown Date',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: theme.colorScheme.onSurface),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 5),
-
-                            // 🔹 unit | contents | 사진 묶어서 출력
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: groupedRecords.entries.map((entry) {
-                                final unit = entry.key; // 구분 (아침, 점심 등)
-                                final records = entry.value; // 같은 unit을 가진 기록들
-
-                                return InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ReadRecord(
-                                          recordId: record?.id ?? 'unknown',
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      ...records.map((rec) {
-                                        return Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                      // 🔹 unit (아침, 점심 등) 제목
-                                      Row(
-                                        children: [
-                                          Text(
-                                            unit,
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: theme.colorScheme.onSurface),
-                                          ),
-                                          SizedBox( width: 4),
-                                          Text(
-                                            '|',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: theme.colorScheme.onSurface),
-                                          ),
-                                          SizedBox( width: 4),
-                                          Text(
-                                            rec.contents ?? 'Unknown contents',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: theme.colorScheme.onSurface),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 4),
-                                            // 🔹 이미지 목록 출력
-                                            if (rec.images != null && rec.images!.isNotEmpty)
-                                              Wrap(
-                                                spacing: 8.0,
-                                                runSpacing: 4.0,
-                                                children: rec.images!.map((imageUrl) {
-                                                  if (imageUrl.startsWith('https://') ||
-                                                      imageUrl.startsWith('http://')) {
-                                                    return Image.network(
-                                                      imageUrl,
-                                                      width: 50,
-                                                      height: 50,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder: (context, error, stackTrace) {
-                                                        return SizedBox(); // 🔹 오류 발생 시 아무것도 표시하지 않음
-                                                      },
-                                                    );
-                                                  } else {
-                                                    return Image.file(
-                                                      File(imageUrl),
-                                                      width: 50,
-                                                      height: 50,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder: (context, error, stackTrace) {
-                                                        return SizedBox(); // 🔹 오류 발생 시 빈 컨테이너 반환
-                                                      },
-                                                    );
-                                                  }
-                                                }).toList(),
-                                              ),
-                                            SizedBox(height: 5),
-                                          ],
-                                        );
-                                      }).toList(),
-                                      SizedBox(height: 10),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 🔹 컬러 바 추가
+                        Container(
+                          width: 4,
+                          height: 50, // 컬러 바 높이
+                          color: _convertColor(record?.color ?? '#FFFFFF'),
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 8), // 컬러 바와 텍스트 사이 간격
+          
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 🔹 zone | 날짜 표시
+                              Row(
+                                children: [
+                                  Text(
+                                    record?.zone ?? 'Unknown zone',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: theme.colorScheme.onSurface),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text('|',
+                                    style: TextStyle(
+                                        color: theme.colorScheme.onSurface
+                                    ),),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    record?.date != null
+                                        ? DateFormat('yyyy-MM-dd').format(record!.date!)
+                                        : 'Unknown Date',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: theme.colorScheme.onSurface),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 5),
+          
+                              // 🔹 unit | contents | 사진 묶어서 출력
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: groupedRecords.entries.map((entry) {
+                                  final unit = entry.key; // 구분 (아침, 점심 등)
+                                  final records = entry.value; // 같은 unit을 가진 기록들
+          
+                                  return InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ReadRecord(
+                                            recordId: record?.id ?? 'unknown',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ...records.map((rec) {
+                                          return Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                        // 🔹 unit (아침, 점심 등) 제목
+                                        Row(
+                                          children: [
+                                            Text(
+                                              unit,
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: theme.colorScheme.onSurface),
+                                            ),
+                                            SizedBox( width: 4),
+                                            Text(
+                                              '|',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: theme.colorScheme.onSurface),
+                                            ),
+                                            SizedBox( width: 4),
+                                            Text(
+                                              rec.contents ?? 'Unknown contents',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: theme.colorScheme.onSurface),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 4),
+                                              // 🔹 이미지 목록 출력
+                                              if (rec.images != null && rec.images!.isNotEmpty)
+                                                Wrap(
+                                                  spacing: 8.0,
+                                                  runSpacing: 4.0,
+                                                  children: rec.images!.map((imageUrl) {
+                                                    if (imageUrl.startsWith('https://') ||
+                                                        imageUrl.startsWith('http://')) {
+                                                      return Image.network(
+                                                        imageUrl,
+                                                        width: 50,
+                                                        height: 50,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return SizedBox(); // 🔹 오류 발생 시 아무것도 표시하지 않음
+                                                        },
+                                                      );
+                                                    } else {
+                                                      return Image.file(
+                                                        File(imageUrl),
+                                                        width: 50,
+                                                        height: 50,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return SizedBox(); // 🔹 오류 발생 시 빈 컨테이너 반환
+                                                        },
+                                                      );
+                                                    }
+                                                  }).toList(),
+                                                ),
+                                              SizedBox(height: 5),
+                                            ],
+                                          );
+                                        }).toList(),
+                                        SizedBox(height: 10),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         );
       },
     );
