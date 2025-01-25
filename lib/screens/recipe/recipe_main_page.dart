@@ -78,8 +78,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     _loadItemsInFridgeFromFirestore();
     _loadUserRole();
   }
-  void _loadUserRole() async {
 
+  void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -95,6 +95,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
       print('Error loading user role: $e');
     }
   }
+
   Future<Map<String, List<String>>> _fetchFoods() async {
     Map<String, List<String>> categoryMap = {};
     Set<String> userFoodNames = {}; // 사용자가 수정한 식품명을 저장
@@ -124,7 +125,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
 
       // ✅ 2. 기본 데이터(default_foods) 가져오기
       final defaultSnapshot =
-      await FirebaseFirestore.instance.collection('default_foods').get();
+          await FirebaseFirestore.instance.collection('default_foods').get();
 
       for (var doc in defaultSnapshot.docs) {
         final data = doc.data();
@@ -159,16 +160,18 @@ class _RecipeMainPageState extends State<RecipeMainPage>
           final indexA = predefinedCategoryFridge.indexOf(a);
           final indexB = predefinedCategoryFridge.indexOf(b);
           return (indexA == -1 ? predefinedCategoryFridge.length : indexA)
-              .compareTo(indexB == -1 ? predefinedCategoryFridge.length : indexB);
+              .compareTo(
+                  indexB == -1 ? predefinedCategoryFridge.length : indexB);
         });
 
       final sortedItemsByCategory = Map.fromEntries(
-        sortedCategories.map((category) => MapEntry(category, categoryMap[category]!)),
+        sortedCategories
+            .map((category) => MapEntry(category, categoryMap[category]!)),
       );
 
       setState(() {
-        this.categories = categoryMap.keys.toList();
-        this.itemsByCategory = categoryMap;
+        this.categories = sortedItemsByCategory.keys.toList();
+        this.itemsByCategory = sortedItemsByCategory;
       });
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
@@ -180,7 +183,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
 
   void _loadThemaFromFirestore() async {
     try {
-      final snapshot = await _db.collection('recipe_thema_categories')
+      final snapshot = await _db
+          .collection('recipe_thema_categories')
           .orderBy('priority', descending: false)
           .get();
       final themaCategories = snapshot.docs.map((doc) {
@@ -297,7 +301,59 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('레시피'),
+        title: Row(
+          children: [
+            Text('레시피'),
+            Spacer(),
+            Transform.translate(
+              offset: Offset(-5, -5),
+              child: Container(
+                height: 15, // 텍스트 필드와 동일한 높이로 설정
+                width: 50, // 정사각형 버튼 크기 설정
+                decoration: BoxDecoration(
+                  // color: theme.colorScheme.surface, // 배경색
+                  borderRadius: BorderRadius.circular(8.0), // 둥근 모서리
+                ),
+                child: Center(
+                  child: IconButton(
+                    icon: Icon(Icons.bookmark,
+                        size: 30,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface), // 스크랩 아이콘 크기 조정
+                    padding: EdgeInsets.zero, // 내부 패딩 제거
+                    onPressed: () {
+                      if (user == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('로그인 하고 레시피를 스크랩해서 관리하세요!'),
+                              ],
+                            ),
+                            duration: Duration(seconds: 3), // 3초간 표시
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ViewScrapRecipeList(),
+                        ),
+                      ).then((_) {
+                        // 🔹 Navigator.pop 이후 텍스트 필드 초기화
+                        _searchController.clear();
+                      }); // 스크랩 아이콘 클릭 시 실행할 동작
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -306,7 +362,6 @@ class _RecipeMainPageState extends State<RecipeMainPage>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(width: 10),
                 Expanded(
                   child: TextField(
                     controller: _searchController,
@@ -318,8 +373,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                       contentPadding:
                           EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
                     ),
-                    style:
-                    TextStyle(color: theme.chipTheme.labelStyle!.color),
+                    style: TextStyle(color: theme.chipTheme.labelStyle!.color),
                     // onChanged: (value) {
                     //   _searchItems(value); // 검색어 입력 시 아이템 필터링
                     // },
@@ -340,53 +394,6 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                         ),
                       );
                     },
-                  ),
-                ),
-
-                Transform.translate(
-                  offset: Offset(-5, -5),
-                  child: Container(
-                    height: 50, // 텍스트 필드와 동일한 높이로 설정
-                    width: 50, // 정사각형 버튼 크기 설정
-                    decoration: BoxDecoration(
-                      // color: theme.colorScheme.surface, // 배경색
-                      borderRadius: BorderRadius.circular(8.0), // 둥근 모서리
-                    ),
-                    child: Center(
-                      child: IconButton(
-                        icon: Icon(Icons.bookmark,
-                            size: 60,
-                            color: Theme.of(context).colorScheme.onSurface
-                        ), // 스크랩 아이콘 크기 조정
-                        padding: EdgeInsets.zero, // 내부 패딩 제거
-                        onPressed: () {
-                          if (user == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('로그인 하고 레시피를 스크랩해서 관리하세요!'),
-                                  ],
-                                ),
-                                duration: Duration(seconds: 3), // 3초간 표시
-                              ),
-                            );
-                            return;
-                          }
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ViewScrapRecipeList(),
-                            ),
-                          ).then((_) {
-                            // 🔹 Navigator.pop 이후 텍스트 필드 초기화
-                            _searchController.clear();
-                          }); // 스크랩 아이콘 클릭 시 실행할 동작
-                        },
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -420,8 +427,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
           ),
         ],
       ),
-      bottomNavigationBar:
-      Container(
+      bottomNavigationBar: Container(
         color: Colors.transparent,
         padding: EdgeInsets.only(bottom: 16),
         child: Column(
@@ -429,9 +435,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
           mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
           children: [
             Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-          child:
-              Row(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
@@ -464,7 +469,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                     onPressed: () {
                       final user = FirebaseAuth.instance.currentUser;
 
-                      if (user == null || user.email == 'guest@foodforlater.com') {
+                      if (user == null ||
+                          user.email == 'guest@foodforlater.com') {
                         // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('로그인 후 레시피를 작성할 수 있습니다.')),
@@ -486,13 +492,12 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                 ],
               ),
             ),
-              if (userRole != 'admin' && userRole != 'paid_user')
-                SafeArea(
-                  bottom: false, // 하단 여백 제거
-                  child: BannerAdWidget(),
-                ),
-            ],
-
+            if (userRole != 'admin' && userRole != 'paid_user')
+              SafeArea(
+                bottom: false, // 하단 여백 제거
+                child: BannerAdWidget(),
+              ),
+          ],
         ),
       ),
     );

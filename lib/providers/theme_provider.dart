@@ -247,7 +247,7 @@ class ThemeProvider extends ChangeNotifier {
         primary: Color(0xFFC3D0D5), // 주요 배경색
         onPrimary: Color(0xFF05264E), // 주요 배경위 텍스트나 아이콘색
         primaryContainer: Color(0xFF4A7ECA), //primary와 유사한 색상이지만, 더 연한 버전
-        onPrimaryContainer: Color(0xFFC3D0D5),
+        onPrimaryContainer: Color(0x41C3D0D5),
         secondary: Color(0x41C3D0D5), // 캘린더 오늘,
         onSecondary: Color(0xFF05264E), // 캘렌더 컬러박스 글씨
         surface: Color(0xFF3F668F), //카드와 같은 표면 색상, 하단 네브바
@@ -307,7 +307,7 @@ class ThemeProvider extends ChangeNotifier {
         onPrimaryContainer: Color(0xFFA7AFAB),
         secondary: Color(0xFFA7AFAB), // 캘린더 오늘,
         onSecondary: Color(0xFF0D2514), // 캘렌더 컬러박스 글씨
-        surface: Color(0xFF19411C), //카드와 같은 표면 색상, 하단 네브바
+        surface: Color(0xFF19411C), //카드와 같은 표면 색상, 하단 네브바, 드롭다운 배경
         onSurface: Color(0xFFA7AFAB), //드롭박스, 사이드바
         brightness: Brightness.dark),
   );

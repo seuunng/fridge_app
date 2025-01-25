@@ -27,7 +27,6 @@ class _RecipeGridState extends State<RecipeGrid> {
     if (widget.categories.isEmpty && widget.itemsByCategory.isNotEmpty) {
       selectedCategory = widget.itemsByCategory.keys.first;
     }
-
   }
 
   @override

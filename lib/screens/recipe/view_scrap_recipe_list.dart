@@ -377,36 +377,36 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  Text(
-                    '컬렉션',
-                    style: TextStyle(
-                      fontSize: 18, // 원하는 폰트 크기로 지정 (예: 18)
-                      fontWeight: FontWeight.bold, // 폰트 굵기 조정 (선택사항)
-                        color: theme.colorScheme.onSurface
+                  Expanded(
+                    child: Text(
+                      '컬렉션',
+                      style: TextStyle(
+                        fontSize: 18, // 원하는 폰트 크기로 지정 (예: 18)
+                        fontWeight: FontWeight.bold, // 폰트 굵기 조정 (선택사항)
+                          color: theme.colorScheme.onSurface
+                      ),
                     ),
                   ),
-                  // Spacer(),
-                  Expanded(
-                    child: CustomDropdown(
-                      title: '',
-                      items: _scraped_groups,
-                      selectedItem: selectedFilter, // 리스트에 없으면 기본값 설정
-                      onItemChanged: (value) async {
-                        setState(() {
-                          selectedFilter = value;
-                        });
-                        await fetchRecipesByScrap();
-                        setState(() {});
-                      },
-                      onItemDeleted: (item) {
-                        if (item != '전체') {
-                          _deleteCategory(item, _scraped_groups, '스크랩 그룹');
-                        }
-                      },
-                      onAddNewItem: () {
-                        _addNewGroup(_scraped_groups, '스크랩 그룹');
-                      },
-                    ),
+                  SizedBox(width: 10,),
+                  CustomDropdown(
+                    title: '',
+                    items: _scraped_groups,
+                    selectedItem: selectedFilter, // 리스트에 없으면 기본값 설정
+                    onItemChanged: (value) async {
+                      setState(() {
+                        selectedFilter = value;
+                      });
+                      await fetchRecipesByScrap();
+                      setState(() {});
+                    },
+                    onItemDeleted: (item) {
+                      if (item != '전체') {
+                        _deleteCategory(item, _scraped_groups, '스크랩 그룹');
+                      }
+                    },
+                    onAddNewItem: () {
+                      _addNewGroup(_scraped_groups, '스크랩 그룹');
+                    },
                   ),
                 ],
               ),

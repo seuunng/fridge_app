@@ -219,15 +219,14 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                           _firstDayOffset(_focusedDate),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 7, // 7열로 설정
-                          mainAxisSpacing: 8.0,
-                          crossAxisSpacing: 8.0,
-                          childAspectRatio: 1.0),
+                          mainAxisSpacing: 4.0,
+                          crossAxisSpacing: 1.0,
+                          childAspectRatio: 0.6),
                       shrinkWrap: true,
                       // GridView를 스크롤이 아닌 적절한 크기로 축소
-                      physics: NeverScrollableScrollPhysics(),
+                      // physics: NeverScrollableScrollPhysics(),
                       itemBuilder: (context, index) {
                         if (index < _firstDayOffset(_focusedDate)) {
-                          // 1일 이전에 해당하는 빈 칸들
                           return Container(); // 빈 컨테이너로 처리
                         } else {
                           // 실제 날짜를 렌더링
@@ -294,9 +293,9 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                                         '$day',
                                         style: TextStyle(
                                           color: isSelected
-                                              ? theme.colorScheme.onSurface
+                                              ? Theme.of(context).colorScheme.onSecondary
                                               : isToday
-                                                  ? theme.colorScheme.onSurface
+                                                  ? Theme.of(context).colorScheme.onSecondary
                                                   : theme.colorScheme.onSurface,
                                           fontWeight: isSelected
                                               ? FontWeight.bold

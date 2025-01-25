@@ -46,6 +46,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
                     color: Colors.grey, // 힌트를 회색으로 설정
                   ),
                 ),
+                itemHeight: 48.0,
                 items: widget.items.map((String item) {
                   return DropdownMenuItem<String>(
                     value: item,
@@ -57,7 +58,9 @@ class _CustomDropdownState extends State<CustomDropdown> {
                             Text(item,
                                 style: TextStyle(
                                     fontSize: 16,
-                                    color: theme.colorScheme.onSurface)),
+                                    color: theme.colorScheme.onSurface,
+                                ),
+                              textAlign: TextAlign.center, ),
               
                             if (_isDropdownOpen) ...[
                               Flexible(
@@ -129,6 +132,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
                             ? theme.colorScheme.onSurface
                             : Colors.grey, // 선택되지 않은 경우 회색
                       ),
+                      textAlign: TextAlign.center,
                     );
                   }).toList();
                 },

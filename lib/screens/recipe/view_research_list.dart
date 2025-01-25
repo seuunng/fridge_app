@@ -299,7 +299,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
   // 냉장고 재료 우선순위에 따라 10개 추리기
   Future<List<String>> _applyCategoryPriority(List<String> fridgeIngredients) async {
-    print('fridgeIngredients $fridgeIngredients');
+    // print('fridgeIngredients $fridgeIngredients');
     Map<String, String> ingredientToCategory =
         await _loadIngredientCategoriesFromFirestore();
 
@@ -846,6 +846,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
           ),
         ),
       );
+    } else {
+      return Container();
     }
 
     return LayoutBuilder(builder: (context, constraints) {
