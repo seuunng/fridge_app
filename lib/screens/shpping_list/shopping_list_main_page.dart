@@ -335,7 +335,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
     try {
       for (var category in checkedItems.keys) {
-        List<String> categoryItems = List<String>.from(itemLists[category]!);
+        List<String> categoryItems = List<String>.from(itemLists[category] ?? []);
 
         if (categoryItems.isEmpty) {
           continue;
@@ -370,13 +370,13 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
               }
             }
 
-            if (foodData == null) {
-              print("일치하는 음식이 없습니다: $itemName");
-              continue;
-            }
+            // if (foodData == null) {
+            //   print("일치하는 음식이 없습니다: $itemName");
+            //   continue;
+            // }
 
             final fridgeCategoryId =
-                foodData['defaultFridgeCategory'] ?? '기타'; // 냉장고 카테고리
+                foodData?['defaultFridgeCategory'] ?? '냉장'; // 냉장고 카테고리
 
             // 🔹 3. 냉장고에 이미 있는지 확인
             final existingItem = await FirebaseFirestore.instance
