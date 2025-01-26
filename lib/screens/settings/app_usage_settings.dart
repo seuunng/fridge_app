@@ -477,7 +477,8 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                       items: CustomThemeMode.values.map((mode) {
                         return DropdownMenuItem<CustomThemeMode>(
                           value: mode,
-                          child: Text(mode.toString().split('.').last,
+                          child: Text(
+                              themeModeNames[mode] ?? mode.toString(),
                               style: TextStyle(color: theme.colorScheme.onSurface)),
                         );
                       }).toList(),
