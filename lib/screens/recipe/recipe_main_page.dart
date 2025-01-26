@@ -306,48 +306,40 @@ class _RecipeMainPageState extends State<RecipeMainPage>
             Text('레시피'),
             Spacer(),
             Transform.translate(
-              offset: Offset(-5, -5),
-              child: Container(
-                height: 15, // 텍스트 필드와 동일한 높이로 설정
-                width: 50, // 정사각형 버튼 크기 설정
-                decoration: BoxDecoration(
-                  // color: theme.colorScheme.surface, // 배경색
-                  borderRadius: BorderRadius.circular(8.0), // 둥근 모서리
-                ),
-                child: Center(
-                  child: IconButton(
-                    icon: Icon(Icons.bookmark,
-                        size: 30,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface), // 스크랩 아이콘 크기 조정
-                    padding: EdgeInsets.zero, // 내부 패딩 제거
-                    onPressed: () {
-                      if (user == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('로그인 하고 레시피를 스크랩해서 관리하세요!'),
-                              ],
-                            ),
-                            duration: Duration(seconds: 3), // 3초간 표시
-                          ),
-                        );
-                        return;
-                      }
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ViewScrapRecipeList(),
-                        ),
-                      ).then((_) {
-                        // 🔹 Navigator.pop 이후 텍스트 필드 초기화
-                        _searchController.clear();
-                      }); // 스크랩 아이콘 클릭 시 실행할 동작
-                    },
+              offset: Offset(0, 0),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent, // 터치 영역을 확장
+                onTap: () {
+                  if (user == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('로그인 하고 레시피를 스크랩해서 관리하세요!'),
+                        duration: Duration(seconds: 3), // 3초간 표시
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ViewScrapRecipeList(),
+                    ),
+                  ).then((_) {
+                    _searchController.clear(); // 텍스트 필드 초기화
+                  });
+                },
+                child: Container(
+                  height: 50, // 터치 가능한 높이를 넉넉히 설정
+                  width: 50, // 터치 가능한 너비를 넉넉히 설정
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8.0), // 둥근 모서리 유지
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.bookmark,
+                      size: 30,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ),

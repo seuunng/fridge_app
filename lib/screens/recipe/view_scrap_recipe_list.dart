@@ -38,26 +38,23 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   void initState() {
     super.initState();
     selectedRecipes.clear();
-    _loadData();
-    _loadScrapedGroups();
-    _loadUserRole();
+    _initializePage();
   }
-  void _loadUserRole() async {
+  // 🔹 새로운 초기화 함수 추가
+  Future<void> _initializePage() async {
+    setState(() {
+      isLoading = true; // 로딩 상태 시작
+    });
 
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
+    // 스크랩 그룹 로드
+    await _loadScrapedGroups();
 
-      if (userDoc.exists) {
-        setState(() {
-          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
-        });
-      }
-    } catch (e) {
-      print('Error loading user role: $e');
-    }
+    // 레시피 로드
+    List<RecipeModel> recipes = await fetchRecipesByScrap();
+    setState(() {
+      recipeList = recipes; // 로드된 데이터를 recipeList에 반영
+      isLoading = false;
+    });
   }
   Future<void> _loadData() async {
     setState(() {
@@ -107,6 +104,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
 
   Future<List<RecipeModel>> fetchRecipesByScrap() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    List<RecipeModel> fetchedRecipes = [];
     try {
       QuerySnapshot snapshot;
       if (selectedFilter == '전체') {
@@ -116,7 +114,6 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
             .orderBy('scrapedAt', descending: true)
             .get();
       } else {
-        // 특정 그룹명을 기준으로 필터링
         snapshot = await _db
             .collection('scraped_recipes')
             .where('userId', isEqualTo: userId)
@@ -125,28 +122,21 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
             .get();
       }
 
-      // 각 문서의 recipeId로 레시피 정보를 불러옴
-      recipeList.clear();
       for (var doc in snapshot.docs) {
         Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?; // 데이터를 Map<String, dynamic>으로 캐스팅
         String? recipeId = data?['recipeId']; // null 안전하게 접근
         if (recipeId != null && recipeId.isNotEmpty) {
-          DocumentSnapshot<Map<String, dynamic>> recipeSnapshot =
-              await FirebaseFirestore.instance
-                  .collection('recipe')
-                  .doc(recipeId)
-                  .get();
-
+          final recipeSnapshot = await _db.collection('recipe').doc(recipeId).get();
           if (recipeSnapshot.exists && recipeSnapshot.data() != null) {
-            recipeList.add(RecipeModel.fromFirestore(recipeSnapshot.data()!));
+            fetchedRecipes.add(RecipeModel.fromFirestore(recipeSnapshot.data()!));
           }
         }
       }
-      return recipeList;
     } catch (e) {
       print('Error fetching matching recipes: $e');
       return [];
     }
+    return fetchedRecipes; // 데이터를 반환
   }
 
   Future<void> _loadFridgeItemsFromFirestore() async {
@@ -371,7 +361,11 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
         appBar: AppBar(
           title: Text('스크랩 레시피 목록'),
         ),
-        body: Column(
+        body: isLoading
+            ? Center(child: CircularProgressIndicator()) // 🔹 로딩 스피너 표시
+            : recipeList.isEmpty
+            ? Center(child: Text('스크랩된 레시피가 없습니다.')) // 데이터가 없을 경우 표시
+            : Column(
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -395,9 +389,13 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                     onItemChanged: (value) async {
                       setState(() {
                         selectedFilter = value;
+                        isLoading = true; // 🔹 로딩 상태 시작
                       });
-                      await fetchRecipesByScrap();
-                      setState(() {});
+                      final recipes = await fetchRecipesByScrap();
+                      setState(() {
+                        recipeList = recipes; // 레시피 데이터 반영
+                        isLoading = false; // 🔹 로딩 상태 종료
+                      });
                     },
                     onItemDeleted: (item) {
                       if (item != '전체') {

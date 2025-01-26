@@ -180,7 +180,9 @@ class _AddRecipeState extends State<AddRecipe> {
 
       // ✅ 3. 테마 데이터 가져오기
       final themesSnapshot =
-          await _db.collection('recipe_thema_categories').get();
+          await _db.collection('recipe_thema_categories')
+              .orderBy('priority', descending: false)
+              .get();
       final List<String> themesData = themesSnapshot.docs
           .map((doc) => doc['categories'] as String)
           .toList();
