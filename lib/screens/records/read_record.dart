@@ -92,10 +92,8 @@ class _ReadRecordState extends State<ReadRecord> {
       appBar: AppBar(
         title: Text('기록 보기'),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.delete,
-            ),
+          TextButton(
+            child: Text('삭제'),
             onPressed: () {
               // 삭제 버튼을 누르면 다이얼로그 표시
               showDialog(
@@ -126,9 +124,6 @@ class _ReadRecordState extends State<ReadRecord> {
               );
             },
           ),
-          SizedBox(
-            width: 20,
-          )
         ],
       ),
       body: StreamBuilder<DocumentSnapshot>(

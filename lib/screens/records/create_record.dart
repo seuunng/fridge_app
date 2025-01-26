@@ -313,9 +313,52 @@ class _CreateRecordState extends State<CreateRecord> {
     }
     return downloadUrls;
   }
-
+  void _saveWithConfirmation() {
+    if (contentsController.text.trim().isNotEmpty ||
+        (_tempImageFiles != null && _tempImageFiles!.isNotEmpty)) {
+      // 저장되지 않은 상태인지 확인
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('저장되지 않은 내용이 있습니다.'),
+            content: Text('현재 입력된 내용만 저장할까요?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // 팝업 닫기
+                },
+                child: Text('아니요'),
+              ),
+              TextButton(
+                onPressed: () {
+                  // 저장 로직 실행
+                  _saveRecord();
+                  Navigator.pop(context); // 팝업 닫기
+                },
+                child: Text('예'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      // 바로 저장 실행 (입력된 내용이 없는 경우)
+      _saveRecord();
+    }
+  }
 // 저장 버튼 누르면 레시피 추가 또는 수정 처리
   void _saveRecord() async {
+    if (isSaving) {
+      // 이미 저장 중이라면 중복 실행을 방지
+      print('저장 중입니다. 중복 실행 방지');
+      return;
+    }
+
+    setState(() {
+      isSaving = true; // 저장 시작
+    });
+
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     if (_imageFiles != null && _imageFiles!.length > 4) {
@@ -457,7 +500,7 @@ class _CreateRecordState extends State<CreateRecord> {
               width: double.infinity,
               child: NavbarButton(
                 buttonTitle: '저장하기',
-                onPressed: _saveRecord,
+                onPressed: _saveWithConfirmation,
               ),
             ),
             if (userRole != 'admin' && userRole != 'paid_user')
