@@ -91,8 +91,9 @@ class _AccountInformationState extends State<AccountInformation> {
       await user?.delete();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.')),
+        SnackBar(content: Text('계정이 삭제되었습니다.')),
       );
+      Navigator.pop(context); // 다이얼로그 닫기
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
@@ -100,7 +101,7 @@ class _AccountInformationState extends State<AccountInformation> {
     } catch (e) {
       print('계정 삭제 중 오류 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다.')),
+        SnackBar(content: Text('비밀번호를 확인해주세요.')),
       );
     }
   }
@@ -128,9 +129,13 @@ class _AccountInformationState extends State<AccountInformation> {
       } else {
         throw Exception('지원하지 않는 인증 제공자입니다.');
       }
-    } catch (e) {
-      print('재인증 실패: $e');
-      rethrow;
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') {
+        // 🔹 비밀번호가 틀렸을 때 메시지 처리
+        throw Exception('비밀번호가 틀렸습니다.');
+      } else {
+        throw Exception('재인증 실패: ${e.message}');
+      }
     }
   }
   Future<void> googleLogout() async {
@@ -533,7 +538,7 @@ class _AccountInformationState extends State<AccountInformation> {
 
   void _withdrawAlertDialog() async {
     final theme = Theme.of(context);
-    TextEditingController _confirmationController = TextEditingController();
+    final TextEditingController _passwordController = TextEditingController();
     await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -577,8 +582,19 @@ class _AccountInformationState extends State<AccountInformation> {
                   );
                   return;
                 }
-                Navigator.pop(context); // 다이얼로그 닫기
-                await _deleteAccount(); // 계정 삭제 시도
+                try {
+                  await _reauthenticateUser(); // 재인증 시도
+                  await _deleteAccount(); // 계정 삭제
+                  Navigator.pop(context); // 성공 시 다이어로그 닫기
+                } catch (e) {
+                  // 실패 메시지를 보여주고 다이어로그는 닫지 않음
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('비밀번호를 확인해주세요.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               },
             ),
           ],

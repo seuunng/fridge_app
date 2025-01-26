@@ -155,53 +155,51 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
           children: [
             Row(
               children: [
-                Text(
-                  '구분',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface),
+                Expanded(
+                  child: Text(
+                    '구분',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface),
+                  ),
                 ),
                 Spacer(),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Radio<String>(
-                        value: '제안/문의',
-                        groupValue: _selectedType,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedType = value!;
-                          });
-                        },
-                      ),
-                      SizedBox(width: 2), // 버튼과 텍스트 사이 간격
-                      Text(
-                        '제안/문의',
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                      ),
-                    ],
-                  ),
+                Row(
+                  children: [
+                    Radio<String>(
+                      value: '제안/문의',
+                      groupValue: _selectedType,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedType = value!;
+                        });
+                      },
+                    ),
+                    SizedBox(width: 2), // 버튼과 텍스트 사이 간격
+                    Text(
+                      '제안/문의',
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Radio<String>(
-                        value: '신고',
-                        groupValue: _selectedType,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedType = value!;
-                          });
-                        },
-                      ),
-                      SizedBox(width: 2), // 버튼과 텍스트 사이 간격
-                      Text(
-                        '신고',
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                      ),
-                    ],
-                  ),
+                Row(
+                  children: [
+                    Radio<String>(
+                      value: '신고',
+                      groupValue: _selectedType,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedType = value!;
+                        });
+                      },
+                    ),
+                    SizedBox(width: 2), // 버튼과 텍스트 사이 간격
+                    Text(
+                      '신고',
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                    ),
+                  ],
                 ),
               ],
             ),
