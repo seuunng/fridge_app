@@ -97,12 +97,40 @@ class _AddItemState extends State<AddItem> {
     setState(() {
       selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
     });
-
     if (selectedFridge != null) {
       selected_fridgeId = await fetchFridgeId(selectedFridge!);
+      if (selected_fridgeId == null) {
+        print('선택된 냉장고가 현재 계정과 일치하지 않음. 기본 냉장고로 변경합니다.');
+        _setDefaultFridge(); // 기본 냉장고로 초기화
+      } else {
+        print('선택된 냉장고 ID: $selected_fridgeId');
+      }
     }
   }
+  void _setDefaultFridge() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
+    try {
+      // 현재 계정과 연결된 냉장고 가져오기
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        // 첫 번째 냉장고를 기본으로 설정
+        final fridgeName = snapshot.docs.first.data()['FridgeName'] ?? '기본 냉장고';
+        setState(() {
+          selectedFridge = fridgeName;
+        });
+        await prefs.setString('selectedFridge', fridgeName);
+      } else {
+        print('해당 계정에 연결된 냉장고가 없습니다.');
+      }
+    } catch (e) {
+      print('기본 냉장고 설정 중 오류 발생: $e');
+    }
+  }
   Future<List<FoodsModel>> _fetchFoods() async {
     List<FoodsModel> userFoods = [];
     List<FoodsModel> defaultFoods = [];
@@ -280,7 +308,6 @@ class _AddItemState extends State<AddItem> {
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final fridgeId = selected_fridgeId;
-
     try {
       for (String itemName in selectedItems) {
         final matchingFood = itemsByCategory.values.expand((x) => x).firstWhere(
@@ -436,7 +463,6 @@ class _AddItemState extends State<AddItem> {
   }
 
   void _navigateAddPreferredCategory() {
-    print('_navigateAddPreferredCategory() selectedCategory $selectedCategory');
     if (userRole != 'admin' && userRole != 'paid_user') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

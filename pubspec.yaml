@@ -50,6 +50,7 @@ dependencies:
   file_picker: ^6.1.1  # 최신 버전 확인 필요
   csv: ^5.0.2  # 최신 버전 확인 필요
   flutter_dash: ^1.0.0
+  html: ^0.15.0
   #  firebase_messaging: ^14.5.0  # 푸시 알림
   #  firebase_analytics: ^10.8.0  # 사용자 분석
 
