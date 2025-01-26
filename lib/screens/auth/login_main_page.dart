@@ -62,7 +62,8 @@ class _LoginPageState extends State<LoginPage> {
       {String? nickname,
       String? email,
       String? gender,
-      String? birthYear}) async {
+      String? birthYear,
+       String? avatar,}) async {
     final userDoc =
         FirebaseFirestore.instance.collection('users').doc(user.uid);
 
@@ -75,6 +76,7 @@ class _LoginPageState extends State<LoginPage> {
         'gender': gender ?? '알 수 없음',
         'birthYear': birthYear ?? '알 수 없음',
         'role': 'user',
+        'avatar': avatar,
       });
     }
   }
@@ -334,6 +336,7 @@ class _LoginPageState extends State<LoginPage> {
   // }
 
   Future<void> signInWithNaver() async {
+    print('signInWithNaver() 실행');
     try {
       await Future.delayed(Duration(milliseconds: 100));
       final NaverLoginResult res = await FlutterNaverLogin.logIn();
@@ -342,12 +345,13 @@ class _LoginPageState extends State<LoginPage> {
 
         // 사용자 정보 가져오기
         final NaverAccountResult account = res.account;
-
+        // print('naver로그인: $account');
         final response = await createNaverFirebaseToken(token.accessToken);
         if (response != null) {
           await Future.delayed(Duration(milliseconds: 100));
           final firebaseUser = await _auth.signInWithCustomToken(response);
-
+          print('naver로그인');
+          print(res.account.profileImage);
           if (firebaseUser.user != null) {
             await addUserToFirestore(
               firebaseUser.user!,
@@ -355,8 +359,9 @@ class _LoginPageState extends State<LoginPage> {
               email: res.account.email,
               gender: res.account.gender ?? '알 수 없음',
               birthYear: res.account.birthyear ?? '알 수 없음',
+              avatar: res.account.profileImage ?? '알 수 없음',
             );
-            assignRandomAvatarToUser(firebaseUser.user!.uid);
+            // assignRandomAvatarToUser(firebaseUser.user!.uid);
             await FirebaseService.recordSessionStart();
             if (mounted) {
               Navigator.pushReplacementNamed(context, '/home');
