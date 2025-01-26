@@ -317,12 +317,29 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
 // 삭제 모드에서 선택된 아이템들을 삭제하기 전에 확인 다이얼로그를 띄우는 함수
   Future<void> _confirmDeleteItems() async {
+    final theme = Theme.of(context);
+    // 삭제 모드에서 선택된 식품이 없으면 스낵바를 표시하고 함수 종료
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('선택된 식품이 없습니다. 삭제할 항목을 선택해주세요.'),
+          duration: Duration(seconds: 2), // 스낵바 표시 시간
+        ),
+      );
+      return;
+    }
     bool confirmDelete = await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('삭제 확인'),
-          content: Text('선택된 아이템들을 삭제하시겠습니까?'),
+          title: Text('삭제 확인',
+            style: TextStyle(
+                color: theme.colorScheme.onSurface
+            ),),
+          content: Text('선택된 아이템들을 삭제하시겠습니까?',
+            style: TextStyle(
+                color: theme.colorScheme.onSurface
+            ),),
           actions: [
             TextButton(
               child: Text('취소'),
