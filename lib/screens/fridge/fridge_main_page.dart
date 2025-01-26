@@ -61,6 +61,11 @@ class FridgeMainPageState extends State<FridgeMainPage>
       isDeletedMode = false;
     });
     _loadUserRole();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSelectedFridge();
+      _loadFridgeNameFromFirestore();
+    });
   }
 
   @override
@@ -68,6 +73,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
     super.didPopNext();
     stopDeleteMode();
     _loadSelectedFridge();
+    _loadFridgeNameFromFirestore();
+    // _reloadFridgeData();
   }
 
   @override
@@ -77,6 +84,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
       stopDeleteMode();
     }
     _loadSelectedFridge();
+    _loadFridgeNameFromFirestore();
     _controller.dispose();
     super.dispose();
   }
@@ -85,6 +93,16 @@ class FridgeMainPageState extends State<FridgeMainPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+  Future<void> _reloadFridgeData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+    });
+    if (selectedFridge != null) {
+      selected_fridgeId = await fetchFridgeId(selectedFridge!);
+      await _loadFridgeCategoriesFromFirestore(selected_fridgeId);
+    }
   }
   void _loadUserRole() async {
     try {

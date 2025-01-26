@@ -302,7 +302,9 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     themeProvider.setThemeMode(_tempTheme);
     themeProvider.setFontType(_selectedCategory_font);
-
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context, true); // true를 반환하여 변경 사항이 있음을 알림
+    }
   }
 
   @override
