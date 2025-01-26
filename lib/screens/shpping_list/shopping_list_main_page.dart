@@ -259,6 +259,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           .get();
 
       if (snapshot.docs.isNotEmpty) {
+        print('Fetched fridge ID for $fridgeName: ${snapshot.docs.first.id}');
         return snapshot.docs.first.id; // fridgeId 반환
       } else {
         print("No fridge found for the given name: $fridgeName");
@@ -578,6 +579,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                         selectedFridge = value;
                         selected_fridgeId = fridgeId; // 🔹 변경된 냉장고 ID 저장
                       });
+                      print('Selected fridge: $selectedFridge, Fridge ID: $selected_fridgeId');
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
                       await prefs.setString(
@@ -610,7 +612,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                               sourcePage: 'shoppingList',
                               onItemAdded: () {},
                             ),
-                            fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
+                            // fullscreenDialog: true, // 모달 다이얼로그처럼 보이게 설정
                           ),
                         );
                         setState(() {
@@ -630,14 +632,18 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                     children: [
                       Expanded(
                         child: NavbarButton(
-                          buttonTitle: '${fridgeName ?? "선택된 냉장고"} 로 이동',
+                          buttonTitle: '${selectedFridge ?? "선택된 냉장고"} 로 이동',
                           onPressed: () {
                             _addItemsToFridge();
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => HomeScreen()),
-                            );
+                                  builder: (context) => HomeScreen()
+                              ),
+                            ).then((_) {
+                            // 🔹 Navigator.pop 후 다시 돌아왔을 때 데이터 로드
+                            _loadItemsFromFirestore(userId);
+                            });
                           },
                         ),
                       ),
@@ -657,7 +663,9 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
   Widget _buildSections() {
     return Column(
-      children: itemLists.keys.map((category) {
+      children: itemLists.keys
+          .where((category) => itemLists[category] != null && itemLists[category]!.isNotEmpty) // 아이템이 비어있지 않은 섹션만 렌더링
+          .map((category) {
         return Column(
           children: [
             _buildSectionTitle(category), // 카테고리 타이틀
