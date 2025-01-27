@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           PopupMenuItem<String>(
             value: 'preferred_foods_categories_setting',
-            child: Text('선호 식품 카테고리 관리'),
+            child: Text('제외 키워드 카테고리 관리'),
           )
         ];
       case 1: // 장보기 페이지
@@ -112,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           PopupMenuItem<String>(
             value: 'preferred_foods_categories_setting',
-            child: Text('선호 식품 카테고리 관리'),
+            child: Text('제외 키워드 카테고리 관리'),
           )
         ];
       case 2: // 레시피 페이지
@@ -161,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => AddItem(
-              pageTitle: '선호식품 카테고리에 추가',
+              pageTitle: '제외 키워드 카테고리에 추가',
               addButton: '',
               sourcePage: 'preferred_foods_category',
               onItemAdded: () {

@@ -56,7 +56,11 @@ class _ViewResearchListState extends State<ViewResearchList> {
   String? selectedFridge = '';
   String? selected_fridgeId = '';
   String query = '';
+  String mangaeQuery = '';
   List<Map<String, dynamic>> _mangaeresults = [];
+  bool isLoading = false;
+  int resultsPerPage = 10; // 한 번에 가져올 결과 개수
+  int currentPage = 1;
 
   String searchKeyword = '';
   double rating = 0.0;
@@ -113,6 +117,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       )
       ..loadRequest(Uri.parse('https://flutter.dev'));
     _updateQuery();
+    _mangaeUpdateQuery();
   }
 
   void _updateQuery() {
@@ -122,7 +127,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
       if (!queryKeywords.contains("요리")) queryKeywords.add("요리");
       if (!queryKeywords.contains("만드는법")) queryKeywords.add("만드는법");
       query = queryKeywords.join(" "); // 공백으로 연결
-      print('Updated query: $query');
+      // print('Updated query: $query');
+    });
+  }
+  void _mangaeUpdateQuery() {
+    setState(() {
+      final queryKeywords = [...keywords, ...topIngredients];
+      mangaeQuery = queryKeywords.join(" ");
+      // print('Updated query: $query');
     });
   }
 
@@ -214,7 +226,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
     }
   }
 
-  // 선호카테고리 불러오기
+  // 제외 키워드 카테고리 불러오기
   Future<void> _loadPreferredFoodsByCategory() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
@@ -359,7 +371,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
     });
   }
 
-  //순차적으로 냉장고아이템중 10개 정하고 선호식품카테고리 가져와서 레시피 검색하기
+  //순차적으로 냉장고아이템중 10개 정하고 제외 키워드 식품카테고리 가져와서 레시피 검색하기
   Future<void> _initializeSearch() async {
     await _loadSearchSettingsFromLocal();
 
@@ -373,7 +385,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
         cookingMethods: this.selectedCookingMethods);
   }
 
-  //선호카테고리에 따른 레시피 불러오기
+  //제외 키워드 카테고리에 따른 레시피 불러오기
   Future<void> loadRecipesByPreferredFoodsCategory() async {
     try {
       List<String> allPreferredItems =
@@ -658,29 +670,51 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
 
   Future<void> fetchSearchResultsFromWeb(String query) async {
-    final String url =
+    final String baseUrl =
         'https://www.googleapis.com/customsearch/v1?q=$query&key=$apiKey&cx=$cx';
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(baseUrl));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
+        // 데이터를 변환하며 null-safe 접근 및 기본값 설정
+        final items = (data['items'] as List<dynamic>?)
+            ?.map((item) => {
+          'title': item['title'] ?? 'Unknown Title',
+          'snippet' : item['snippet'] ?? 'No description',
+          'imageUrl': item['pagemap']?['cse_thumbnail']?[0]?['src'] ??
+              'https://via.placeholder.com/150', // 기본 이미지
+          'link': item['link'] ?? '',
+        })
+            .toList() ??
+            [];
+
         setState(() {
-          _results = data['items'] ?? []; // 웹 검색 결과를 상태 변수에 저장
+          _results = items; // 상태 업데이트
         });
+
+        print('사진경로1111 $items');
       } else {
         throw Exception('웹 검색 실패: ${response.statusCode}');
       }
     } catch (e) {
       print("웹 검색 중 오류 발생: $e");
+      setState(() {
+        _results = []; // 오류 시 빈 리스트로 설정
+      });
     }
   }
 
+
   Future<List<Map<String, dynamic>>> fetchRecipesFromMangnaeya(
       String query) async {
+    setState(() {
+      isLoading = true; // 검색 시작 시 로딩 상태 활성화
+    });
+    try {
     final String url = 'https://www.10000recipe.com/recipe/list.html?q=$query';
 
-    try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final document = parse(response.body);
@@ -733,6 +767,10 @@ class _ViewResearchListState extends State<ViewResearchList> {
       }
     } catch (e) {
       print('Error fetching recipes from Mangnaeya: $e');
+    } finally {
+      setState(() {
+        isLoading = false; // 로딩 상태 비활성화
+      });
     }
     return [];
   }
@@ -753,7 +791,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
       appBar: AppBar(
         title: Text('레시피 검색'),
       ),
-      body: SingleChildScrollView(
+      body: isLoading
+          ? Center(child: CircularProgressIndicator()) // 로딩 중일 때 로딩 스피너 표시
+          : SingleChildScrollView(
         child: Column(
           children: [
             Padding(
@@ -836,10 +876,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
                         // print('queryKeywords $queryKeywords');
                         // print('refinedQueryKeywords $refinedQueryKeywords');
                         // final query = refinedQueryKeywords.join(" ");
-                        _updateQuery();
-                        print('search $query');
+                        _mangaeUpdateQuery();
                         final mangnaeyaRecipes =
-                            await fetchRecipesFromMangnaeya(query);
+                            await fetchRecipesFromMangnaeya(mangaeQuery);
                         setState(() {
                           _mangaeresults = mangnaeyaRecipes; // 만개의 레시피 결과 저장
                         });
@@ -943,12 +982,15 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
   Widget _buildCategoryGrid() {
     final theme = Theme.of(context);
-    if (matchingRecipes.isEmpty && _results.isEmpty) {
+    if (matchingRecipes.isEmpty && _results.isEmpty && _mangaeresults.isEmpty) {
       return Center(
         child: Text(
           '조건에 맞는 레시피가 없습니다.',
           style:
-              TextStyle(fontSize: 14, color: theme.chipTheme.labelStyle!.color),
+              TextStyle(
+                  fontSize: 14,
+                  color: theme.chipTheme.labelStyle!.color
+              ),
         ),
       );
     }
@@ -963,7 +1005,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       return GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.all(8.0),
+          padding: EdgeInsets.symmetric(horizontal: 8.0),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 1, // 열 개수
             crossAxisSpacing: 8.0,
@@ -1195,7 +1237,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
       ));
     }
 
-    return LayoutBuilder(builder: (context, constraints) {
+    return LayoutBuilder(
+        builder: (context, constraints) {
       // 화면 너비에 따라 레이아웃 조정
       bool isWeb = constraints.maxWidth > 600;
       // int crossAxisCount = isWeb ? 2 : 1; // 웹에서는 두 열, 모바일에서는 한 열
@@ -1205,7 +1248,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       return GridView.builder(
         shrinkWrap: true,
         physics: BouncingScrollPhysics(), // 스크롤 가능하게 설정
-        padding: EdgeInsets.all(11.0),
+        padding: EdgeInsets.symmetric(horizontal: 11.0),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 1, // 한 줄에 하나씩 표시
           crossAxisSpacing: 8.0, // 아이템 간 가로 간격
@@ -1215,12 +1258,12 @@ class _ViewResearchListState extends State<ViewResearchList> {
         ),
         itemCount: _results.length,
         itemBuilder: (context, index) {
-          final result = _results[index];
-          final title = result['title'] ?? 'No title';
-          final snippet = result['snippet'] ?? 'No description';
-          final link = result['link'] ?? '';
-          final imageUrl =
-              result['pagemap']?['cse_thumbnail']?[0]?['src']; // 기본 이미지 URL
+            final result = _results[index];
+            final title = result['title'] ?? 'No title available';
+            final snippet = result['snippet'] ?? 'No description available';
+            final link = result['link'] ?? '';
+            final imageUrl = result['imageUrl'] ??
+                'https://seuunng.github.io/food_for_later_policy/favicon.png'; // 기본 이미지
 
           return GestureDetector(
             onTap: () {
@@ -1326,12 +1369,12 @@ class _ViewResearchListState extends State<ViewResearchList> {
         return GridView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.all(3.0),
+          padding: EdgeInsets.symmetric(horizontal: 3.0),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 1,
             // 열 개수
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
+            crossAxisSpacing: 2.0,
+            mainAxisSpacing: 2.0,
             childAspectRatio: isWeb ? 1.2 : (aspectRatio ?? 3.0),
             // 앱에서만 비율 적용
             mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
@@ -1341,16 +1384,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
             final recipe = recipes[index];
             final String title = recipe['title'] ?? '제목 없음';
             final List<String> ingredients = recipe['ingredients'] ?? [];
-            final String link = recipe['link'] ?? ''; // 링크 추가
-
-            final String image = recipe['image'] ?? ''; // 링크 추가
-            bool inFridge = fridgeIngredients.contains(ingredients);
-            bool isKeyword = keywords.contains(ingredients) ||
-                (useFridgeIngredientsState &&
-                    topIngredients.contains(ingredients));
-            ;
-            bool isFromPreferredFoods = itemsByCategory.values
-                .any((list) => list.contains(ingredients));
+            final String link = recipe['link'] ?? '';
+            final String image = recipe['image'] ?? '';
             return GestureDetector(
               onTap: () {
                 // 타일 클릭 시 WebView 페이지로 이동

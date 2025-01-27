@@ -59,7 +59,7 @@ class _AdminDashboardTrendsState extends State<AdminDashboardTrends> {
       case 2:
         return '기본식품 추가';
       case 3:
-        return '선호식품 추가';
+        return '제외 키워드 추가';
       case 4:
         return '기록카테고리 추가';
       default:

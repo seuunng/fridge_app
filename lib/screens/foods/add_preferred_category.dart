@@ -285,7 +285,7 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
           children: [
             Expanded(
               child: NavbarButton(
-                buttonTitle: '선호식품 카테고리에 저장',
+                buttonTitle: '제외 키워드에 저장',
                 onPressed: _saveCategory,
               ),
             )

@@ -269,12 +269,13 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? theme.colorScheme.secondary
-                                      : isToday
+                                  color:  isToday
                                           ? theme.colorScheme.secondary
                                           : Colors.transparent,
                                   borderRadius: BorderRadius.circular(8.0),
+                                  // borderColor: isSelected
+                                  //     ? theme.colorScheme.secondary
+                                  //     : Colors.transparent,
                                   border: isSelected
                                       ? Border.all(
                                           color: theme.colorScheme.secondary,
@@ -292,9 +293,7 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                                       Text(
                                         '$day',
                                         style: TextStyle(
-                                          color: isSelected
-                                              ? Theme.of(context).colorScheme.onSecondary
-                                              : isToday
+                                          color: isToday
                                                   ? Theme.of(context).colorScheme.onSecondary
                                                   : theme.colorScheme.onSurface,
                                           fontWeight: isSelected

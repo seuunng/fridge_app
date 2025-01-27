@@ -19,7 +19,7 @@ class _PreferredfoodscategoryTableState
   List<Map<String, dynamic>> columns = [
     {'name': '선택', 'state': SortState.none},
     {'name': '연번', 'state': SortState.none},
-    {'name': '선호식품 카테고리', 'state': SortState.none},
+    {'name': '제외 키워드 카테고리', 'state': SortState.none},
     {'name': '식품명', 'state': SortState.none},
     {'name': '변동', 'state': SortState.none}
   ];
@@ -74,7 +74,7 @@ class _PreferredfoodscategoryTableState
                   tempItemsByCategory[category]!.add(item);
                   tempUserData.add({
                     '연번': tempUserData.length + 1, // 연번 자동 증가
-                    '선호식품 카테고리': category,
+                    '제외 키워드 카테고리': category,
                     '식품명': item,
                   });
                 }
@@ -150,7 +150,7 @@ class _PreferredfoodscategoryTableState
     setState(() {
       Map<String, dynamic> selectedFood = userData[index];
       _foodNameController.text = selectedFood['식품명'];
-      _selectedCategory = selectedFood['선호식품 카테고리'];
+      _selectedCategory = selectedFood['제외 키워드 카테고리'];
 
       isEditing = true;
       selectedFoodIndex = index;
@@ -503,7 +503,7 @@ class _PreferredfoodscategoryTableState
                                       color: theme.colorScheme.onSurface)))),
                       TableCell(
                         child: CustomDropdown(
-                          title: '선호식품 카테고리',
+                          title: '제외 키워드 카테고리',
                           items: categoryOptions,
                           selectedItem: _selectedCategory ?? '',
                           onItemChanged: (value) {
@@ -635,7 +635,7 @@ class _PreferredfoodscategoryTableState
                       TableCell(
                           verticalAlignment: TableCellVerticalAlignment.middle,
                           child: Center(
-                              child: Text(row['선호식품 카테고리'],
+                              child: Text(row['제외 키워드 카테고리'],
                                   style: TextStyle(
                                       color: theme.colorScheme.onSurface)))),
                       TableCell(
@@ -671,7 +671,7 @@ class _PreferredfoodscategoryTableState
                     // 선택한 데이터를 가져옵니다.
                     Map<String, dynamic> selectedFood =
                         userData[selectedFoodIndex!];
-                    String category = selectedFood['선호식품 카테고리'];
+                    String category = selectedFood['제외 키워드 카테고리'];
                     String foodName = selectedFood['식품명'];
 
                     // 선택한 카테고리와 식품명을 기반으로 삭제 수행

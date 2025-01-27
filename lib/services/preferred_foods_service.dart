@@ -14,7 +14,7 @@ class PreferredFoodsService {
 
       // 🔹 기존 카테고리가 있으면 추가하지 않음 (중복 방지)
       if (existingCategories.docs.isNotEmpty) {
-        print('기본 선호 카테고리가 이미 존재합니다. 추가하지 않습니다.');
+        print('기본 제외 키워드 카테고리가 이미 존재합니다. 추가하지 않습니다.');
         return;
       }
 
@@ -46,7 +46,7 @@ class PreferredFoodsService {
     } catch (e) {
       print('Error adding default preferred categories: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기본 선호 카테고리를 추가하는 중 오류가 발생했습니다.')),
+        SnackBar(content: Text('기본 제외 키워드 카테고리를 추가하는 중 오류가 발생했습니다.')),
       );
     }
   }

@@ -470,7 +470,7 @@ class _AddItemState extends State<AddItem> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('프리미엄 서비스를 이용하면 나만의 선호식품 카테고리를 관리할 수 있어요!'),
+                Text('프리미엄 서비스를 이용하면 나만의 제외 키워드 카테고리를 관리할 수 있어요!'),
               ],
             ),
             duration: Duration(seconds: 3), // 3초간 표시

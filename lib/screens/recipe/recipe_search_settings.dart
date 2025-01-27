@@ -240,7 +240,7 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
               SizedBox(height: 16),
               // 레시피 출처 선택
               Text(
-                '선호 식품 및 조리방법 선택',
+                '제외 키워드 선택',
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

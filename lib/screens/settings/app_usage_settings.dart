@@ -393,7 +393,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
               Row(
                 children: [
                   Text(
-                    '선호 식품 카테고리 수정',
+                    '제외 키워드 카테고리 수정',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -406,7 +406,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => AddItem(
-                            pageTitle: '선호식품 카테고리에 추가',
+                            pageTitle: '제외 키워드 카테고리에 추가',
                             addButton: '카테고리에 추가',
                             sourcePage: 'preferred_foods_category',
                             onItemAdded: () {
