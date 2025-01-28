@@ -303,7 +303,7 @@ class ThemeProvider extends ChangeNotifier {
     colorScheme: ColorScheme.dark().copyWith(
         primary: Color(0xFFA7AFAB), // 주요 배경색
         onPrimary: Color(0xFF0D2514), // 주요 배경위 텍스트나 아이콘색
-        primaryContainer: Color(0xFF19411C), //primary와 유사한 색상이지만, 더 연한 버전
+        primaryContainer: Color(0xFFA7AFAB), //primary와 유사한 색상이지만, 더 연한 버전
         onPrimaryContainer: Color(0xFFA7AFAB),
         secondary: Color(0xFFA7AFAB), // 캘린더 오늘,
         onSecondary: Color(0xFF0D2514), // 캘렌더 컬러박스 글씨
