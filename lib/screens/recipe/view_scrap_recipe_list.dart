@@ -7,6 +7,9 @@ import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
+import 'package:html/parser.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class ViewScrapRecipeList extends StatefulWidget {
   @override
@@ -33,13 +36,33 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   bool isLoading = true; // 로딩 상태 추가
   bool isScraped = false;
   String userRole = '';
+  bool hasLink = false;
 
   @override
   void initState() {
     super.initState();
     selectedRecipes.clear();
     _initializePage();
+    _loadUserRole();
   }
+
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
+  }
+
   // 🔹 새로운 초기화 함수 추가
   Future<void> _initializePage() async {
     setState(() {
@@ -56,6 +79,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       isLoading = false;
     });
   }
+
   Future<void> _loadData() async {
     setState(() {
       isLoading = true; // 로딩 상태 시작
@@ -106,29 +130,34 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     List<RecipeModel> fetchedRecipes = [];
     try {
-      QuerySnapshot snapshot;
-      if (selectedFilter == '전체') {
-        snapshot = await _db
-            .collection('scraped_recipes')
-            .where('userId', isEqualTo: userId)
-            .orderBy('scrapedAt', descending: true)
-            .get();
-      } else {
-        snapshot = await _db
-            .collection('scraped_recipes')
-            .where('userId', isEqualTo: userId)
-            .where('scrapedGroupName', isEqualTo: selectedFilter)
-            .orderBy('scrapedAt', descending: true)
-            .get();
-      }
+      QuerySnapshot snapshot = await _db
+          .collection('scraped_recipes')
+          .where('userId', isEqualTo: userId)
+          .orderBy('scrapedAt', descending: true)
+          .get();
 
       for (var doc in snapshot.docs) {
-        Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?; // 데이터를 Map<String, dynamic>으로 캐스팅
-        String? recipeId = data?['recipeId']; // null 안전하게 접근
-        if (recipeId != null && recipeId.isNotEmpty) {
-          final recipeSnapshot = await _db.collection('recipe').doc(recipeId).get();
-          if (recipeSnapshot.exists && recipeSnapshot.data() != null) {
-            fetchedRecipes.add(RecipeModel.fromFirestore(recipeSnapshot.data()!));
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        String? link = data['link']; // 저장된 링크 확인
+
+        if (link != null && link.isNotEmpty) {
+          final webRecipe = await _fetchRecipeDetailsFromLink(link);
+          print('RecipeModel에 저장된 foods: ${webRecipe?.foods}');
+          print('RecipeModel에 저장된 foods: ${webRecipe?.link}');
+
+          if (webRecipe != null) {
+            fetchedRecipes.add(webRecipe);
+          }
+        } else {
+          // 저장된 레시피가 Firestore 레시피일 경우 처리
+          String recipeId = data['recipeId'] ?? '';
+          if (recipeId.isNotEmpty) {
+            final recipeSnapshot =
+                await _db.collection('recipe').doc(recipeId).get();
+            if (recipeSnapshot.exists) {
+              fetchedRecipes
+                  .add(RecipeModel.fromFirestore(recipeSnapshot.data()!));
+            }
           }
         }
       }
@@ -136,6 +165,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       print('Error fetching matching recipes: $e');
       return [];
     }
+    print('불러온 레시피 수: ${fetchedRecipes.length}');
     return fetchedRecipes; // 데이터를 반환
   }
 
@@ -174,11 +204,63 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     }
   }
 
+  Future<RecipeModel?> _fetchRecipeDetailsFromLink(String link) async {
+    try {
+      final response = await http.get(Uri.parse(link));
+      if (response.statusCode == 200) {
+        final document = parse(response.body);
+
+        // 제목 가져오기
+        String title =
+            document.querySelector('.view2_summary.st3 h3')?.text.trim() ??
+                '제목 없음';
+
+        // 이미지 가져오기
+        final imageElement = document.querySelector('.centeredcrop img');
+        String imageUrl = imageElement != null
+            ? '${imageElement.attributes['src']}'
+            : 'https://via.placeholder.com/150'; // 기본 이미지
+        // 재료 가져오기
+        final ingredientsElements =
+            document.querySelectorAll('.ready_ingre3 > ul > li');
+        List<String> ingredients = ingredientsElements
+            .map((e) => e.text.trim().split(RegExp(r'\s+'))[0])
+            .where((ingredient) => !ingredient.endsWith("구매"))
+            .toList();
+
+        // RecipeModel 생성
+        return RecipeModel.fromWeb(
+          title: title,
+          link: link,
+          image: imageUrl,
+          foods: ingredients,
+        );
+      }
+
+    } catch (e) {
+      print('Error fetching recipe from link: $e');
+    }
+    return null; // 오류 발생 시 null 반환
+  }
+
+  void _openRecipeLink(String link) async {
+    try {
+      final uri = Uri.parse(link);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        print("Could not open link: $link");
+      }
+    } catch (e) {
+      print("Error opening link: $e");
+    }
+  }
+
   void _toggleScraped(String recipeId) async {
     bool newState = await ScrapedRecipeService.toggleScraped(
       context,
       recipeId,
-          (bool state) {
+      (bool state) {
         setState(() {
           isScraped = state;
         });
@@ -234,20 +316,21 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     }
     showDialog(
       context: context,
-      builder: (BuildContext context) {final theme = Theme.of(context);
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
 
-      String newCategory = '';
+        String newCategory = '';
         return AlertDialog(
-          title: Text('스크랩 그룹 추가',
-              style: TextStyle(
-              color: theme.colorScheme.onSurface
-          ),),
+          title: Text(
+            '스크랩 그룹 추가',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
           content: TextField(
             onChanged: (value) {
               newCategory = value;
             },
-            decoration: InputDecoration(hintText: '새로운 그룹 입력'),style:
-          TextStyle(color: theme.chipTheme.labelStyle!.color),
+            decoration: InputDecoration(hintText: '새로운 그룹 입력'),
+            style: TextStyle(color: theme.chipTheme.labelStyle!.color),
           ),
           actions: [
             TextButton(
@@ -283,14 +366,14 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('그룹 삭제',
-            style: TextStyle(
-                color: theme.colorScheme.onSurface
-            ),),
-          content: Text('스크랩 그룹을 삭제하시겠습니까?',
-            style: TextStyle(
-                color: theme.colorScheme.onSurface
-            ),),
+          title: Text(
+            '그룹 삭제',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
+          content: Text(
+            '스크랩 그룹을 삭제하시겠습니까?',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
           actions: [
             TextButton(
               child: Text('취소'),
@@ -358,94 +441,93 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-        appBar: AppBar(
-          title: Text('스크랩 레시피 목록'),
-        ),
-        body: isLoading
-            ? Center(child: CircularProgressIndicator()) // 🔹 로딩 스피너 표시
-            : recipeList.isEmpty
-            ? Center(child: Text('스크랩된 레시피가 없습니다.')) // 데이터가 없을 경우 표시
-            : Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '컬렉션',
-                      style: TextStyle(
-                        fontSize: 18, // 원하는 폰트 크기로 지정 (예: 18)
-                        fontWeight: FontWeight.bold, // 폰트 굵기 조정 (선택사항)
-                          color: theme.colorScheme.onSurface
+      appBar: AppBar(
+        title: Text('스크랩 레시피 목록'),
+      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator()) // 🔹 로딩 스피너 표시
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '컬렉션',
+                          style: TextStyle(
+                              fontSize: 18, // 원하는 폰트 크기로 지정 (예: 18)
+                              fontWeight: FontWeight.bold, // 폰트 굵기 조정 (선택사항)
+                              color: theme.colorScheme.onSurface),
+                        ),
                       ),
-                    ),
-                  ),
-                  SizedBox(width: 10,),
-                  CustomDropdown(
-                    title: '',
-                    items: _scraped_groups,
-                    selectedItem: selectedFilter, // 리스트에 없으면 기본값 설정
-                    onItemChanged: (value) async {
-                      setState(() {
-                        selectedFilter = value;
-                        isLoading = true; // 🔹 로딩 상태 시작
-                      });
-                      final recipes = await fetchRecipesByScrap();
-                      setState(() {
-                        recipeList = recipes; // 레시피 데이터 반영
-                        isLoading = false; // 🔹 로딩 상태 종료
-                      });
-                    },
-                    onItemDeleted: (item) {
-                      if (item != '전체') {
-                        _deleteCategory(item, _scraped_groups, '스크랩 그룹');
-                      }
-                    },
-                    onAddNewItem: () {
-                      _addNewGroup(_scraped_groups, '스크랩 그룹');
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(3.0),
-                child: _buildRecipeGrid(),
-              ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-        if(selectedRecipes.isNotEmpty)
-            Container(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: NavbarButton(
-                    buttonTitle: '스크랩 그룹 변경',
-                    onPressed: () async {
-                      // 그룹 변경 팝업 표시
-                      String? newGroupName = await _showGroupChangeDialog();
-                      if (newGroupName != null) {
-                        await updateScrapedGroupName(newGroupName);
-                      }
-                    },
+                      SizedBox(
+                        width: 10,
+                      ),
+                      CustomDropdown(
+                        title: '',
+                        items: _scraped_groups,
+                        selectedItem: selectedFilter, // 리스트에 없으면 기본값 설정
+                        onItemChanged: (value) async {
+                          setState(() {
+                            selectedFilter = value;
+                            isLoading = true; // 🔹 로딩 상태 시작
+                          });
+                          final recipes = await fetchRecipesByScrap();
+                          setState(() {
+                            recipeList = recipes; // 레시피 데이터 반영
+                            isLoading = false; // 🔹 로딩 상태 종료
+                          });
+                        },
+                        onItemDeleted: (item) {
+                          if (item != '전체') {
+                            _deleteCategory(item, _scraped_groups, '스크랩 그룹');
+                          }
+                        },
+                        onAddNewItem: () {
+                          _addNewGroup(_scraped_groups, '스크랩 그룹');
+                        },
+                      ),
+                    ],
                   ),
                 ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(3.0),
+                    child: _buildRecipeGrid(),
+                  ),
+                ),
+              ],
+            ),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (selectedRecipes.isNotEmpty)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: SizedBox(
+                width: double.infinity,
+                child: NavbarButton(
+                  buttonTitle: '스크랩 그룹 변경',
+                  onPressed: () async {
+                    // 그룹 변경 팝업 표시
+                    String? newGroupName = await _showGroupChangeDialog();
+                    if (newGroupName != null) {
+                      await updateScrapedGroupName(newGroupName);
+                    }
+                  },
+                ),
               ),
-    if (userRole != 'admin' && userRole != 'paid_user')
-    SafeArea(
-    bottom: false, // 하단 여백 제거
-    child: BannerAdWidget(),
-    ),
-    ],
-        ),
-            );
+            ),
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildRecipeGrid() {
@@ -492,13 +574,17 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ReadRecipe(
-                                      recipeId: recipe.id,
-                                      searchKeywords: [],
-                                    )));
+                        if (recipe.link != null && recipe.link!.isNotEmpty) {
+                          _openRecipeLink(recipe.link ?? '');
+                        } else {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ReadRecipe(
+                                        recipeId: recipe.id,
+                                        searchKeywords: [],
+                                      )));
+                        }
                       },
                       child: Container(
                         padding: EdgeInsets.symmetric(
@@ -558,7 +644,9 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                                         ),
                                       ),
                                       SizedBox(width: 8),
-                                      _buildRatingStars(recipeRating),
+                                      if (recipe.link == null ||
+                                          recipe.link!.isEmpty)
+                                        _buildRatingStars(recipeRating),
                                       IconButton(
                                         icon: Icon(
                                           isScraped
@@ -573,7 +661,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                                     ],
                                   ), // 간격 추가
                                   // 재료
-                                  _buildChips(recipe),
+                                  SingleChildScrollView(child: _buildChips(recipe)),
                                 ],
                               ),
                             ),
@@ -590,12 +678,13 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   }
 
   Widget _buildChips(RecipeModel recipe) {
+    final List<String> uniqueIngredients = recipe.foods;
     return Wrap(
       alignment: WrapAlignment.start,
       spacing: 2.0, // 아이템 간의 간격
       runSpacing: 2.0,
       children: [
-        _buildTagSection("재료", recipe.foods),
+        _buildTagSection("재료", uniqueIngredients),
         _buildTagSection("조리 방법", recipe.methods),
         _buildTagSection("테마", recipe.themes),
       ],
@@ -603,6 +692,8 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   }
 
   Widget _buildTagSection(String title, List<String> tags) {
+    print("title in _buildTagSection: $title");
+    print("Tags in _buildTagSection: $tags");
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -672,20 +763,19 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('그룹 변경',
-            style: TextStyle(
-                color: theme.colorScheme.onSurface
-            ),
+          title: Text(
+            '그룹 변경',
+            style: TextStyle(color: theme.colorScheme.onSurface),
           ),
           content: DropdownButtonFormField<String>(
             value: _scraped_groups.isNotEmpty ? _scraped_groups[0] : null,
             items: _scraped_groups
                 .map((group) => DropdownMenuItem(
                       value: group,
-                      child: Text(group,
-                        style: TextStyle(
-                            color: theme.colorScheme.onSurface
-                        ),),
+                      child: Text(
+                        group,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
                     ))
                 .toList(),
             onChanged: (value) {

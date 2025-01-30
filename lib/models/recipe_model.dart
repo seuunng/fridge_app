@@ -15,6 +15,7 @@ class RecipeModel {
   double rating;
   int views;
   DateTime date;
+  final String? link;  // 웹 레시피 링크 추가
 
   RecipeModel({
     required this.id,
@@ -31,6 +32,7 @@ class RecipeModel {
     required this.date,
     this.rating = 0.0,
     this.views = 0,
+    this.link,  // 웹 레시피의 경우 사용
   });
 
   factory RecipeModel.fromFirestore(Map<String, dynamic> data) {
@@ -58,6 +60,7 @@ class RecipeModel {
       mainImages: List<String>.from(data['mainImages'] ?? []),
       rating: (data['rating'] ?? 0).toDouble(),
       views: data['views'] ?? 0,
+      link: data['link'],  // Firestore 데이터에 링크가 있으면 저장
     );
   }
   @override
@@ -87,10 +90,32 @@ class RecipeModel {
                 'image': step['image'],
               })
           .toList(),
-      'mainImages': mainImages, // 메인사진 저장
-      'rating': rating, // 별점 저장
       'views': views,
-      'date': date
+      'date': date,
+      'link': link,
     };
+  }
+  factory RecipeModel.fromWeb({
+    required String title,
+    required String link,
+    required String image,
+    required List<String> foods,
+  }) {
+    return RecipeModel(
+      id: '',  // 웹 레시피의 경우 Firestore ID가 없으므로 빈 값
+      userID: '',  // 웹 레시피에는 userID가 필요하지 않음
+      difficulty: '',  // 웹 레시피는 난이도 정보 없음
+      serving: 0,
+      time: 0,
+      steps: [],
+      date: DateTime.now(),
+      recipeName: title,
+      mainImages: [image],
+      rating: 0.0,  // 웹 레시피는 별점 정보가 없으므로 기본값 사용
+      foods: foods,
+      methods: [],
+      themes: [],
+      link: link,
+    );
   }
 }

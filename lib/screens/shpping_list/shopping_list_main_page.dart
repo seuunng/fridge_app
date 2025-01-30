@@ -259,7 +259,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           .get();
 
       if (snapshot.docs.isNotEmpty) {
-        print('Fetched fridge ID for $fridgeName: ${snapshot.docs.first.id}');
         return snapshot.docs.first.id; // fridgeId 반환
       } else {
         print("No fridge found for the given name: $fridgeName");

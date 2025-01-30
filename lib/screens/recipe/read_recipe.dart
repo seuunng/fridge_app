@@ -9,6 +9,8 @@ import 'package:food_for_later_new/screens/recipe/recipe_review.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:food_for_later_new/screens/recipe/share_options.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:food_for_later_new/screens/records/records_calendar_view.dart';
+import 'package:food_for_later_new/screens/records/view_record_main.dart';
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 import 'package:uuid/uuid.dart';
@@ -570,7 +572,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
       // records 배열 구성
       List<Map<String, dynamic>> records = [
         {
-          'unit': '식단',  // 고정값 혹은 다른 값으로 대체 가능
+          'unit': '레시피 보기',  // 고정값 혹은 다른 값으로 대체 가능
           'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
           'images': recipeData['mainImages'] ?? [], // 이미지 배열
           'recipeId': widget.recipeId,
@@ -592,12 +594,25 @@ class _ReadRecipeState extends State<ReadRecipe> {
 
       // 저장 성공 메시지
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('레시피가 내일 날짜로 기록되었습니다.')),
+        SnackBar(content: Text('레시피가 내일 날짜로 기록되었습니다.'),
+          action: SnackBarAction(
+            label: '기록 보기',
+            onPressed: () {
+              // 기록 페이지로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ViewRecordMain(),
+                ),
+              );
+            },
+          ),),
       );
     } catch (e) {
       print('레시피 저장 오류: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('레시피 저장에 실패했습니다. 다시 시도해주세요.')),
+        SnackBar(content: Text('레시피 저장에 실패했습니다. 다시 시도해주세요.')
+        ),
       );
     }
   }

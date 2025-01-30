@@ -201,6 +201,7 @@ class _ReadRecordState extends State<ReadRecord> {
                     return GestureDetector(
                       onTap: () {
                         // 클릭 시 레시피 페이지로 이동
+                        if(rec.unit == '레시피 보기')
                         Navigator.push(
                           context,
                           MaterialPageRoute(

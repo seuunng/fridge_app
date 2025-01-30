@@ -10,7 +10,6 @@ import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:food_for_later_new/screens/recipe/web_search_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' show parse; // parse 메서드를 가져옵니다.
 // import 'package:html/dom.dart'; // DOM 작업에 필요한 클래스 가져오기
@@ -636,7 +635,39 @@ class _ViewResearchListState extends State<ViewResearchList> {
       },
     );
   }
+  Future<void> toggleMangnaeyaRecipeScraped(
+      String title, String image, String link) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
+    try {
+      // Firestore에서 해당 레시피의 스크랩 상태 확인
+      final snapshot = await FirebaseFirestore.instance
+          .collection('scraped_recipes')
+          .where('userId', isEqualTo: userId)
+          .where('recipeId', isEqualTo: link)
+          .get();
+
+      isScraped;
+      if (snapshot.docs.isNotEmpty) {
+        // 이미 스크랩된 경우 -> 스크랩 해제
+        await snapshot.docs.first.reference.delete();
+        print('스크랩 해제 완료');
+        isScraped = false;
+      } else {
+        // 스크랩되지 않은 경우 -> 새로 스크랩 추가
+        await FirebaseFirestore.instance.collection('scraped_recipes').add({
+          'userId': userId,
+          'link': link,
+          'isScraped': true,
+          'scrapedGroupName': '기본함',
+          'scrapedAt': FieldValue.serverTimestamp(),
+        });
+        isScraped = true;
+      }
+    } catch (e) {
+      print('Error toggling Mangnaeya recipe scrap: $e');
+    }
+  }
   // 검색한 키워드 저장하기
   void _saveSearchKeyword(String keyword) async {
     final searchRef = FirebaseFirestore.instance.collection('search_keywords');
@@ -693,8 +724,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
         setState(() {
           _results = items; // 상태 업데이트
         });
-
-        print('사진경로1111 $items');
       } else {
         throw Exception('웹 검색 실패: ${response.statusCode}');
       }
@@ -705,7 +734,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
       });
     }
   }
-
 
   Future<List<Map<String, dynamic>>> fetchRecipesFromMangnaeya(
       String query) async {
@@ -762,7 +790,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
             });
           }
         }
-
         return recipes; // 모든 레시피 데이터 반환
       }
     } catch (e) {
@@ -1448,19 +1475,43 @@ class _ViewResearchListState extends State<ViewResearchList> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // 레시피 제목
-                          Container(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                          Row(
+                            children: [
+                              Container(
+                                width: MediaQuery.of(context).size.width *
+                                    0.5,
+                                child: Text(
+                                  title,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              SizedBox(height: 8.0),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  isScraped
+                                      ? Icons.bookmark
+                                      : Icons.bookmark_border,
+                                  size: 20,
+                                  color: Colors.black,
+                                ), // 스크랩 아이콘 크기 조정
+                                onPressed: () {
+                                  toggleMangnaeyaRecipeScraped(title, image, link);
+                                },
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 8.0), // 간격 추가
+                            ],
+                          ),
+                          // SizedBox(height: 8.0), // 간격 추가
 
                           // 재료 칩
                           Expanded(

@@ -9,9 +9,9 @@ import 'package:food_for_later_new/screens/records/records_list_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ViewRecordMain extends StatefulWidget {
-  final String selectedCategory;
+  final String? selectedCategory;
 
-  ViewRecordMain({Key? key, required this.selectedCategory}) : super(key: key);
+  ViewRecordMain({Key? key, this.selectedCategory}) : super(key: key);
 
   @override
   _ViewRecordMainState createState() => _ViewRecordMainState();
