@@ -12,8 +12,8 @@ class RecordCategoryService {
           'isDeleted': false
         },
         {
-          'zone': '간식',
-          'units': ['간식'],
+          'zone': '외식',
+          'units': ['배달','외식','간식'],
           'color': '#FFC1CC', // 핑크 블러쉬
           'isDeleted': false
         },

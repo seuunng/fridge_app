@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -75,19 +77,30 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
           });
         },
         itemBuilder: (context, index) {
-          return Center(
-            child: Image.network(
-              widget.images[index],
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.error, color: Colors.red, size: 100);
-              },
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
-              },
+          final imagePath = widget.images[index];
+          return InteractiveViewer(
+            child: Center(
+              child: imagePath.startsWith('http')
+                  ? Image.network(
+                imagePath,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(Icons.error, color: Colors.red, size: 100);
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+              )
+                  : Image.file(
+                File(imagePath),
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(Icons.broken_image, color: Colors.red, size: 100);
+                },
+              ),
             ),
           );
         },

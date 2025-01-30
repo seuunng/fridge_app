@@ -11,6 +11,7 @@ import 'package:food_for_later_new/screens/recipe/share_options.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
+import 'package:uuid/uuid.dart';
 
 class ReadRecipe extends StatefulWidget {
   final String recipeId;
@@ -554,6 +555,53 @@ class _ReadRecipeState extends State<ReadRecipe> {
     });
   }
 
+  DateTime getTomorrowDate() {
+    return DateTime.now().add(Duration(days: 1));
+  }
+
+  void _saveRecipeForTomorrow() async {
+    try {
+      // 레시피 데이터를 불러옵니다.
+      var recipeData = await fetchRecipeData(widget.recipeId);
+
+      // 내일 날짜로 저장
+      DateTime tomorrow = getTomorrowDate().toUtc();
+
+      // records 배열 구성
+      List<Map<String, dynamic>> records = [
+        {
+          'unit': '식단',  // 고정값 혹은 다른 값으로 대체 가능
+          'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
+          'images': recipeData['mainImages'] ?? [], // 이미지 배열
+          'recipeId': widget.recipeId,
+        }
+      ];
+
+      // 저장할 데이터 구조 정의
+      Map<String, dynamic> recordData = {
+        'id': Uuid().v4(),  // 고유 ID 생성
+        'date': Timestamp.fromDate(tomorrow),
+        'userId': userId,
+        'color': '#88E09F',  // 고정된 색상 코드 또는 동적 값 사용 가능
+        'zone': '레시피',  // 고정값 또는 다른 값으로 대체 가능
+        'records': records,
+      };
+
+      // Firestore에 저장
+      await FirebaseFirestore.instance.collection('record').add(recordData);
+
+      // 저장 성공 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레시피가 내일 날짜로 기록되었습니다.')),
+      );
+    } catch (e) {
+      print('레시피 저장 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레시피 저장에 실패했습니다. 다시 시도해주세요.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -592,34 +640,16 @@ class _ReadRecipeState extends State<ReadRecipe> {
                 ),
               ],
             ),
-            Column(
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min, // 최소 공간만 차지하도록 설정
-                  children: [
-                    IconButton(
-                      visualDensity: const VisualDensity(horizontal: -4),
-                      icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
-                          size: 26), // 스크랩 아이콘 크기 조정
-                      onPressed: () => _toggleScraped(widget.recipeId),
-                    ), // 아이콘과 텍스트 사이 간격 조정
-                    Text(
-                      '$scrapedCount',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            IconButton(
+              visualDensity: const VisualDensity(horizontal: -4),
+              icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
+                  size: 26), // 스크랩 아이콘 크기 조정
+              onPressed: () => _toggleScraped(widget.recipeId),
             ),
             IconButton(
               visualDensity: const VisualDensity(horizontal: -4),
-              icon: Icon(Icons.share, size: 26), // 스크랩 아이콘 크기 조정
-              onPressed: () {
-                showShareOptions(context, fromEmail, toEmail, nickname, recipeName, recipeUrl);
-              },
+              icon: Icon(Icons.calendar_today, size: 25), // 스크랩 아이콘 크기 조정
+              onPressed: () => _saveRecipeForTomorrow(),
             ),
           ],
         ),
@@ -675,20 +705,25 @@ class _ReadRecipeState extends State<ReadRecipe> {
                       ),
                       IconButton(
                         visualDensity: const VisualDensity(horizontal: -4),
-                        icon: Icon(Icons.share, size: 18,
-                            color: theme.colorScheme.onSurface), // 스크랩 아이콘 크기 조정
-                        onPressed: () {
-                          showShareOptions(context, fromEmail, toEmail, nickname, recipeName, recipeUrl);
-                        },
-                      ),
-                      IconButton(
-                        visualDensity: const VisualDensity(horizontal: -4),
                         icon: Icon(
                           isScraped ? Icons.bookmark : Icons.bookmark_border,
                           size: 18,
                             color: theme.colorScheme.onSurface
                         ), // 스크랩 아이콘 크기 조정
                         onPressed: () => _toggleScraped(widget.recipeId),
+                      ),
+                      IconButton(
+                        visualDensity: const VisualDensity(horizontal: -4),
+                        icon: Icon(Icons.calendar_today, size: 18), // 스크랩 아이콘 크기 조정
+                        onPressed: () => _saveRecipeForTomorrow(),
+                      ),
+                      IconButton(
+                        visualDensity: const VisualDensity(horizontal: -4),
+                        icon: Icon(Icons.share, size: 18,
+                            color: theme.colorScheme.onSurface), // 스크랩 아이콘 크기 조정
+                        onPressed: () {
+                          showShareOptions(context, fromEmail, toEmail, nickname, recipeName, recipeUrl);
+                        },
                       ),
                       IconButton(
                         visualDensity: const VisualDensity(horizontal: -4),
@@ -1134,16 +1169,16 @@ class _ReadRecipeState extends State<ReadRecipe> {
                           hasImage
                               ? Image.network(
                                   steps[index]['image']!,
-                                  width: 150,
-                                  height: 150,
+                                  width: 100,
+                                  height: 100,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
                                     return Text('Error loading image');
                                   },
                                 )
                               : Container(
-                                  width: 150,
-                                  height: 150,
+                                  width: 100,
+                                  height: 100,
                                   color: Colors.grey, // 이미지가 없을 때 회색 배경
                                   child: Icon(Icons.image, color: Colors.white),
                                 ),

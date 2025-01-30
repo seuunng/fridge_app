@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/screens/recipe/full_screen_image_view.dart';
+import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:food_for_later_new/screens/records/create_record.dart';
 import 'package:intl/intl.dart';
 import '../../models/record_model.dart';
@@ -84,7 +86,6 @@ class _ReadRecordState extends State<ReadRecord> {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -197,77 +198,82 @@ class _ReadRecordState extends State<ReadRecord> {
                   itemCount: record.records.length,
                   itemBuilder: (context, index) {
                     final rec = record.records[index];
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                rec.unit ?? 'Unknown Field',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    color: theme.colorScheme.onSurface),
-                              ),
-                              Text(
-                                ' | ',
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onSurface),
-                              ),
-                              Text(
-                                rec.contents ?? 'No description',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    color: theme.colorScheme.onSurface),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                    return GestureDetector(
+                      onTap: () {
+                        // 클릭 시 레시피 페이지로 이동
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReadRecipe(
+                              recipeId: rec.recipeId ?? '',  // contents에 레시피 ID가 저장되어 있다고 가정
+                              searchKeywords: [],      // 검색 키워드 (필요 시 전달)
+                            ),
                           ),
-                          SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8.0,
-                            runSpacing: 8.0,
-                            children: rec.images.map((imagePath) {
-                              if (Uri.parse(imagePath).isAbsolute) {
-                                // 원격 이미지 URL일 경우
-                                return Image.network(
-                                  imagePath,
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(Icons.broken_image, size: 60);
-                                  },
-                                );
-                              } else if (!kIsWeb &&
-                                  File(imagePath).existsSync()) {
-                                // 로컬 이미지 파일 경로일 경우
-                                return Image.file(
-                                  File(imagePath),
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Text('Error loading image');
-                                  },
-                                );
-                              } else {
-                                // 알 수 없는 경로의 경우, 기본 이미지나 안내 텍스트 표시
-                                return Container(
-                                  width: 60,
-                                  height: 60,
-                                  color: Colors.grey,
-                                  child:
-                                      Center(child: Text('Invalid Image Path')),
-                                );
-                              }
-                            }).toList(),
-                          ),
-                          Divider(),
-                        ],
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  rec.unit ?? 'Unknown Field',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: theme.colorScheme.onSurface),
+                                ),
+                                Text(
+                                  ' | ',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onSurface),
+                                ),
+                                Text(
+                                  rec.contents ?? 'No description',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: theme.colorScheme.onSurface),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 8.0,
+                              children: rec.images.map((imagePath) {
+                                  // 원격 이미지 URL일 경우
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => FullScreenImageView(
+                                            images: rec.images,
+                                            initialIndex: index,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child:  Container(
+                                      width: 60,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(8.0),
+                                      ),
+                                      child: _buildImageWidget(imagePath),
+                                    ),
+                                  );
+                      
+                              }).toList(),
+                            ),
+                            Divider(),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -315,5 +321,64 @@ class _ReadRecordState extends State<ReadRecord> {
         ],
       ),
     );
+  }
+  String getValidImagePath(String imagePath) {
+    try {
+      // 네트워크 경로 (https://)일 경우 유효한 것으로 간주
+      if (imagePath.startsWith('http') || imagePath.startsWith('https')) {
+        return imagePath;
+      }
+
+      // 로컬 경로일 경우 실제 파일이 존재하는지 확인
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        return imagePath;
+      } else {
+        print('유효하지 않은 로컬 경로: $imagePath');
+        return ''; // 유효하지 않은 로컬 경로
+      }
+    } catch (e) {
+      print('경로 확인 중 오류 발생: $e');
+      return '';
+    }
+  }
+  Widget _buildImageWidget(String imagePath, {bool fullScreen = false}) {
+    final imageSize = fullScreen ? double.infinity : 60.0;
+    final fitMode = fullScreen ? BoxFit.contain : BoxFit.cover;
+    imagePath = getValidImagePath(imagePath);
+
+    if (imagePath.isEmpty) {
+      return Container(
+        width: imageSize,
+        height: imageSize,
+        color: Colors.grey,
+        child: Center(child: Text('Invalid Image Path')),
+      );
+    }
+    print(File(imagePath).existsSync());
+    if (Uri.parse(imagePath).isAbsolute) {
+      return Image.network(
+        imagePath,
+        width: imageSize,
+        height: imageSize,
+        fit: fitMode,
+        errorBuilder: (context, error, stackTrace) => Icon(Icons.broken_image, size: imageSize),
+      );
+    } else if (!kIsWeb && File(imagePath).existsSync()) {
+      return Image.file(
+        File(imagePath),
+        width: imageSize,
+        height: imageSize,
+        fit: fitMode,
+        errorBuilder: (context, error, stackTrace) => Text('Error loading image'),
+      );
+    } else {
+      return Container(
+        width: imageSize,
+        height: imageSize,
+        color: Colors.grey,
+        child: Center(child: Text('Invalid Image Path')),
+      );
+    }
   }
 }

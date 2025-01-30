@@ -234,7 +234,6 @@ class _CreateRecordState extends State<CreateRecord> {
 
     return compressedFile;
   }
-
   // 이미지를 선택하는 메서드
   Future<void> _pickImages() async {
     final ImagePicker picker = ImagePicker();
@@ -279,41 +278,16 @@ class _CreateRecordState extends State<CreateRecord> {
       //     SnackBar(content: Text('이미지를 선택하지 않았습니다.')),
       //   );
       // }
+    print('_tempImageFiles 업데이트: $_tempImageFiles');
+    setState(() {
+      _imageFiles = List.from(_tempImageFiles!);  // 이미지 파일 설정
+    });
   }
 
-// 이미지 업로드 메서드
-  Future<List<String>> _uploadImages() async {
-    List<String> downloadUrls = [];
-
-    if (_imageFiles == null || _imageFiles!.isEmpty) {
-      print('No images to upload.');
-      return downloadUrls; // 빈 배열 반환
-    }
-
-    for (var imagePath in _imageFiles!) {
-      File file = File(imagePath);
-      File compressedFile = await _compressImage(file);
-      try {
-        final uniqueFileName =
-            'record_image_${DateTime.now().millisecondsSinceEpoch}';
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('images/records/$uniqueFileName');
-
-        final SettableMetadata metadata = SettableMetadata(
-          contentType: 'image/jpeg', // 이미지 형식에 맞게 설정
-        );
-
-        await ref.putFile(compressedFile, metadata);
-        final downloadUrl = await ref.getDownloadURL();
-        downloadUrls.add(downloadUrl);
-      } catch (e) {
-        print('이미지 업로드 실패: $e');
-      }
-    }
-    return downloadUrls;
-  }
   void _saveWithConfirmation() {
+
+    print('_tempImageFiles $_tempImageFiles');
+    print('_imageFiles $_imageFiles');
     if (contentsController.text.trim().isNotEmpty ||
         (_tempImageFiles != null && _tempImageFiles!.isNotEmpty)) {
       // 저장되지 않은 상태인지 확인
@@ -349,8 +323,8 @@ class _CreateRecordState extends State<CreateRecord> {
   }
 // 저장 버튼 누르면 레시피 추가 또는 수정 처리
   void _saveRecord() async {
+    print('_saveRecord() 실행');
     if (isSaving) {
-      // 이미 저장 중이라면 중복 실행을 방지
       print('저장 중입니다. 중복 실행 방지');
       return;
     }
@@ -368,7 +342,7 @@ class _CreateRecordState extends State<CreateRecord> {
       return;
     }
     List<String> imageUrls = await _uploadImages();
-
+    print('imageUrls $imageUrls');
     if (imageUrls.isEmpty && _imageFiles!.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('이미지 업로드에 실패했습니다.')),
@@ -376,11 +350,25 @@ class _CreateRecordState extends State<CreateRecord> {
       return;
     }
 
+    int urlIndex = 0;
+    for (int i = 0; i < recordsWithImages.length; i++) {
+      final record = recordsWithImages[i];
+      final localImages = List<String>.from(record['images'] ?? []);
+
+      List<String> updatedImages = localImages.map((localPath) {
+        if (urlIndex < imageUrls.length) {
+          return imageUrls[urlIndex++];
+        } else {
+          return localPath;
+        }
+      }).toList();
+      record['images'] = updatedImages;
+    }
     List<RecordDetail> recordDetails = recordsWithImages.map((record) {
       return RecordDetail(
         unit: record['field'] as String,
         contents: record['contents'] as String,
-        images: List<String>.from(record['images'] as List<dynamic>),
+        images: List<String>.from(record['images'] ?? []),
       );
     }).toList();
 
@@ -393,7 +381,7 @@ class _CreateRecordState extends State<CreateRecord> {
     final record = RecordModel(
       id: widget.recordId ?? Uuid().v4(),
       // 고유 ID 생성, 수정 모드일 때 기존 ID 사용
-      date: selectedDate,
+      date: selectedDate.toUtc(),
       color: '#${selectedColor.value.toRadixString(16).padLeft(8, '0')}',
       zone: selectedCategory,
       records: recordDetails,
@@ -417,6 +405,39 @@ class _CreateRecordState extends State<CreateRecord> {
     }
   }
 
+// 이미지 업로드 메서드
+  Future<List<String>> _uploadImages() async {
+    List<String> downloadUrls = [];
+
+    if (_imageFiles == null || _imageFiles!.isEmpty) {
+      print('No images to upload.');
+      return downloadUrls; // 빈 배열 반환
+    }
+
+    for (var imagePath in _imageFiles!) {
+      File file = File(imagePath);
+      File compressedFile = await _compressImage(file);
+
+      final storageRef = FirebaseStorage.instance.ref();
+      try {
+        final uniqueFileName =
+            'record_image_${DateTime.now().millisecondsSinceEpoch}';
+        final imageRef = storageRef.child('images/records/$uniqueFileName');
+        final metadata = SettableMetadata(
+          contentType: 'image/jpeg', // 이미지의 MIME 타입 설정
+        );
+
+        final uploadTask = imageRef.putFile(compressedFile, metadata);
+        final snapshot = await uploadTask.whenComplete(() {});
+        final downloadURL = await snapshot.ref.getDownloadURL();
+        downloadUrls.add(downloadURL);
+        print('downloadUrls $downloadUrls');
+      } catch (e) {
+        print('이미지 업로드 실패: $e');
+      }
+    }
+    return downloadUrls;
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -755,53 +776,103 @@ class _CreateRecordState extends State<CreateRecord> {
                 ),
               ] ,
               // Spacer(),
-              IconButton(
-                icon: Icon(Icons.add, color: theme.colorScheme.onSurface),
-                onPressed: () {
-                  if (recordsWithImages.length >= 10) {
-                    // 최대 10개의 기록만 추가 가능하도록 제한
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('기록은 최대 10개까지만 추가할 수 있습니다.'),
-                      ),
-                    );
-                    return;
-                  }
-                  if (contentsController.text.isNotEmpty) {
-                    setState(() {
-                      final newRecord = {
-                        'field': selectedField,
-                        'contents': contentsController.text,
-                        'images':
-                            List<String>.from(_tempImageFiles ?? []), // 명시적 타입 변환
-                      };
-
-                      if (selectedRecordIndex != null) {
-                        // 선택된 항목 업데이트
-                        recordsWithImages[selectedRecordIndex!] =
-                            Map<String, Object>.from(newRecord);
-                        selectedRecordIndex = null;
-                      } else {
-                        // 새로운 항목 추가
-                        recordsWithImages
-                            .add(Map<String, Object>.from(newRecord));
-                      }
-
-                      // 입력 필드와 이미지 초기화
-                      contentsController.clear();
-                      _tempImageFiles = [];
-
-                    });
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('내용을 입력하세요.'),
-                      ),
-                    );
-                  }
-                },
-              ),
+              // IconButton(
+              //   icon: Icon(Icons.add, color: theme.colorScheme.onSurface),
+              //   onPressed: () {
+              //     if (recordsWithImages.length >= 10) {
+              //       // 최대 10개의 기록만 추가 가능하도록 제한
+              //       ScaffoldMessenger.of(context).showSnackBar(
+              //         SnackBar(
+              //           content: Text('기록은 최대 10개까지만 추가할 수 있습니다.'),
+              //         ),
+              //       );
+              //       return;
+              //     }
+              //     if (contentsController.text.isNotEmpty) {
+              //       setState(() {
+              //         final newRecord = {
+              //           'field': selectedField,
+              //           'contents': contentsController.text,
+              //           'images':
+              //               List<String>.from(_tempImageFiles ?? []), // 명시적 타입 변환
+              //         };
+              //
+              //         if (selectedRecordIndex != null) {
+              //           // 선택된 항목 업데이트
+              //           recordsWithImages[selectedRecordIndex!] =
+              //               Map<String, Object>.from(newRecord);
+              //           selectedRecordIndex = null;
+              //         } else {
+              //           // 새로운 항목 추가
+              //           recordsWithImages
+              //               .add(Map<String, Object>.from(newRecord));
+              //         }
+              //
+              //         // 입력 필드와 이미지 초기화
+              //         contentsController.clear();
+              //         _tempImageFiles = [];
+              //
+              //       });
+              //     } else {
+              //       ScaffoldMessenger.of(context).showSnackBar(
+              //         SnackBar(
+              //           content: Text('내용을 입력하세요.'),
+              //         ),
+              //       );
+              //     }
+              //   },
+              // ),
             ],
+          ),
+
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: NavbarButton(
+            buttonTitle: '기록 추가하기',
+            onPressed: () {
+              if (recordsWithImages.length >= 10) {
+                // 최대 10개의 기록만 추가 가능하도록 제한
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('기록은 최대 10개까지만 추가할 수 있습니다.'),
+                  ),
+                );
+                return;
+              }
+              if (contentsController.text.isNotEmpty) {
+                setState(() {
+                  final newRecord = {
+                    'field': selectedField,
+                    'contents': contentsController.text,
+                    'images':
+                    List<String>.from(_tempImageFiles ?? []), // 명시적 타입 변환
+                  };
+
+                  if (selectedRecordIndex != null) {
+                    // 선택된 항목 업데이트
+                    recordsWithImages[selectedRecordIndex!] =
+                    Map<String, Object>.from(newRecord);
+                    selectedRecordIndex = null;
+                  } else {
+                    // 새로운 항목 추가
+                    recordsWithImages
+                        .add(Map<String, Object>.from(newRecord));
+                  }
+
+                  // 입력 필드와 이미지 초기화
+                  contentsController.clear();
+                  _tempImageFiles = [];
+
+                });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('내용을 입력하세요.'),
+                  ),
+                );
+              }
+            },
           ),
         ),
       ],

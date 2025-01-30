@@ -80,11 +80,13 @@ class RecordDetail {
   String unit;
   String contents;
   List<String> images;
+  final String? recipeId;
 
   RecordDetail({
     required this.unit,
     required this.contents,
     required this.images,
+    this.recipeId,  // 🔹 선택적 필드로 추가
   });
 
   factory RecordDetail.fromMap(Map<String, dynamic> data) {
@@ -102,6 +104,7 @@ class RecordDetail {
       images: json['images'] != null && json['images'] is List
           ? List<String>.from(json['images'])
           : [],
+      recipeId: json['recipeId'],  // 🔹 JSON에서 가져오기
     );
   }
 
@@ -110,6 +113,7 @@ class RecordDetail {
       'unit': unit,
       'contents': contents,
       'images': images,
+      'recipeId': recipeId,
     };
   }
 }

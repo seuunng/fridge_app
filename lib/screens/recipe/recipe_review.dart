@@ -23,7 +23,7 @@ class _RecipeReviewState extends State<RecipeReview> {
 
   bool isAdmin = false;
   TextEditingController reviewContentController = TextEditingController();
-  int likedCount = 0;   // 좋아요 수
+  int likedCount = 0; // 좋아요 수
 
   @override
   void initState() {
@@ -32,6 +32,7 @@ class _RecipeReviewState extends State<RecipeReview> {
     _checkAdminRole();
     _loadScrapedAndLikedCounts();
   }
+
   void _loadScrapedAndLikedCounts() async {
     int liked = await _getLikedCount(widget.recipeId);
 
@@ -39,6 +40,7 @@ class _RecipeReviewState extends State<RecipeReview> {
       likedCount = liked;
     });
   }
+
   void _loadReviewsFromFirestore() async {
     List<Map<String, dynamic>> fetchedReviews = await fetchRecipeReviews();
     setState(() {
@@ -168,6 +170,7 @@ class _RecipeReviewState extends State<RecipeReview> {
       ));
     }
   }
+
   Future<int> _getLikedCount(String recipeId) async {
     try {
       QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
@@ -182,6 +185,7 @@ class _RecipeReviewState extends State<RecipeReview> {
       return 0; // 에러 시 0 반환
     }
   }
+
   Future<void> _deleteReview(int index) async {
     String docId = recipeReviews[index]['docId'];
     bool isNiced = recipeReviews[index]['isNiced'] ?? false;
@@ -301,8 +305,7 @@ class _RecipeReviewState extends State<RecipeReview> {
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface)),
           SizedBox(height: 16),
-          recipeReviews.isEmpty
-              ? Center(
+          if (recipeReviews.isEmpty) Center(
                   // 리뷰가 없을 때 표시될 메시지
                   child: Column(
                     children: [
@@ -318,8 +321,7 @@ class _RecipeReviewState extends State<RecipeReview> {
                       ),
                     ],
                   ),
-                )
-              : ListView.builder(
+                ) else ListView.builder(
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
                   itemCount: recipeReviews.length,
@@ -339,172 +341,178 @@ class _RecipeReviewState extends State<RecipeReview> {
                     final String nickname =
                         recipeReviews[index]['nickname']; // 작성자의 아바타
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CircleAvatar(
-                                  radius: 20, // 아바타 크기
-                                  backgroundImage: AssetImage(avatar),
-                                ),
-                                SizedBox(width: 10),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(nickname,
-                                        style: TextStyle(
-                                            color:
-                                                theme.colorScheme.onSurface)),
-                                    SizedBox(width: 4),
-                                    Text(formattedDate,
-                                        style: TextStyle(
-                                            color:
-                                                theme.colorScheme.onSurface)),
-                                    _buildRatingStars(rating)
-                                  ],
-                                ),
-                                Spacer(),
-                                Row(children: [
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20, // 아바타 크기
+                                    backgroundImage: AssetImage(avatar),
+                                  ),
+                                  SizedBox(width: 10),
                                   Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min, // 최소 공간만 차지하도록 설정
-                                        children: [
-                                    GestureDetector(
-                                    onTap: () => _toggleNiced(index),
-                                    child: Icon(
-                                                isNiced
-                                                    ? Icons.thumb_up
-                                                    : Icons.thumb_up_alt_outlined,
-                                                size: 12,
-                                                color: theme.colorScheme.onSurface),
-                    ),
-                                          SizedBox(width: 10),
-                                          Text(
-                                            '$likedCount',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: theme.colorScheme.onSurface,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-
-                                  SizedBox(width: 10),
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  FeedbackSubmission(
-                                                    postNo: recipeReviews[index]
-                                                        ['reviewId'],
-                                                    postType: '리뷰',
-                                                  )));
-                                    },
-                                    child:
-                                        Icon(Icons.feedback_outlined, size: 12,
-                                            color: theme.colorScheme.onSurface),
-                                  ),
-                                  SizedBox(width: 10),
-                                ]),
-                                if (isAdmin || isAuthor)
-                                  Row(
-                                    children: [
-                                      Text('|',
+                                      Text(nickname,
                                           style: TextStyle(
                                               color:
                                                   theme.colorScheme.onSurface)),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      AddRecipeReview(
-                                                        recipeId:
-                                                            widget.recipeId,
-                                                        reviewId:
-                                                            recipeReviews[index]
-                                                                ['reviewId'],
-                                                      )));
-                                        },
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: Size(30, 20),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        child: Text('수정',
-                                            style: TextStyle(
-                                                color: theme
-                                                    .colorScheme.onSurface)),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            _confirmDeleteReview(index),
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: Size(30, 20),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        child: Text('삭제',
-                                            style: TextStyle(
-                                                color: theme
-                                                    .colorScheme.onSurface)),
-                                      ),
-                                      SizedBox(width: 5),
+                                      SizedBox(width: 4),
+                                      Text(formattedDate,
+                                          style: TextStyle(
+                                              color:
+                                                  theme.colorScheme.onSurface)),
+                                      _buildRatingStars(rating)
                                     ],
                                   ),
-                              ],
-                            ),
-                            SizedBox(height: 10),
-                            Text(recipeReviews[index]['content']!,
-                                style: TextStyle(
-                                    color: theme.colorScheme.onSurface)),
-                            SizedBox(height: 10),
-                            Wrap(
-                              spacing: 8.0,
-                              runSpacing: 4.0,
-                              children: images.isNotEmpty
-                                  ? images.map((imageUrl) {
-                                      return GestureDetector(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  FullScreenImageView(
-                                                images: images,
-                                                initialIndex: images.indexOf(
-                                                    imageUrl), // 현재 클릭한 이미지의 인덱스 전달
+                                  // Spacer(),
+                                  Row(children: [
+                                    Column(
+                                      children: [
+                                        Row(
+                                          mainAxisSize:
+                                              MainAxisSize.min, // 최소 공간만 차지하도록 설정
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => _toggleNiced(index),
+                                              child: Icon(
+                                                  isNiced
+                                                      ? Icons.thumb_up
+                                                      : Icons
+                                                          .thumb_up_alt_outlined,
+                                                  size: 12,
+                                                  color: theme
+                                                      .colorScheme.onSurface),
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              '$likedCount',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color:
+                                                    theme.colorScheme.onSurface,
                                               ),
                                             ),
-                                          );
-                                        },
-                                        child: Image.network(
-                                          imageUrl,
-                                          width: 50,
-                                          height: 50,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                            return Icon(Icons.broken_image);
-                                          },
+                                          ],
                                         ),
-                                      );
-                                    }).toList()
-                                  : [Container()], // 이미지가 없는 경우 빈 컨테이너
-                            ),
-                          ]),
+                                      ],
+                                    ),
+                                    SizedBox(width: 10),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    FeedbackSubmission(
+                                                      postNo: recipeReviews[index]
+                                                          ['reviewId'],
+                                                      postType: '리뷰',
+                                                    )));
+                                      },
+                                      child: Icon(Icons.feedback_outlined,
+                                          size: 12,
+                                          color: theme.colorScheme.onSurface),
+                                    ),
+                                    SizedBox(width: 10),
+                                  ]),
+                                  if (isAdmin || isAuthor)
+                                    Row(
+                                      children: [
+                                        Text('|',
+                                            style: TextStyle(
+                                                color:
+                                                    theme.colorScheme.onSurface)),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        AddRecipeReview(
+                                                          recipeId:
+                                                              widget.recipeId,
+                                                          reviewId:
+                                                              recipeReviews[index]
+                                                                  ['reviewId'],
+                                                        )));
+                                          },
+                                          style: TextButton.styleFrom(
+                                            padding: EdgeInsets.zero,
+                                            minimumSize: Size(30, 20),
+                                            tapTargetSize:
+                                                MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                          child: Text('수정',
+                                              style: TextStyle(
+                                                  color: theme
+                                                      .colorScheme.onSurface)),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              _confirmDeleteReview(index),
+                                          style: TextButton.styleFrom(
+                                            padding: EdgeInsets.zero,
+                                            minimumSize: Size(30, 20),
+                                            tapTargetSize:
+                                                MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                          child: Text('삭제',
+                                              style: TextStyle(
+                                                  color: theme
+                                                      .colorScheme.onSurface)),
+                                        ),
+                                        SizedBox(width: 5),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                              SizedBox(height: 10),
+                              Text(recipeReviews[index]['content']!,
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)),
+                              SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8.0,
+                                runSpacing: 4.0,
+                                children: images.isNotEmpty
+                                    ? images.map((imageUrl) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    FullScreenImageView(
+                                                  images: images,
+                                                  initialIndex: images.indexOf(
+                                                      imageUrl), // 현재 클릭한 이미지의 인덱스 전달
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: Image.network(
+                                            imageUrl,
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Icon(Icons.broken_image);
+                                            },
+                                          ),
+                                        );
+                                      }).toList()
+                                    : [Container()], // 이미지가 없는 경우 빈 컨테이너
+                              ),
+                            ]),
+                      ),
                     );
                   },
                 ),
