@@ -6,10 +6,13 @@ import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:food_for_later_new/screens/records/view_record_main.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class ViewScrapRecipeList extends StatefulWidget {
   @override
@@ -23,7 +26,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
 
   // 요리명 리스트
   List<String> scrapedRecipes = [];
-  List<RecipeModel> recipeList = [];
+  List<Map<String, dynamic>> recipeList = [];
   List<RecipeModel> myRecipeList = []; // 나의 레시피 리스트
   String ratings = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -36,7 +39,8 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   bool isLoading = true; // 로딩 상태 추가
   bool isScraped = false;
   String userRole = '';
-  bool hasLink = false;
+  // bool hasLink = false;
+  Map<String, bool> scrapedStatus = {};
 
   @override
   void initState() {
@@ -67,31 +71,32 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   Future<void> _initializePage() async {
     setState(() {
       isLoading = true; // 로딩 상태 시작
+      print('초기화 중: 현재 선택된 필터 -> $selectedFilter');
     });
 
     // 스크랩 그룹 로드
     await _loadScrapedGroups();
 
     // 레시피 로드
-    List<RecipeModel> recipes = await fetchRecipesByScrap();
+    List<Map<String, dynamic>> fetchedRecipes = await fetchRecipesByScrap();
     setState(() {
-      recipeList = recipes; // 로드된 데이터를 recipeList에 반영
+      recipeList = getFilteredRecipes(fetchedRecipes);
       isLoading = false;
     });
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      isLoading = true; // 로딩 상태 시작
-    });
-
-    await fetchRecipesByScrap();
-    await _loadFridgeItemsFromFirestore();
-
-    setState(() {
-      isLoading = false; // 로딩 상태 종료
-    });
-  }
+  // Future<void> _loadData() async {
+  //   setState(() {
+  //     isLoading = true; // 로딩 상태 시작
+  //   });
+  //
+  //   await fetchRecipesByScrap();
+  //   await _loadFridgeItemsFromFirestore();
+  //
+  //   setState(() {
+  //     isLoading = false; // 로딩 상태 종료
+  //   });
+  // }
 
   Future<void> _loadScrapedGroups() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -119,16 +124,19 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   }
 
   // 레시피 목록 필터링 함수
-  List<RecipeModel> getFilteredRecipes() {
-    if (selectedFilter == '전체') {
-      return recipeList;
-    }
-    return myRecipeList;
+  List<Map<String, dynamic>> getFilteredRecipes(
+      List<Map<String, dynamic>> fetchedRecipes) {
+    return fetchedRecipes
+        .where((entry) =>
+            selectedFilter == '전체' ||
+            entry['recipe'].scrapedGroupName == selectedFilter)
+        .toList(); // 🔹 `fetchedRecipes` 그대로 반환 (Map 형태 유지)
   }
 
-  Future<List<RecipeModel>> fetchRecipesByScrap() async {
+  Future<List<Map<String, dynamic>>> fetchRecipesByScrap() async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    List<RecipeModel> fetchedRecipes = [];
+    final List<Map<String, dynamic>> fetchedRecipes = [];
+
     try {
       QuerySnapshot snapshot = await _db
           .collection('scraped_recipes')
@@ -138,35 +146,35 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
 
       for (var doc in snapshot.docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        String? link = data['link']; // 저장된 링크 확인
+        String? link = data['link'];
+        String? scrapedGroupName = data['scrapedGroupName'] ?? '기본함';
 
+        RecipeModel? recipe;
         if (link != null && link.isNotEmpty) {
-          final webRecipe = await _fetchRecipeDetailsFromLink(link);
-          print('RecipeModel에 저장된 foods: ${webRecipe?.foods}');
-          print('RecipeModel에 저장된 foods: ${webRecipe?.link}');
-
-          if (webRecipe != null) {
-            fetchedRecipes.add(webRecipe);
-          }
+          recipe = await _fetchRecipeDetailsFromLink(link);
         } else {
-          // 저장된 레시피가 Firestore 레시피일 경우 처리
           String recipeId = data['recipeId'] ?? '';
           if (recipeId.isNotEmpty) {
             final recipeSnapshot =
                 await _db.collection('recipe').doc(recipeId).get();
             if (recipeSnapshot.exists) {
-              fetchedRecipes
-                  .add(RecipeModel.fromFirestore(recipeSnapshot.data()!));
+              recipe = RecipeModel.fromFirestore(
+                  recipeSnapshot.data() as Map<String, dynamic>);
             }
           }
+        }
+        if (recipe != null) {
+          recipe.scrapedGroupName = scrapedGroupName;
+          fetchedRecipes.add({
+            'id': doc.id, // 🔹 Firestore 문서 ID 저장
+            'recipe': recipe,
+          });
         }
       }
     } catch (e) {
       print('Error fetching matching recipes: $e');
-      return [];
     }
-    print('불러온 레시피 수: ${fetchedRecipes.length}');
-    return fetchedRecipes; // 데이터를 반환
+    return fetchedRecipes;
   }
 
   Future<void> _loadFridgeItemsFromFirestore() async {
@@ -183,24 +191,40 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     }
   }
 
-  Future<bool> loadScrapedData(String recipeId) async {
+  Future<Map<String, dynamic>> loadScrapedData(String recipeId,
+      {String? link}) async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
-      QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
-          .instance
-          .collection('scraped_recipes')
-          .where('recipeId', isEqualTo: recipeId)
-          .where('userId', isEqualTo: userId)
-          .get();
+      QuerySnapshot<Map<String, dynamic>> snapshot;
+
+      if (link != null) {
+        // 🔹 웹 레시피의 경우 link로 확인
+        snapshot = await FirebaseFirestore.instance
+            .collection('scraped_recipes')
+            .where('userId', isEqualTo: userId)
+            .where('link', isEqualTo: link)
+            .get();
+      } else {
+        // 🔹 Firestore 레시피의 경우 recipeId로 확인
+        snapshot = await FirebaseFirestore.instance
+            .collection('scraped_recipes')
+            .where('userId', isEqualTo: userId)
+            .where('recipeId', isEqualTo: recipeId)
+            .get();
+      }
 
       if (snapshot.docs.isNotEmpty) {
-        return snapshot.docs.first.data()['isScraped'] ?? false;
+        final data = snapshot.docs.first.data();
+        return {
+          'isScraped': data['isScraped'] ?? false,
+          'scrapedGroupName': data['scrapedGroupName'] ?? '기본함'
+        };
       } else {
-        return false; // 스크랩된 레시피가 없으면 false 반환
+        return {'isScraped': false, 'scrapedGroupName': '기본함'};
       }
     } catch (e) {
       print("Error fetching recipe data: $e");
-      return false;
+      return {'isScraped': false, 'scrapedGroupName': '기본함'};
     }
   }
 
@@ -236,27 +260,118 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
           foods: ingredients,
         );
       }
-
     } catch (e) {
       print('Error fetching recipe from link: $e');
     }
     return null; // 오류 발생 시 null 반환
   }
 
-  void _openRecipeLink(String link) async {
-    try {
-      final uri = Uri.parse(link);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      } else {
-        print("Could not open link: $link");
-      }
-    } catch (e) {
-      print("Error opening link: $e");
-    }
+  void _openRecipeLink(String link, String title, int index) async {
+    final Map<String, dynamic> recipeEntry = recipeList[index];
+    final String docId = recipeEntry['id'];
+    final RecipeModel recipe = recipeEntry['recipe']; // 🔹 RecipeModel 가져오기
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      visualDensity: const VisualDensity(horizontal: -4),
+                      icon: Icon(
+                          isScraped ? Icons.bookmark : Icons.bookmark_border,
+                          size: 26), // 스크랩 아이콘 크기 조정
+                      onPressed: () => _toggleScraped(recipe.id, recipe.link),
+                    ),
+                    IconButton(
+                      visualDensity: const VisualDensity(horizontal: -4),
+                      icon:
+                          Icon(Icons.calendar_today, size: 25), // 스크랩 아이콘 크기 조정
+                      onPressed: () => _saveRecipeForTomorrow(),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          body: WebViewWidget(
+            controller: WebViewController()
+              ..setJavaScriptMode(JavaScriptMode.unrestricted)
+              ..loadRequest(Uri.parse(link)),
+          ),
+        ),
+      ),
+    );
   }
 
-  void _toggleScraped(String recipeId) async {
+  DateTime getTomorrowDate() {
+    return DateTime.now().add(Duration(days: 1));
+  }
+  void _saveRecipeForTomorrow() async {
+    try {
+      // 레시피 데이터를 불러옵니다.
+      var recipeData = await fetchRecipeData(recipeId);
+
+      // 내일 날짜로 저장
+      DateTime tomorrow = getTomorrowDate().toUtc();
+
+      // records 배열 구성
+      List<Map<String, dynamic>> records = [
+        {
+          'unit': '레시피 보기',  // 고정값 혹은 다른 값으로 대체 가능
+          'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
+          'images': recipeData['mainImages'] ?? [], // 이미지 배열
+          'recipeId': recipeId,
+        }
+      ];
+
+      // 저장할 데이터 구조 정의
+      Map<String, dynamic> recordData = {
+        'id': Uuid().v4(),  // 고유 ID 생성
+        'date': Timestamp.fromDate(tomorrow),
+        'userId': userId,
+        'color': '#88E09F',  // 고정된 색상 코드 또는 동적 값 사용 가능
+        'zone': '레시피',  // 고정값 또는 다른 값으로 대체 가능
+        'records': records,
+      };
+
+      // Firestore에 저장
+      await FirebaseFirestore.instance.collection('record').add(recordData);
+
+      // 저장 성공 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레시피가 내일 날짜로 기록되었습니다.'),
+          action: SnackBarAction(
+            label: '기록 보기',
+            onPressed: () {
+              // 기록 페이지로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ViewRecordMain(),
+                ),
+              );
+            },
+          ),),
+      );
+    } catch (e) {
+      print('레시피 저장 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레시피 저장에 실패했습니다. 다시 시도해주세요.')
+        ),
+      );
+    }
+  }
+  void _toggleScraped(String recipeId, String? link) async {
     bool newState = await ScrapedRecipeService.toggleScraped(
       context,
       recipeId,
@@ -265,6 +380,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
           isScraped = state;
         });
       },
+      link,
     );
   }
 
@@ -421,18 +537,14 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   }
 
   Future<void> updateScrapedGroupName(String newGroupName) async {
-    for (String recipeId in selectedRecipes) {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('scraped_recipes')
-          .where('userId', isEqualTo: userId)
-          .where('recipeId', isEqualTo: recipeId)
-          .get();
-
-      for (var doc in snapshot.docs) {
+    for (String docId in selectedRecipes) {
+      try {
         await FirebaseFirestore.instance
             .collection('scraped_recipes')
-            .doc(doc.id)
+            .doc(docId)
             .update({'scrapedGroupName': newGroupName});
+      } catch (e) {
+        print('❌ 문서 업데이트 실패: $docId, 오류: $e');
       }
     }
   }
@@ -471,11 +583,14 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                         onItemChanged: (value) async {
                           setState(() {
                             selectedFilter = value;
+                            print('선택된 필터가 변경되었습니다: $selectedFilter');
                             isLoading = true; // 🔹 로딩 상태 시작
                           });
-                          final recipes = await fetchRecipesByScrap();
+                          final fetchedData = await fetchRecipesByScrap();
+                          final filteredRecipes =
+                              getFilteredRecipes(fetchedData);
                           setState(() {
-                            recipeList = recipes; // 레시피 데이터 반영
+                            recipeList = filteredRecipes; // 레시피 데이터 반영
                             isLoading = false; // 🔹 로딩 상태 종료
                           });
                         },
@@ -542,28 +657,33 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       ),
       itemCount: recipeList.length,
       itemBuilder: (context, index) {
-        RecipeModel recipe = recipeList[index];
+        final Map<String, dynamic> recipeEntry = recipeList[index];
+        final String docId = recipeEntry['id']; // 🔹 정확히 Firestore 문서 ID 가져오기
+        final RecipeModel recipe = recipeEntry['recipe']; // 🔹 RecipeModel 가져오기
+
         String recipeName = recipe.recipeName;
         double recipeRating = recipe.rating;
         bool hasMainImage = recipe.mainImages.isNotEmpty;
         // 카테고리 그리드 렌더링
-        return FutureBuilder<bool>(
-            future: loadScrapedData(recipe.id), // 각 레시피별로 스크랩 상태를 확인
+        return FutureBuilder<Map<String, dynamic>>(
+            future: loadScrapedData(recipe.id,
+                link: recipe.link), // 각 레시피별로 스크랩 상태를 확인
             builder: (context, snapshot) {
-              bool isScraped = snapshot.data ?? false;
+              bool isScraped = (snapshot.data?['isScraped'] as bool?) ?? false;
+              // scrapedStatus[recipe.id] = isScraped;
               return Row(
                 children: [
                   SizedBox(
                     width: 20, // 원하는 너비로 조정
                     height: 20, // 원하는 높이로 조정
                     child: Checkbox(
-                      value: selectedRecipes.contains(recipe.id),
+                      value: selectedRecipes.contains(docId),
                       onChanged: (bool? value) {
                         setState(() {
                           if (value == true) {
-                            selectedRecipes.add(recipe.id);
+                            selectedRecipes.add(docId);
                           } else {
-                            selectedRecipes.remove(recipe.id);
+                            selectedRecipes.remove(docId);
                           }
                         });
                       },
@@ -575,7 +695,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                     child: GestureDetector(
                       onTap: () {
                         if (recipe.link != null && recipe.link!.isNotEmpty) {
-                          _openRecipeLink(recipe.link ?? '');
+                          _openRecipeLink(recipe.link ?? '', recipeName, index);
                         } else {
                           Navigator.push(
                               context,
@@ -655,13 +775,14 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                                           size: 20,
                                           color: Colors.black,
                                         ), // 스크랩 아이콘 크기 조정
-                                        onPressed: () =>
-                                            _toggleScraped(recipe.id),
+                                        onPressed: () => _toggleScraped(
+                                            recipe.id, recipe.link),
                                       ),
                                     ],
                                   ), // 간격 추가
                                   // 재료
-                                  SingleChildScrollView(child: _buildChips(recipe)),
+                                  SingleChildScrollView(
+                                      child: _buildChips(recipe)),
                                 ],
                               ),
                             ),
@@ -678,52 +799,48 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   }
 
   Widget _buildChips(RecipeModel recipe) {
-    final List<String> uniqueIngredients = recipe.foods;
-    return Wrap(
-      alignment: WrapAlignment.start,
-      spacing: 2.0, // 아이템 간의 간격
-      runSpacing: 2.0,
-      children: [
-        _buildTagSection("재료", uniqueIngredients),
-        _buildTagSection("조리 방법", recipe.methods),
-        _buildTagSection("테마", recipe.themes),
-      ],
+    final List<String> uniqueIngredients = recipe.foods.toSet().toList();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Wrap(
+        alignment: WrapAlignment.start,
+        spacing: 2.0, // 아이템 간의 간격
+        runSpacing: 2.0,
+        children: [
+          _buildTagSection("재료", uniqueIngredients),
+          // _buildTagSection("조리 방법", recipe.methods),
+          // _buildTagSection("테마", recipe.themes),
+        ],
+      ),
     );
   }
 
   Widget _buildTagSection(String title, List<String> tags) {
-    print("title in _buildTagSection: $title");
-    print("Tags in _buildTagSection: $tags");
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          alignment: WrapAlignment.start,
-          spacing: 2.0, // 아이템 간의 간격
-          runSpacing: 2.0,
-          children: tags.map((tag) {
-            bool inFridge = fridgeIngredients.contains(tag);
-            return Container(
-              padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
-              decoration: BoxDecoration(
-                color: inFridge ? Colors.grey : Colors.transparent,
-                border: Border.all(
-                  color: Colors.grey,
-                  width: 0.5,
-                ),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Text(
-                tag,
-                style: TextStyle(
-                  fontSize: 12.0,
-                  color: inFridge ? Colors.white : Colors.black,
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+    return Wrap(
+      alignment: WrapAlignment.start,
+      spacing: 2.0, // 아이템 간의 간격
+      runSpacing: 2.0,
+      children: tags.map((tag) {
+        bool inFridge = fridgeIngredients.contains(tag);
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
+          decoration: BoxDecoration(
+            color: inFridge ? Colors.grey : Colors.transparent,
+            border: Border.all(
+              color: Colors.grey,
+              width: 0.5,
+            ),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Text(
+            tag,
+            style: TextStyle(
+              fontSize: 12.0,
+              color: inFridge ? Colors.white : Colors.black,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -768,8 +885,9 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
             style: TextStyle(color: theme.colorScheme.onSurface),
           ),
           content: DropdownButtonFormField<String>(
-            value: _scraped_groups.isNotEmpty ? _scraped_groups[0] : null,
+            value: _scraped_groups.isNotEmpty ? _scraped_groups[1] : null,
             items: _scraped_groups
+                .where((group) => group != '전체')
                 .map((group) => DropdownMenuItem(
                       value: group,
                       child: Text(
@@ -779,7 +897,9 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                     ))
                 .toList(),
             onChanged: (value) {
-              newGroupName = value;
+              setState(() {
+                newGroupName = value; // 🔹 선택한 값으로 갱신
+              });
             },
           ),
           actions: [
@@ -789,7 +909,18 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
             ),
             TextButton(
               child: Text('확인'),
-              onPressed: () => Navigator.pop(context, newGroupName),
+              onPressed: () async {
+                if (newGroupName != null && newGroupName!.isNotEmpty) {
+                  await updateScrapedGroupName(newGroupName!);
+
+                  setState(() {
+                    selectedFilter = newGroupName!; // 드롭다운 초기화
+                    selectedRecipes.clear(); // 체크박스 초기화
+                  });
+
+                  Navigator.pop(context);
+                }
+              },
             ),
           ],
         );

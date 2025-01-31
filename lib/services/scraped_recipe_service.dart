@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class ScrapedRecipeService {
   static Future<bool> toggleScraped(
-      BuildContext context, String recipeId, Function updateState) async {
+      BuildContext context, String recipeId, Function updateState, String? link) async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null || user.email == 'guest@foodforlater.com') {
@@ -17,30 +17,41 @@ class ScrapedRecipeService {
 
     final userId = user.uid;
     try {
+      QuerySnapshot<Map<String, dynamic>> snapshot;
+      if (link != null) {
+        // 🔹 웹 레시피의 경우 link로 확인
+        snapshot = await FirebaseFirestore.instance
+            .collection('scraped_recipes')
+            .where('userId', isEqualTo: userId)
+            .where('link', isEqualTo: link)
+            .get();
+      } else {
+        // 🔹 Firestore 레시피의 경우 recipeId로 확인
+        snapshot = await FirebaseFirestore.instance
+            .collection('scraped_recipes')
+            .where('userId', isEqualTo: userId)
+            .where('recipeId', isEqualTo: recipeId)
+            .get();
+      }
       // 스크랩 상태 확인을 위한 쿼리
-      QuerySnapshot<Map<String, dynamic>> existingScrapedRecipes =
-      await FirebaseFirestore.instance
-          .collection('scraped_recipes')
-          .where('recipeId', isEqualTo: recipeId)
-          .where('userId', isEqualTo: userId)
-          .get();
 
       bool isScraped;
-      if (existingScrapedRecipes.docs.isEmpty) {
+      if (snapshot.docs.isEmpty) {
         // 🔹 스크랩이 존재하지 않으면 새로 추가
         await FirebaseFirestore.instance.collection('scraped_recipes').add({
           'userId': userId,
-          'recipeId': recipeId,
+          'recipeId': recipeId ?? '',
           'isScraped': true,
           'scrapedGroupName': '기본함',
           'scrapedAt': FieldValue.serverTimestamp(),
+          'link': link ?? ''
         });
 
         isScraped = true;
       } else {
         // 🔹 스크랩이 존재하면 삭제
         DocumentSnapshot<Map<String, dynamic>> doc =
-            existingScrapedRecipes.docs.first;
+            snapshot.docs.first;
 
         await FirebaseFirestore.instance
             .collection('scraped_recipes')

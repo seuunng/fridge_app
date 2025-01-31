@@ -49,7 +49,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
 
   bool isLiked = false; // 좋아요 상태
   bool isScraped = false; // 스크랩 상태
-
+  String? link;
   late PageController _pageController;
   int _currentIndex = 0;
 
@@ -502,7 +502,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
     }
   }
 
-  void _toggleScraped(String recipeId) async {
+  void _toggleScraped(String recipeId, String? link) async {
     bool newState = await ScrapedRecipeService.toggleScraped(
       context,
       recipeId,
@@ -511,6 +511,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
           isScraped = state;
         });
       },
+      link
     );
   }
 
@@ -659,7 +660,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
               visualDensity: const VisualDensity(horizontal: -4),
               icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
                   size: 26), // 스크랩 아이콘 크기 조정
-              onPressed: () => _toggleScraped(widget.recipeId),
+              onPressed: () => _toggleScraped(widget.recipeId, link),
             ),
             IconButton(
               visualDensity: const VisualDensity(horizontal: -4),
@@ -695,6 +696,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
 
             final bool isOwner = userId == data['userID'];
             final bool showAdminOptions = isAdmin || isOwner;
+            String? link = data['link'] ?? '';
 
             return SingleChildScrollView(
               child: Column(
@@ -725,7 +727,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
                           size: 18,
                             color: theme.colorScheme.onSurface
                         ), // 스크랩 아이콘 크기 조정
-                        onPressed: () => _toggleScraped(widget.recipeId),
+                        onPressed: () => _toggleScraped(widget.recipeId, link),
                       ),
                       IconButton(
                         visualDensity: const VisualDensity(horizontal: -4),

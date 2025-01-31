@@ -16,6 +16,7 @@ class RecipeModel {
   int views;
   DateTime date;
   final String? link;  // 웹 레시피 링크 추가
+  String? scrapedGroupName;
 
   RecipeModel({
     required this.id,
@@ -33,6 +34,7 @@ class RecipeModel {
     this.rating = 0.0,
     this.views = 0,
     this.link,  // 웹 레시피의 경우 사용
+    this.scrapedGroupName
   });
 
   factory RecipeModel.fromFirestore(Map<String, dynamic> data) {

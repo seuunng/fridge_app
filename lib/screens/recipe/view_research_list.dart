@@ -624,7 +624,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
 
   // 스크랩하기/해제하기
-  void _toggleScraped(String recipeId) async {
+  void _toggleScraped(String recipeId, String? link) async {
     bool newState = await ScrapedRecipeService.toggleScraped(
       context,
       recipeId,
@@ -633,6 +633,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
           isScraped = state;
         });
       },
+      link
     );
   }
   Future<void> toggleMangnaeyaRecipeScraped(
@@ -1124,8 +1125,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
                               Row(
                                 children: [
                                   Container(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.25,
+                                    width: MediaQuery.of(context).size.width * 0.25,
                                     child: Text(
                                       recipeName,
                                       style: TextStyle(
@@ -1146,7 +1146,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
                                       size: 20,
                                       color: Colors.black,
                                     ), // 스크랩 아이콘 크기 조정
-                                    onPressed: () => _toggleScraped(recipe.id),
+                                    onPressed: () => _toggleScraped(recipe.id, recipe.link ?? ''),
                                   ),
                                 ],
                               ),
