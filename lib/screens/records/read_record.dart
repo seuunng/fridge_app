@@ -6,11 +6,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/full_screen_image_view.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
+import 'package:food_for_later_new/screens/recipe/recipe_webview_page.dart';
 import 'package:food_for_later_new/screens/records/create_record.dart';
+import 'package:food_for_later_new/screens/records/view_record_main.dart';
+import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 import 'package:intl/intl.dart';
 import '../../models/record_model.dart';
+import 'package:uuid/uuid.dart';
 
 class ReadRecord extends StatefulWidget {
   final String recordId; // recordId를 전달받도록 수정
@@ -25,7 +30,7 @@ class _ReadRecordState extends State<ReadRecord> {
   Map<String, List<String>> categoryMap = {};
   String userRole = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
+  bool isScraped = false;
 
   @override
   void initState() {
@@ -48,6 +53,43 @@ class _ReadRecordState extends State<ReadRecord> {
       print('Error loading user role: $e');
     }
   }
+  Future<Map<String, dynamic>> loadScrapedData(String recipeId,
+      {String? link}) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot;
+
+      if (link != null) {
+        // 🔹 웹 레시피의 경우 link로 확인
+        snapshot = await FirebaseFirestore.instance
+            .collection('scraped_recipes')
+            .where('userId', isEqualTo: userId)
+            .where('link', isEqualTo: link)
+            .get();
+      } else {
+        // 🔹 Firestore 레시피의 경우 recipeId로 확인
+        snapshot = await FirebaseFirestore.instance
+            .collection('scraped_recipes')
+            .where('userId', isEqualTo: userId)
+            .where('recipeId', isEqualTo: recipeId)
+            .get();
+      }
+
+      if (snapshot.docs.isNotEmpty) {
+        final data = snapshot.docs.first.data();
+        return {
+          'isScraped': data['isScraped'] ?? false,
+          'scrapedGroupName': data['scrapedGroupName'] ?? '기본함'
+        };
+      } else {
+        return {'isScraped': false, 'scrapedGroupName': '기본함'};
+      }
+    } catch (e) {
+      print("Error fetching recipe data: $e");
+      return {'isScraped': false, 'scrapedGroupName': '기본함'};
+    }
+  }
+
   Future<void> _fetchRecordCategories() async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -86,6 +128,94 @@ class _ReadRecordState extends State<ReadRecord> {
       );
     }
   }
+
+  void _openRecipeLink(String link, String title, RecipeModel recipe, bool initialScraped) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RecipeWebViewPage(
+          link: link,
+          title: title,
+          recipe: recipe,
+          initialScraped: initialScraped,
+          onToggleScraped: toggleScraped,         // 기존의 toggleScraped 함수 사용
+          onSaveRecipeForTomorrow: _saveRecipeForTomorrow, // 기존의 _saveRecipeForTomorrow 함수 사용
+        ),
+      ),
+    );
+  }
+
+  Future<bool> toggleScraped(String recipeId, String? link) async {
+    bool newState = await ScrapedRecipeService.toggleScraped(
+      context,
+      recipeId,
+      link,
+    );
+    return newState; // 또는 비동기 작업 결과로 반환
+  }
+
+  DateTime getTomorrowDate() {
+    return DateTime.now().add(Duration(days: 1));
+  }
+  void _saveRecipeForTomorrow(RecipeModel recipe) async {
+    try {
+      // 기존의 fetchRecipeData 대신 recipe 객체의 데이터를 사용합니다.
+      var recipeData = {
+        'recipeName': recipe.recipeName,
+        'mainImages': recipe.mainImages,
+      };
+
+      // 내일 날짜로 저장
+      DateTime tomorrow = getTomorrowDate().toUtc();
+
+      // records 배열 구성
+      List<Map<String, dynamic>> records = [
+        {
+          'unit': '레시피 보기',  // 고정값 혹은 다른 값으로 대체 가능
+          'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
+          'images': recipeData['mainImages'] ?? [], // 이미지 배열
+          'link': recipe.link
+        }
+      ];
+
+      // 저장할 데이터 구조 정의
+      Map<String, dynamic> recordData = {
+        'id': Uuid().v4(),  // 고유 ID 생성
+        'date': Timestamp.fromDate(tomorrow),
+        'userId': userId,
+        'color': '#88E09F',  // 고정된 색상 코드 또는 동적 값 사용 가능
+        'zone': '레시피',  // 고정값 또는 다른 값으로 대체 가능
+        'records': records,
+      };
+
+      // Firestore에 저장
+      await FirebaseFirestore.instance.collection('record').add(recordData);
+
+      // 저장 성공 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레시피가 내일 날짜로 기록되었습니다.'),
+          action: SnackBarAction(
+            label: '기록 보기',
+            onPressed: () {
+              // 기록 페이지로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ViewRecordMain(),
+                ),
+              );
+            },
+          ),),
+      );
+    } catch (e) {
+      print('레시피 저장 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레시피 저장에 실패했습니다. 다시 시도해주세요.')
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -184,7 +314,7 @@ class _ReadRecordState extends State<ReadRecord> {
                           color: theme.colorScheme.onSurface),
                     ),
                     Text(
-                      '${record.zone} 기록',
+                      '${record.zone ?? ''} 기록',
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -199,19 +329,46 @@ class _ReadRecordState extends State<ReadRecord> {
                   itemBuilder: (context, index) {
                     final rec = record.records[index];
                     return GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         // 클릭 시 레시피 페이지로 이동
-                        if(rec.unit == '레시피 보기')
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ReadRecipe(
-                              recipeId: rec.recipeId ?? '',  // contents에 레시피 ID가 저장되어 있다고 가정
-                              searchKeywords: [],      // 검색 키워드 (필요 시 전달)
-                            ),
-                          ),
-                        );
-                      },
+                        if (rec.unit == '레시피 보기') {
+                          final RecipeModel recipe = RecipeModel(
+                            id: rec.recipeId ?? '',
+                            recipeName: rec.contents ?? '',
+                            link: rec.link ?? '',
+                            mainImages: rec.images != null ? List<String>.from(
+                                rec.images) : <String>[],
+                            rating: 0.0,
+                            userID: userId,
+                            difficulty: '',
+                            serving: 0,
+                            time: 0,
+                            foods: <String>[],
+                            themes: <String>[],
+                            methods: <String>[],
+                            steps: <Map<String, String>>[],
+                            date: DateTime.now(),
+                          );
+                          final Map<String, dynamic> scrapedData = await loadScrapedData(recipe.id, link: recipe.link);
+                          bool initialScraped = scrapedData['isScraped'] ?? false;
+
+                          if ((rec.link ?? '').isNotEmpty) {
+                            _openRecipeLink(
+                                rec.link ?? '', rec.contents, recipe, initialScraped);
+                          } else {
+                            // 링크가 없으면 기존 ReadRecipe 페이지로 이동
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ReadRecipe(
+                                      recipeId: recipe.id,
+                                      searchKeywords: [],
+                                    ),
+                              ),
+                            );
+                          }
+                        }},
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -224,6 +381,7 @@ class _ReadRecordState extends State<ReadRecord> {
                                   style: TextStyle(
                                       fontSize: 16,
                                       color: theme.colorScheme.onSurface),
+                                    overflow: TextOverflow.ellipsis
                                 ),
                                 Text(
                                   ' | ',
@@ -231,13 +389,16 @@ class _ReadRecordState extends State<ReadRecord> {
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.onSurface),
+                                    overflow: TextOverflow.ellipsis
                                 ),
-                                Text(
-                                  rec.contents ?? 'No description',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: theme.colorScheme.onSurface),
-                                  overflow: TextOverflow.ellipsis,
+                                Expanded(
+                                  child: Text(
+                                    rec.contents ?? 'No description',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        color: theme.colorScheme.onSurface),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),

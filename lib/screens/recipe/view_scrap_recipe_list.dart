@@ -6,6 +6,7 @@ import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:food_for_later_new/screens/recipe/recipe_webview_page.dart';
 import 'package:food_for_later_new/screens/records/view_record_main.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
 import 'package:html/parser.dart';
@@ -266,48 +267,17 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     return null; // 오류 발생 시 null 반환
   }
 
-  void _openRecipeLink(String link, String title, int index) async {
-    final Map<String, dynamic> recipeEntry = recipeList[index];
-    final String docId = recipeEntry['id'];
-    final RecipeModel recipe = recipeEntry['recipe']; // 🔹 RecipeModel 가져오기
+  void _openRecipeLink(String link, String title, RecipeModel recipe, bool initialScraped) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      visualDensity: const VisualDensity(horizontal: -4),
-                      icon: Icon(
-                          isScraped ? Icons.bookmark : Icons.bookmark_border,
-                          size: 26), // 스크랩 아이콘 크기 조정
-                      onPressed: () => _toggleScraped(recipe.id, recipe.link),
-                    ),
-                    IconButton(
-                      visualDensity: const VisualDensity(horizontal: -4),
-                      icon:
-                          Icon(Icons.calendar_today, size: 25), // 스크랩 아이콘 크기 조정
-                      onPressed: () => _saveRecipeForTomorrow(),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          body: WebViewWidget(
-            controller: WebViewController()
-              ..setJavaScriptMode(JavaScriptMode.unrestricted)
-              ..loadRequest(Uri.parse(link)),
-          ),
+        builder: (context) => RecipeWebViewPage(
+          link: link,
+          title: title,
+          recipe: recipe,
+          initialScraped: initialScraped,
+          onToggleScraped: toggleScraped,         // 기존의 toggleScraped 함수 사용
+          onSaveRecipeForTomorrow: _saveRecipeForTomorrow, // 기존의 _saveRecipeForTomorrow 함수 사용
         ),
       ),
     );
@@ -316,10 +286,13 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   DateTime getTomorrowDate() {
     return DateTime.now().add(Duration(days: 1));
   }
-  void _saveRecipeForTomorrow() async {
+  void _saveRecipeForTomorrow(RecipeModel recipe) async {
     try {
-      // 레시피 데이터를 불러옵니다.
-      var recipeData = await fetchRecipeData(recipeId);
+      // 기존의 fetchRecipeData 대신 recipe 객체의 데이터를 사용합니다.
+      var recipeData = {
+        'recipeName': recipe.recipeName,
+        'mainImages': recipe.mainImages,
+      };
 
       // 내일 날짜로 저장
       DateTime tomorrow = getTomorrowDate().toUtc();
@@ -330,10 +303,9 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
           'unit': '레시피 보기',  // 고정값 혹은 다른 값으로 대체 가능
           'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
           'images': recipeData['mainImages'] ?? [], // 이미지 배열
-          'recipeId': recipeId,
+          'link': recipe.link
         }
       ];
-
       // 저장할 데이터 구조 정의
       Map<String, dynamic> recordData = {
         'id': Uuid().v4(),  // 고유 ID 생성
@@ -371,19 +343,17 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       );
     }
   }
-  void _toggleScraped(String recipeId, String? link) async {
+  Future<bool> toggleScraped(String recipeId, String? link) async {
     bool newState = await ScrapedRecipeService.toggleScraped(
       context,
       recipeId,
-      (bool state) {
-        setState(() {
-          isScraped = state;
-        });
-      },
       link,
     );
+    return newState; // 또는 비동기 작업 결과로 반환
   }
-
+  String _generateScrapedKey(String recipeId, String? link) {
+    return link != null && link.isNotEmpty ? 'link|$link' : 'id|$recipeId';
+  }
   Future<void> _createDefaultGroup() async {
     try {
       // Firestore에 기본 냉장고 추가
@@ -695,7 +665,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                     child: GestureDetector(
                       onTap: () {
                         if (recipe.link != null && recipe.link!.isNotEmpty) {
-                          _openRecipeLink(recipe.link ?? '', recipeName, index);
+                          _openRecipeLink(recipe.link ?? '', recipeName, recipe, isScraped);
                         } else {
                           Navigator.push(
                               context,
@@ -775,8 +745,14 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
                                           size: 20,
                                           color: Colors.black,
                                         ), // 스크랩 아이콘 크기 조정
-                                        onPressed: () => _toggleScraped(
-                                            recipe.id, recipe.link),
+                                        onPressed: () async {
+                                          bool newState = await toggleScraped(recipe.id, recipe.link);
+
+                                          // 🔹 UI 업데이트 (정확한 키로 상태 반영)
+                                          setState(() {
+                                            scrapedStatus[_generateScrapedKey(recipe.id, recipe.link)] = newState;
+                                          });
+                                        },
                                       ),
                                     ],
                                   ), // 간격 추가

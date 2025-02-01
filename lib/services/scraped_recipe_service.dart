@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class ScrapedRecipeService {
   static Future<bool> toggleScraped(
-      BuildContext context, String recipeId, Function updateState, String? link) async {
+      BuildContext context, String recipeId, String? link) async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null || user.email == 'guest@foodforlater.com') {
@@ -61,8 +61,6 @@ class ScrapedRecipeService {
         isScraped = false;
       }
 
-      // 🔹 UI 업데이트 (상태 변경 함수 호출)
-      updateState(isScraped);
 
       // 🔹 피드백 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
@@ -71,6 +69,7 @@ class ScrapedRecipeService {
         ),
       );
 
+      print('최종 스크랩 상태: $isScraped');
       return isScraped;
     } catch (e) {
       print('Error scraping recipe: $e');

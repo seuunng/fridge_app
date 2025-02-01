@@ -506,11 +506,6 @@ class _ReadRecipeState extends State<ReadRecipe> {
     bool newState = await ScrapedRecipeService.toggleScraped(
       context,
       recipeId,
-          (bool state) {
-        setState(() {
-          isScraped = state;
-        });
-      },
       link
     );
   }
@@ -576,7 +571,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
           'unit': '레시피 보기',  // 고정값 혹은 다른 값으로 대체 가능
           'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
           'images': recipeData['mainImages'] ?? [], // 이미지 배열
-          'recipeId': widget.recipeId,
+          'link': recipeData['link']
         }
       ];
 
