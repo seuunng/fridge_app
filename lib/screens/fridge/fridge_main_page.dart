@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
+import 'package:food_for_later_new/components/floating_button_with_arrow.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/main.dart';
 import 'package:food_for_later_new/models/fridge_category_model.dart';
@@ -11,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_item_details.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FridgeMainPage extends StatefulWidget {
@@ -94,6 +96,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
+
   Future<void> _reloadFridgeData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -104,6 +107,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
       await _loadFridgeCategoriesFromFirestore(selected_fridgeId);
     }
   }
+
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -126,7 +130,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
     await _loadFridgeNameFromFirestore();
     await _loadSelectedFridge(); // 🔹 `selected_fridgeId`를 가져온 후 실행
     if (selected_fridgeId != null) {
-      await _loadFridgeCategoriesFromFirestore(selected_fridgeId!); // ✅ 냉장고 ID가 설정된 후 아이템 불러오기
+      await _loadFridgeCategoriesFromFirestore(
+          selected_fridgeId!); // ✅ 냉장고 ID가 설정된 후 아이템 불러오기
     }
   }
 
@@ -204,22 +209,22 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
           if (!mounted) return;
 
-            int shelfLife = foodsData?['shelfLife'] ?? 365;
+          int shelfLife = foodsData?['shelfLife'] ?? 365;
 
-            int index = storageSections.indexWhere(
-                (section) => section.categoryName == fridgeCategoryId);
+          int index = storageSections.indexWhere(
+              (section) => section.categoryName == fridgeCategoryId);
 
-            if (index >= 0) {
-              setState(() {
-                itemLists[index].add({
-                  'itemName': itemName,
-                  'shelfLife': shelfLife,
-                  'registrationDate': registrationDate,
-                });
+          if (index >= 0) {
+            setState(() {
+              itemLists[index].add({
+                'itemName': itemName,
+                'shelfLife': shelfLife,
+                'registrationDate': registrationDate,
               });
-            } else {
-              print("Category not found: $fridgeCategoryId");
-            }
+            });
+          } else {
+            print("Category not found: $fridgeCategoryId");
+          }
         } catch (e) {
           print('Error fetching or processing food data for $itemName: $e');
         }
@@ -232,7 +237,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     }
   }
 
-  Future<void>  _loadSelectedFridge() async {
+  Future<void> _loadSelectedFridge() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
@@ -350,14 +355,14 @@ class FridgeMainPageState extends State<FridgeMainPage>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('삭제 확인',
-            style: TextStyle(
-                color: theme.colorScheme.onSurface
-            ),),
-          content: Text('선택된 아이템들을 삭제하시겠습니까?',
-            style: TextStyle(
-                color: theme.colorScheme.onSurface
-            ),),
+          title: Text(
+            '삭제 확인',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
+          content: Text(
+            '선택된 아이템들을 삭제하시겠습니까?',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
           actions: [
             TextButton(
               child: Text('취소'),
@@ -504,29 +509,49 @@ class FridgeMainPageState extends State<FridgeMainPage>
           ),
 
           floatingActionButton: !isDeletedMode
-              ? FloatingAddButton(
-                  heroTag: 'fridge_add_button',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AddItem(
-                          pageTitle: '냉장고에 추가',
-                          addButton: '냉장고에 추가',
-                          sourcePage: 'fridge',
-                          onItemAdded: () {
-                            _loadFridgeCategoriesFromFirestore(
-                                selected_fridgeId);
-                          },
-                        ),
-                      ),
-                    );
-                    setState(() {
-                      _loadFridgeCategoriesFromFirestore(
-                          selected_fridgeId);
-                    });
-                  },
-                )
+              ?(itemLists.every((items) => items.isEmpty)
+              ? FloatingButtonWithArrow(
+            heroTag: 'fridge_arrow_button',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddItem(
+                    pageTitle: '냉장고에 추가',
+                    addButton: '냉장고에 추가',
+                    sourcePage: 'fridge',
+                    onItemAdded: () {
+                      _loadFridgeCategoriesFromFirestore(selected_fridgeId);
+                    },
+                  ),
+                ),
+              );
+              setState(() {
+                _loadFridgeCategoriesFromFirestore(selected_fridgeId);
+              });
+            },
+          )
+              : FloatingAddButton(
+            heroTag: 'fridge_add_button',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddItem(
+                    pageTitle: '냉장고에 추가',
+                    addButton: '냉장고에 추가',
+                    sourcePage: 'fridge',
+                    onItemAdded: () {
+                      _loadFridgeCategoriesFromFirestore(selected_fridgeId);
+                    },
+                  ),
+                ),
+              );
+              setState(() {
+                _loadFridgeCategoriesFromFirestore(selected_fridgeId);
+              });
+            },
+          ))
               : null,
 
           bottomNavigationBar: Column(
@@ -534,23 +559,31 @@ class FridgeMainPageState extends State<FridgeMainPage>
             mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
             children: [
               if (isDeletedMode)
-                  Container(
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: NavbarButton(
-                          buttonTitle: '삭제 하기',
-                          onPressed: _confirmDeleteItems,
-                        ),
-                      ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: NavbarButton(
+                      buttonTitle: '삭제 하기',
+                      onPressed: _confirmDeleteItems,
                     ),
-              if (userRole != 'admin' && userRole != 'paid_user') BannerAdWidget(),
+                  ),
+                ),
+              if (userRole != 'admin' && userRole != 'paid_user')
+                BannerAdWidget(),
             ],
           ),
         ));
   }
 
   Widget _buildSections() {
+    // 모든 섹션의 아이템이 비어 있는지 확인하는 조건
+    bool allSectionsEmpty = itemLists.every((items) => items.isEmpty);
+
+    if (allSectionsEmpty) {
+      return _buildAnimatedEmptyFridge(); // 모든 섹션이 비어 있으면 애니메이션 표시
+    }
+
     return Column(
       children: List.generate(storageSections.length, (index) {
         return Column(
@@ -616,9 +649,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: Center(
-                  child: Text(
-                    ""
-                  ),
+                  child: Text(""),
                 ),
               );
             } else {
@@ -630,7 +661,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
                   items[index]['registrationDate'] ?? DateTime.now();
               bool isSelected = selectedItems.contains(currentItem);
               String formattedDate =
-              DateFormat('yyyy-MM-dd').format(registrationDate);
+                  DateFormat('yyyy-MM-dd').format(registrationDate);
 
               return AnimatedBuilder(
                 animation: _animation,
@@ -719,7 +750,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
                         final foodsSnapshot = await FirebaseFirestore.instance
                             .collection('foods')
                             .where('foodsName',
-                            isEqualTo: currentItem) // 현재 아이템과 일치하는지 확인
+                                isEqualTo: currentItem) // 현재 아이템과 일치하는지 확인
                             .get();
 
                         Map<String, dynamic>? foodData;
@@ -748,29 +779,27 @@ class FridgeMainPageState extends State<FridgeMainPage>
                           String shoppingListCategory =
                               foodData['shoppingListCategory'] ?? '기타';
                           int shelfLife = foodData['shelfLife'] ?? 0;
-                          DateTime registrationDate =
-                              items[index]['registrationDate'] ??
-                                  DateTime.now();
+                          DateTime registrationDate = items[index]
+                                  ['registrationDate'] ??
+                              DateTime.now();
 
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  FridgeItemDetails(
-                                    foodsName: currentItem,
-                                    // 아이템 이름
-                                    foodsCategory: defaultCategory,
-                                    // 동적 카테고리
-                                    fridgeCategory: defaultFridgeCategory,
-                                    // 냉장고 섹션
-                                    shoppingListCategory:
-                                    shoppingListCategory,
-                                    // 쇼핑 리스트 카테고리
-                                    // expirationDays: expirationDays, // 유통기한
-                                    consumptionDays: shelfLife,
-                                    // 소비기한
-                                    registrationDate: formattedDate,
-                                  ),
+                              builder: (context) => FridgeItemDetails(
+                                foodsName: currentItem,
+                                // 아이템 이름
+                                foodsCategory: defaultCategory,
+                                // 동적 카테고리
+                                fridgeCategory: defaultFridgeCategory,
+                                // 냉장고 섹션
+                                shoppingListCategory: shoppingListCategory,
+                                // 쇼핑 리스트 카테고리
+                                // expirationDays: expirationDays, // 유통기한
+                                consumptionDays: shelfLife,
+                                // 소비기한
+                                registrationDate: formattedDate,
+                              ),
                             ),
                           );
                         } else {
@@ -884,203 +913,55 @@ class FridgeMainPageState extends State<FridgeMainPage>
     );
   }
 
-  Widget _buildItem(String itemName, int shelfLife, DateTime registrationDate) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _getBackgroundColor(shelfLife, registrationDate),
-        borderRadius: BorderRadius.circular(8.0),
-      ),
+  // Widget _buildItem(String itemName, int shelfLife, DateTime registrationDate) {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: _getBackgroundColor(shelfLife, registrationDate),
+  //       borderRadius: BorderRadius.circular(8.0),
+  //     ),
+  //     child: Center(
+  //       child: Text(
+  //         itemName,
+  //         style: TextStyle(color: Colors.white),
+  //       ),
+  //     ),
+  //   );
+  // }
+  Widget _buildAnimatedEmptyFridge() {
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.6,
       child: Center(
-        child: Text(
-          itemName,
-          style: TextStyle(color: Colors.white),
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Column 크기를 자식 크기에 맞춤
+          mainAxisAlignment: MainAxisAlignment.center, // 세로 중앙 정렬
+          crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙 정렬
+          children: [
+            Image.asset(
+              'assets/favicon.png',
+              width: 150,
+              height: 150,
+            ),
+            SizedBox(height: 10),
+            Text(
+              '냉장고가 비어 있습니다.',
+              style: TextStyle(
+                fontSize: 18,
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              '지금 물건을 추가해 보세요!',
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _buildGrid(int sectionIndex, DateTime registrationDate) {
-    if (sectionIndex >= itemLists.length) {
-      return Container(); // 인덱스가 범위를 벗어나면 빈 컨테이너 반환
-    }
-
-    List<Map<String, dynamic>> items = itemLists[sectionIndex] ?? [];
-    return DragTarget<String>(
-      onAccept: (data) async {
-        setState(() {
-          if (!itemLists[sectionIndex].any((map) => map.keys.first == data)) {
-            itemLists[sectionIndex].add({data: 7});
-          }
-
-          for (var section in itemLists) {
-            section.removeWhere((item) => item.keys.first == data);
-          }
-        });
-
-        String newFridgeCategoryId = storageSections[sectionIndex].categoryName;
-
-        try {
-          QuerySnapshot snapshot = await FirebaseFirestore.instance
-              .collection('fridge_items')
-              .where('items', isEqualTo: data)
-              .get();
-
-          if (snapshot.docs.isNotEmpty) {
-            String docId = snapshot.docs.first.id;
-
-            await FirebaseFirestore.instance
-                .collection('fridge_items')
-                .doc(docId)
-                .update({'fridgeCategoryId': newFridgeCategoryId});
-          } else {
-            print("Item not found in fridge_items collection: $data");
-          }
-        } catch (e) {
-          print("Error updating fridgeCategoryId: $e");
-        }
-      },
-      builder: (context, candidateData, rejectedData) {
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.all(8.0),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 5, // 한 줄에 5칸
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
-          ),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            String currentItem = items[index].keys.first ?? 'Unknown Item';
-            int expirationDays = items[index][currentItem]!;
-            bool isSelected = selectedItems.contains(currentItem);
-
-            return Draggable<String>(
-              data: currentItem,
-              feedback: Material(
-                color: Colors.transparent,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  padding: EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.blueGrey[200],
-                    borderRadius: BorderRadius.circular(8.0),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 10,
-                        color: Colors.black26,
-                      )
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      currentItem,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-              childWhenDragging: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Center(
-                  child: Text(
-                    currentItem,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-              child: GestureDetector(
-                onLongPress: () {
-                  setState(() {
-                    // 삭제 모드 전환 및 해제
-                    if (isDeletedMode) {
-                      isDeletedMode = false; // 삭제 모드 해제
-                      selectedItems.clear(); // 선택된 아이템 목록 초기화
-                    } else {
-                      isDeletedMode = true; // 삭제 모드로 전환
-                      selectedItems.add(currentItem);
-                    }
-                  });
-                },
-                onTap: () {
-                  if (isDeletedMode) {
-                    setState(() {
-                      if (selectedItems.contains(currentItem)) {
-                        selectedItems.remove(currentItem); // 선택 해제
-                      } else {
-                        selectedItems.add(currentItem); // 선택
-                      }
-                    });
-                  }
-                },
-                onDoubleTap: () async {
-                  try {
-                    final foodsSnapshot = await FirebaseFirestore.instance
-                        .collection('foods')
-                        .where('foodsName',
-                            isEqualTo: currentItem) // 현재 아이템과 일치하는지 확인
-                        .get();
-
-                    if (foodsSnapshot.docs.isNotEmpty) {
-                      final foodsData = foodsSnapshot.docs.first.data();
-
-                      String defaultCategory =
-                          foodsData['defaultCategory'] ?? '기타';
-                      String defaultFridgeCategory =
-                          foodsData['defaultFridgeCategory'] ?? '기타';
-                      String shoppingListCategory =
-                          foodsData['shoppingListCategory'] ?? '기타';
-                      // int expirationDays = foodsData['expirationDate'] ?? 0;
-                      int shelfLife = foodsData['shelfLife'] ?? 0;
-                      DateTime registrationDate =
-                          items[index]['registrationDate'] ?? DateTime.now();
-                      String formattedDate =
-                          DateFormat('yyyy-MM-dd').format(registrationDate);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FridgeItemDetails(
-                            foodsName: currentItem, // 아이템 이름
-                            foodsCategory: defaultCategory, // 동적 카테고리
-                            fridgeCategory: defaultFridgeCategory, // 냉장고 섹션
-                            shoppingListCategory:
-                                shoppingListCategory, // 쇼핑 리스트 카테고리
-                            // expirationDays: expirationDays, // 유통기한
-                            consumptionDays: shelfLife, // 소비기한
-                            registrationDate: formattedDate,
-                          ),
-                        ),
-                      );
-                    } else {
-                      print("Item not found in foods collection: $currentItem");
-                    }
-                  } catch (e) {
-                    print('Error fetching food details: $e');
-                  }
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDeletedMode && isSelected
-                        ? Colors.orange // 삭제 모드에서 선택된 항목은 주황색
-                        : _getBackgroundColor(expirationDays, registrationDate),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Center(
-                    child: Text(
-                      currentItem,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }

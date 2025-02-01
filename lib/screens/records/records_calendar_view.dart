@@ -497,15 +497,18 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                                   children: [
                                     _buildImageWidget(rec.images),
                                     SizedBox(width: 15),
-                                    Text(
-                                      rec.contents ?? '내용이 없습니다',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondary,
+                                    Expanded(
+                                      child: Text(
+                                        rec.contents ?? '내용이 없습니다',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSecondary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,  // 한 줄로 제한
                                       ),
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),

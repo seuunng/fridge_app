@@ -60,6 +60,7 @@ dependencies:
   path_provider: ^2.0.11  # 파일을 로컬 디바이스에 저장하기 위한 경로 제공
   shared_preferences: ^2.1.1  # 로컬 저장소 (테마, 설정 등)
   provider: ^6.0.0
+  lottie: ^2.1.0
   #  permission_handler: ^10.2.0  # 위치, 카메라 등의 접근 권한 관리
 
   # UI 관련 패키지
