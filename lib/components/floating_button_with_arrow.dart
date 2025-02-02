@@ -25,7 +25,7 @@ class _FloatingButtonWithArrowState extends State<FloatingButtonWithArrow>
     )..repeat(reverse: true); // 애니메이션 반복
 
     _arrowAnimation = Tween<Offset>(
-      begin: Offset(0, 0.3), // 화살표 아래에서 시작
+      begin: Offset(0, 0.5), // 화살표 아래에서 시작
       end: Offset(0, 0),     // 원래 위치로 올라옴
     ).animate(CurvedAnimation(
       parent: _controller,
@@ -47,18 +47,17 @@ class _FloatingButtonWithArrowState extends State<FloatingButtonWithArrow>
       children: [
         // 화살표 애니메이션
         Positioned(
-          right: 5,
+          right: 0,
           bottom: 80, // 플로팅 버튼 바로 위에 위치
           child: SlideTransition(
             position: _arrowAnimation,
             child: Icon(
-              Icons.arrow_downward,
+              Icons.keyboard_double_arrow_down,
               color: Colors.blue,
-              size: 60,
+              size: 90,
             ),
           ),
         ),
-
         // 플로팅 액션 버튼
         FloatingAddButton(
           heroTag: widget.heroTag,

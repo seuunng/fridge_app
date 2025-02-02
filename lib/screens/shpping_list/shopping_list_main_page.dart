@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
+import 'package:food_for_later_new/components/floating_button_with_arrow.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/main.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
@@ -599,7 +600,30 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           // 물건 추가 버튼
           floatingActionButton:
               !showCheckBoxes || !shouldShowMoveToFridgeButton()
-                  ? FloatingAddButton(
+                  ? itemLists.isEmpty || itemLists.values.every((items) => items.isEmpty)
+                  ? FloatingButtonWithArrow(
+                heroTag: 'shopping_add_button',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddItem(
+                        pageTitle: '장보기 목록에 추가',
+                        addButton: '장보기 목록에 추가',
+                        sourcePage: 'shoppingList',
+                          onItemAdded: () {},
+                      ),
+                    ),
+                  );
+                  setState(() {
+                    itemLists.clear(); // 중복 방지를 위해 아이템 리스트 초기화
+                    checkedItems.clear(); // 체크박스 상태 초기화
+                    strikeThroughItems.clear(); // 취소선 상태 초기화
+                    _loadItemsFromFirestore(userId);
+                  });
+                },
+              ):
+              FloatingAddButton(
                       heroTag: 'shopping_add_button',
                       onPressed: () async {
                         await Navigator.push(
@@ -661,6 +685,12 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   }
 
   Widget _buildSections() {
+    bool allSectionsEmpty = itemLists.isEmpty ||
+        itemLists.values.every((items) => items.isEmpty);
+
+    if (allSectionsEmpty) {
+      return _buildAnimatedEmptyShoppingList(); // 모든 섹션이 비어 있으면 애니메이션 표시
+    }
     return Column(
       children: itemLists.keys
           .where((category) => itemLists[category] != null && itemLists[category]!.isNotEmpty) // 아이템이 비어있지 않은 섹션만 렌더링
@@ -816,4 +846,42 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       );
     });
   }
+  Widget _buildAnimatedEmptyShoppingList() {
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.6,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Column 크기를 자식 크기에 맞춤
+          mainAxisAlignment: MainAxisAlignment.center, // 세로 중앙 정렬
+          crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙 정렬
+          children: [
+            Image.asset(
+              'assets/shopping_cart.png',
+              width: 150,
+              height: 150,
+            ),
+            SizedBox(height: 10),
+            Text(
+              '장바구니가 비어 있습니다.',
+              style: TextStyle(
+                fontSize: 18,
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              '지금 물건을 추가해 보세요!',
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 }
