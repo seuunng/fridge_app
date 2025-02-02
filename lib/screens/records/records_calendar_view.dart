@@ -32,6 +32,7 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
     _loadUserRole();
     _loadSearchSettingsFromLocal(); // SharedPreferences에서 검색 조건 불러오기
   }
+
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -47,6 +48,7 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
       print('Error loading user role: $e');
     }
   }
+
   Future<void> _loadSearchSettingsFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -61,6 +63,27 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
       selectedCategories = prefs.getStringList('selectedCategories') ?? ['모두'];
       isLoading = false; // 로딩 완료
     });
+  }
+
+  Future<void> _updateRecordDate(RecordModel record, DateTime newDate) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('record')
+          .doc(record.id)
+          .update({'date': Timestamp.fromDate(newDate)});
+
+      // Firestore 업데이트 후 UI 업데이트
+      setState(() {
+        recordsList = recordsList.map((rec) {
+          if (rec.id == record.id) {
+            rec.date = newDate; // UI에도 새로운 날짜로 반영
+          }
+          return rec;
+        }).toList();
+      });
+    } catch (e) {
+      print('날짜 업데이트 실패: $e');
+    }
   }
 
   List<RecordModel>? getRecordsForDate(DateTime date) {
@@ -129,173 +152,184 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
     }
 
     return Scaffold(
-        body: StreamBuilder<QuerySnapshot>(
-            stream: query.snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Center(
-                  child: Text('데이터를 가져오는 중 오류가 발생했습니다.'),
-                );
-              }
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
-              }
-              // if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              //   return Center(
-              //     child: Text('데이터가 없습니다.'),
-              //   );
-              // }
-              // Firestore 데이터를 recordsList로 변환
-              recordsList = _mapFirestoreToRecordsList(snapshot.data!);
+      body: StreamBuilder<QuerySnapshot>(
+          stream: query.snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Text('데이터를 가져오는 중 오류가 발생했습니다.'),
+              );
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+            // if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            //   return Center(
+            //     child: Text('데이터가 없습니다.'),
+            //   );
+            // }
+            // Firestore 데이터를 recordsList로 변환
+            recordsList = _mapFirestoreToRecordsList(snapshot.data!);
 
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // 월과 년도 표시
-                    Padding(
-                      padding: const EdgeInsets.all(1.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.arrow_back_ios_new,
-                              size: 20,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _focusedDate = DateTime(_focusedDate.year,
-                                    _focusedDate.month - 1, 1);
-                              });
-                            },
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  // 월과 년도 표시
+                  Padding(
+                    padding: const EdgeInsets.all(1.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.arrow_back_ios_new,
+                            size: 20,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          Text(
-                            DateFormat.yMMM().format(_focusedDate),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.onSurface,
-                            ),
+                          onPressed: () {
+                            setState(() {
+                              _focusedDate = DateTime(
+                                  _focusedDate.year, _focusedDate.month - 1, 1);
+                            });
+                          },
+                        ),
+                        Text(
+                          DateFormat.yMMM().format(_focusedDate),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.arrow_forward_ios,
-                              size: 20,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _focusedDate = DateTime(_focusedDate.year,
-                                    _focusedDate.month + 1, 1);
-                              });
-                            },
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 20,
+                            color: theme.colorScheme.onSurface,
                           ),
-                        ],
-                      ),
+                          onPressed: () {
+                            setState(() {
+                              _focusedDate = DateTime(
+                                  _focusedDate.year, _focusedDate.month + 1, 1);
+                            });
+                          },
+                        ),
+                      ],
                     ),
-                    // 달력 헤더 (요일 표시)
-                    GridView.count(
-                      crossAxisCount: 7,
-                      childAspectRatio: 2, // 7열로 설정 (일~토)
-                      shrinkWrap: true, // GridView 높이 조정
-                      children: ["일", "월", "화", "수", "목", "금", "토"]
-                          .map((day) => Center(
-                                child: Text(
-                                  day,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onSurface,
-                                  ),
+                  ),
+                  // 달력 헤더 (요일 표시)
+                  GridView.count(
+                    crossAxisCount: 7,
+                    childAspectRatio: 2, // 7열로 설정 (일~토)
+                    shrinkWrap: true, // GridView 높이 조정
+                    children: ["일", "월", "화", "수", "목", "금", "토"]
+                        .map((day) => Center(
+                              child: Text(
+                                day,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
                                 ),
-                              ))
-                          .toList(),
-                    ),
-                    // 날짜 그리드
-                    GridView.builder(
-                      itemCount: _daysInMonth(_focusedDate) +
-                          _firstDayOffset(_focusedDate),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7, // 7열로 설정
-                          mainAxisSpacing: 4.0,
-                          crossAxisSpacing: 1.0,
-                          childAspectRatio: 0.6),
-                      shrinkWrap: true,
-                      // GridView를 스크롤이 아닌 적절한 크기로 축소
-                      // physics: NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        if (index < _firstDayOffset(_focusedDate)) {
-                          return Container(); // 빈 컨테이너로 처리
-                        } else {
-                          // 실제 날짜를 렌더링
-                          final day = index +
-                              1 -
-                              _firstDayOffset(
-                                  _focusedDate); // 1일이 시작하는 요일만큼 오프셋 적용
-                          final date = DateTime(
-                              _focusedDate.year, _focusedDate.month, day);
-                          bool isSelected = date == _selectedDate;
-                          bool isToday = date.year == DateTime.now().year &&
-                              date.month == DateTime.now().month &&
-                              date.day == DateTime.now().day;
-                          // 해당 날짜에 기록이 있는지 확인
-                          List<RecordModel>? recordsForDate =
-                              getRecordsForDate(date);
-                          Color? backgroundColor;
-                          String? contents;
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                  // 날짜 그리드
+                  GridView.builder(
+                    itemCount: _daysInMonth(_focusedDate) +
+                        _firstDayOffset(_focusedDate),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7, // 7열로 설정
+                        mainAxisSpacing: 4.0,
+                        crossAxisSpacing: 1.0,
+                        childAspectRatio: 0.6),
+                    shrinkWrap: true,
+                    // GridView를 스크롤이 아닌 적절한 크기로 축소
+                    // physics: NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      if (index < _firstDayOffset(_focusedDate)) {
+                        return Container(); // 빈 컨테이너로 처리
+                      } else {
+                        // 실제 날짜를 렌더링
+                        final day = index +
+                            1 -
+                            _firstDayOffset(
+                                _focusedDate); // 1일이 시작하는 요일만큼 오프셋 적용
+                        final date = DateTime(
+                            _focusedDate.year, _focusedDate.month, day);
+                        bool isSelected = date == _selectedDate;
+                        bool isToday = date.year == DateTime.now().year &&
+                            date.month == DateTime.now().month &&
+                            date.day == DateTime.now().day;
+                        // 해당 날짜에 기록이 있는지 확인
+                        List<RecordModel>? recordsForDate =
+                            getRecordsForDate(date);
+                        Color? backgroundColor;
+                        String? contents;
 
-                          if (recordsForDate != null &&
-                              recordsForDate.isNotEmpty) {
-                            // 기록이 있을 경우 첫 번째 기록의 색상과 타이틀을 사용
-                            backgroundColor = Color(int.parse(recordsForDate
-                                .first.color
-                                .replaceFirst('#', '0xff')));
-                            if (recordsForDate.isNotEmpty &&
-                                recordsForDate.first.records.isNotEmpty) {
-                              contents =
-                                  recordsForDate.first.records.first.contents ??
-                                      '내용이 없습니다';
-                            } else {
-                              contents = '내용이 없습니다';
-                            }
+                        if (recordsForDate != null &&
+                            recordsForDate.isNotEmpty) {
+                          // 기록이 있을 경우 첫 번째 기록의 색상과 타이틀을 사용
+                          backgroundColor = Color(int.parse(recordsForDate
+                              .first.color
+                              .replaceFirst('#', '0xff')));
+                          if (recordsForDate.isNotEmpty &&
+                              recordsForDate.first.records.isNotEmpty) {
+                            contents =
+                                recordsForDate.first.records.first.contents ??
+                                    '내용이 없습니다';
+                          } else {
+                            contents = '내용이 없습니다';
                           }
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedDate = date;
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  color:  isToday
-                                          ? theme.colorScheme.secondary
-                                          : Colors.transparent,
+                        }
+                        return DragTarget<RecordModel>(
+                          onWillAccept: (data) => true,
+                          onAccept: (record) async {
+                            await _updateRecordDate(record, date);
+                            setState(() {
+                              _selectedDate = date;
+                            });
+                          },
+                          builder: (context, candidateData, rejectedData) {
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedDate = date;
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isToday
+                                      ? Theme.of(context).colorScheme.secondary
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(8.0),
-                                  // borderColor: isSelected
-                                  //     ? theme.colorScheme.secondary
-                                  //     : Colors.transparent,
                                   border: isSelected
                                       ? Border.all(
-                                          color: theme.colorScheme.secondary,
-                                          width: 2.0)
-                                      : null),
-                              child: Align(
-                                alignment: Alignment.topLeft,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
+                                          width: 2.0,
+                                        )
+                                      : null,
+                                ),
                                 child: Padding(
-                                  padding: const EdgeInsets.all(1.0),
+                                  padding: const EdgeInsets.all(4.0),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      // 날짜
                                       Text(
                                         '$day',
                                         style: TextStyle(
                                           color: isToday
-                                                  ? Theme.of(context).colorScheme.onSecondary
-                                                  : theme.colorScheme.onSurface,
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .onSecondary
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
                                           fontWeight: isSelected
                                               ? FontWeight.bold
                                               : FontWeight.normal,
@@ -304,108 +338,176 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                                       if (recordsForDate != null &&
                                           recordsForDate.isNotEmpty)
                                         Flexible(
-                                          child: LimitedBox(
-                                            maxHeight: 100.0,
-                                            child: Scrollbar(
-                                              child: ListView.builder(
-                                                  shrinkWrap: true,
-                                                  physics:
-                                                      ClampingScrollPhysics(),
-                                                  itemCount:
-                                                      recordsForDate.length,
-                                                  itemBuilder:
-                                                      (context, recordIndex) {
-                                                    final record =
-                                                        recordsForDate[
-                                                            recordIndex];
-                                                    final recordColor = Color(
-                                                      int.parse(record.color
-                                                          .replaceFirst(
-                                                              '#', '0xff')),
-                                                    );
-                                                    return Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: record.records
-                                                          .map<Widget>((rec) {
-                                                        return GestureDetector(
-                                                          onTap: () {
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder:
-                                                                    (context) =>
-                                                                        ReadRecord(
-                                                                  recordId:
-                                                                      record
-                                                                          .id!,
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
-                                                          child: Container(
-                                                            // margin: EdgeInsets
-                                                            //     .symmetric(
-                                                            //         vertical:
-                                                            //             2.0),
-                                                            padding: EdgeInsets
-                                                                .symmetric(
-                                                              horizontal: 4.0,
-                                                            ),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color:
-                                                                  recordColor, // 개별 record의 색상 적용
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          4.0),
-                                                            ),
-                                                            child: Row(
-                                                              children: [
-                                                                Expanded(
-                                                                  child: Text(
-                                                                    rec.contents ??
-                                                                        '내용이 없습니다',
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            8,
-                                                                        color: theme
-                                                                            .colorScheme
-                                                                            .onSecondary),
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                    maxLines: 1,
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }).toList(),
-                                                    );
-                                                  }),
-                                            ),
+                                          child: ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: recordsForDate.length,
+                                            itemBuilder:
+                                                (context, recordIndex) {
+                                              final record =
+                                                  recordsForDate[recordIndex];
+                                              return Draggable<RecordModel>(
+                                                data: record,
+                                                feedback: _buildRecordWidget(
+                                                    record,
+                                                    isDragging: true),
+                                                childWhenDragging: Container(),
+                                                child:
+                                                    _buildRecordWidget(record),
+                                              );
+                                            },
                                           ),
                                         ),
                                     ],
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    _buildWeekContainer(),
-                  ],
-                ),
-              );
-            }),
-      bottomNavigationBar:
-      Column(
+                            );
+                          },
+                        );
+                        //   GestureDetector(
+                        //   onTap: () {
+                        //     setState(() {
+                        //       _selectedDate = date;
+                        //     });
+                        //   },
+                        //   child: Container(
+                        //     decoration: BoxDecoration(
+                        //         color:  isToday
+                        //                 ? theme.colorScheme.secondary
+                        //                 : Colors.transparent,
+                        //         borderRadius: BorderRadius.circular(8.0),
+                        //         // borderColor: isSelected
+                        //         //     ? theme.colorScheme.secondary
+                        //         //     : Colors.transparent,
+                        //         border: isSelected
+                        //             ? Border.all(
+                        //                 color: theme.colorScheme.secondary,
+                        //                 width: 2.0)
+                        //             : null),
+                        //     child: Align(
+                        //       alignment: Alignment.topLeft,
+                        //       child: Padding(
+                        //         padding: const EdgeInsets.all(1.0),
+                        //         child: Column(
+                        //           crossAxisAlignment:
+                        //               CrossAxisAlignment.start,
+                        //           children: [
+                        //             // 날짜
+                        //             Text(
+                        //               '$day',
+                        //               style: TextStyle(
+                        //                 color: isToday
+                        //                         ? Theme.of(context).colorScheme.onSecondary
+                        //                         : theme.colorScheme.onSurface,
+                        //                 fontWeight: isSelected
+                        //                     ? FontWeight.bold
+                        //                     : FontWeight.normal,
+                        //               ),
+                        //             ),
+                        //             if (recordsForDate != null &&
+                        //                 recordsForDate.isNotEmpty)
+                        //               Flexible(
+                        //                 child: LimitedBox(
+                        //                   maxHeight: 100.0,
+                        //                   child: Scrollbar(
+                        //                     child: ListView.builder(
+                        //                         shrinkWrap: true,
+                        //                         physics:
+                        //                             ClampingScrollPhysics(),
+                        //                         itemCount:
+                        //                             recordsForDate.length,
+                        //                         itemBuilder:
+                        //                             (context, recordIndex) {
+                        //                           final record =
+                        //                               recordsForDate[
+                        //                                   recordIndex];
+                        //                           final recordColor = Color(
+                        //                             int.parse(record.color
+                        //                                 .replaceFirst(
+                        //                                     '#', '0xff')),
+                        //                           );
+                        //                           return Column(
+                        //                             crossAxisAlignment:
+                        //                                 CrossAxisAlignment
+                        //                                     .start,
+                        //                             children: record.records
+                        //                                 .map<Widget>((rec) {
+                        //                               return GestureDetector(
+                        //                                 onTap: () {
+                        //                                   Navigator.push(
+                        //                                     context,
+                        //                                     MaterialPageRoute(
+                        //                                       builder:
+                        //                                           (context) =>
+                        //                                               ReadRecord(
+                        //                                         recordId:
+                        //                                             record
+                        //                                                 .id!,
+                        //                                       ),
+                        //                                     ),
+                        //                                   );
+                        //                                 },
+                        //                                 child: Container(
+                        //                                   // margin: EdgeInsets
+                        //                                   //     .symmetric(
+                        //                                   //         vertical:
+                        //                                   //             2.0),
+                        //                                   padding: EdgeInsets
+                        //                                       .symmetric(
+                        //                                     horizontal: 4.0,
+                        //                                   ),
+                        //                                   decoration:
+                        //                                       BoxDecoration(
+                        //                                     color:
+                        //                                         recordColor, // 개별 record의 색상 적용
+                        //                                     borderRadius:
+                        //                                         BorderRadius
+                        //                                             .circular(
+                        //                                                 4.0),
+                        //                                   ),
+                        //                                   child: Row(
+                        //                                     children: [
+                        //                                       Expanded(
+                        //                                         child: Text(
+                        //                                           rec.contents ??
+                        //                                               '내용이 없습니다',
+                        //                                           style: TextStyle(
+                        //                                               fontSize:
+                        //                                                   8,
+                        //                                               color: theme
+                        //                                                   .colorScheme
+                        //                                                   .onSecondary),
+                        //                                           overflow:
+                        //                                               TextOverflow
+                        //                                                   .ellipsis,
+                        //                                           maxLines: 1,
+                        //                                         ),
+                        //                                       ),
+                        //                                     ],
+                        //                                   ),
+                        //                                 ),
+                        //                               );
+                        //                             }).toList(),
+                        //                           );
+                        //                         }),
+                        //                   ),
+                        //                 ),
+                        //               ),
+                        //           ],
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ),
+                        // );
+                      }
+                    },
+                  ),
+                  _buildWeekContainer(),
+                ],
+              ),
+            );
+          }),
+      bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
         mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
         children: [
@@ -414,9 +516,66 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
               child: BannerAdWidget(),
             ),
         ],
-
       ),
+    );
+  }
 
+  Widget _buildDateCell(DateTime date) {
+    bool isSelected = date == _selectedDate;
+    bool isToday = date.year == DateTime.now().year &&
+        date.month == DateTime.now().month &&
+        date.day == DateTime.now().day;
+    List<RecordModel>? recordsForDate = getRecordsForDate(date);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isToday
+            ? Theme.of(context).colorScheme.secondary
+            : Colors.transparent,
+        border: isSelected
+            ? Border.all(
+                color: Theme.of(context).colorScheme.secondary, width: 2.0)
+            : null,
+      ),
+      child: Column(
+        children: [
+          Text('${date.day}',
+              style: TextStyle(
+                  color: isToday
+                      ? Theme.of(context).colorScheme.onSecondary
+                      : Colors.black)),
+          if (recordsForDate != null && recordsForDate.isNotEmpty)
+            ...recordsForDate.map((record) {
+              return Draggable<RecordModel>(
+                data: record, // 드래그될 데이터를 설정
+                feedback: _buildRecordWidget(record, isDragging: true),
+                childWhenDragging: Container(), // 드래그 중일 때 비워둠
+                child: _buildRecordWidget(record),
+              );
+            }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordWidget(RecordModel record, {bool isDragging = false}) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 2.0),
+      padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+      decoration: BoxDecoration(
+        color: Color(int.parse(record.color.replaceFirst('#', '0xff'))),
+        borderRadius: BorderRadius.circular(4.0),
+        boxShadow: isDragging
+            ? [BoxShadow(blurRadius: 10, color: Colors.black26)]
+            : [],
+      ),
+      child: Text(
+        record.records.first.contents ?? '기록 없음',
+        style: TextStyle(fontSize: 8, color: theme.colorScheme.onSecondary),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
     );
   }
 
@@ -507,7 +666,7 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                                               .onSecondary,
                                         ),
                                         overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,  // 한 줄로 제한
+                                        maxLines: 1, // 한 줄로 제한
                                       ),
                                     ),
                                   ],

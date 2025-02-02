@@ -39,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isAdmin = false;
   String userRole = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  bool isCondimentsHidden = false;
 
   // 각 페이지를 저장하는 리스트
   @override
@@ -56,7 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadUserRole();
   }
   void _loadUserRole() async {
-
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -72,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error loading user role: $e');
     }
   }
+
   void _loadSelectedRecordListType() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
@@ -102,7 +103,31 @@ class _HomeScreenState extends State<HomeScreen> {
           PopupMenuItem<String>(
             value: 'preferred_foods_categories_setting',
             child: Text('제외 키워드 카테고리 관리'),
-          )
+          ),
+          PopupMenuItem<String>(
+            child: InkWell(
+              onTap: () {
+                // 텍스트를 클릭해도 동일한 동작 실행
+                bool newValue = !isCondimentsHidden;
+                Navigator.pop(context); // ✅ 팝업 메뉴 닫기
+                _updateCondimentsHiddenStatus(newValue);
+              },
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: isCondimentsHidden,
+                    onChanged: (bool? newValue) {
+                      if (newValue != null) {
+                        Navigator.pop(context); // ✅ 팝업 메뉴 닫기
+                        _updateCondimentsHiddenStatus(newValue);
+                      }
+                    },
+                  ),
+                  Text('조미료 숨기기',),
+                ],
+              ),
+            ),
+          ),
         ];
       case 1: // 장보기 페이지
         return [
@@ -211,6 +236,22 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         break;
     }
+  }
+
+  void _updateCondimentsHiddenStatus(bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isCondimentsHidden', value);
+
+    setState(() {
+      isCondimentsHidden = value;  // 상태 즉시 반영
+    });
+
+    setState(() {
+      // ✅ 상태를 저장한 후 냉장고 페이지를 다시 빌드하도록 함
+      _pages[0] = FridgeMainPage(key: GlobalKey());
+    });
+    // isCondimentsHiddenNotifier.value = value;
+    print('isCondimentsHidden 상태 업데이트 및 저장됨: $isCondimentsHidden');
   }
 
   Future<String?> _getUserRole() async {

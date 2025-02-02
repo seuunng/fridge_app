@@ -33,6 +33,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
   List<FridgeCategory> storageSections = [];
   FridgeCategory? selectedSection;
+  bool isCondimentsHidden = false;
 
   List<List<Map<String, dynamic>>> itemLists = [[], [], []];
   List<Map<String, dynamic>> recentlyDeletedItems = [];
@@ -69,6 +70,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
       _loadSelectedFridge();
       _loadFridgeNameFromFirestore();
     });
+
+    _loadCondimentsHiddenStatus();
   }
 
   @override
@@ -108,7 +111,18 @@ class FridgeMainPageState extends State<FridgeMainPage>
   //     await _loadFridgeCategoriesFromFirestore(selected_fridgeId);
   //   }
   // }
+  void _loadCondimentsHiddenStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? savedValue = prefs.getBool('isCondimentsHidden');
+    print('SharedPreferences에서 불러온 isCondimentsHidden: $savedValue');
 
+    if (savedValue != null) {
+      setState(() {
+        isCondimentsHidden = savedValue;
+      });
+    }
+    print('_loadCondimentsHiddenStatus() $isCondimentsHidden');
+  }
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -186,6 +200,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
         Timestamp registrationTimestamp =
             itemData['registrationDate'] ?? Timestamp.now();
         DateTime registrationDate = registrationTimestamp.toDate();
+        String defaultCategory = itemData['defaultCategory']??'';
 
         try {
           final foodsSnapshot = await FirebaseFirestore.instance
@@ -211,7 +226,9 @@ class FridgeMainPageState extends State<FridgeMainPage>
           if (!mounted) return;
 
           int shelfLife = foodsData?['shelfLife'] ?? 365;
-
+          if (foodsData != null) {
+            defaultCategory = foodsData['defaultCategory'] ?? '기타';
+          }
           int index = storageSections.indexWhere(
               (section) => section.categoryName == fridgeCategoryId);
 
@@ -221,6 +238,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
                 'itemName': itemName,
                 'shelfLife': shelfLife,
                 'registrationDate': registrationDate,
+                'defaultCategory': defaultCategory,
               });
             });
           } else {
@@ -237,7 +255,16 @@ class FridgeMainPageState extends State<FridgeMainPage>
       );
     }
   }
-
+  List<Map<String, dynamic>> _filterItems(List<Map<String, dynamic>> items) {
+    print("_filterItems: $isCondimentsHidden");
+    if (isCondimentsHidden) {
+      return items.where((item) {
+        String categoryName = item['defaultCategory'] ?? '  기타';
+        return categoryName != '양념'; // 양념 카테고리 제외
+      }).toList();
+    }
+    return items;
+  }
   Future<void> _loadSelectedFridge() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
@@ -553,7 +580,7 @@ print(itemName);
           ),
 
           floatingActionButton: !isDeletedMode
-              ?(itemLists.every((items) => items.isEmpty)
+              ?(itemLists.every((items) => _filterItems(items).isEmpty)
               ? FloatingButtonWithArrow(
             heroTag: 'fridge_arrow_button',
             onPressed: () {
@@ -625,8 +652,7 @@ print(itemName);
   }
 
   Widget _buildSections() {
-    // 모든 섹션의 아이템이 비어 있는지 확인하는 조건
-    bool allSectionsEmpty = itemLists.every((items) => items.isEmpty);
+    bool allSectionsEmpty = itemLists.every((items) => _filterItems(items).isEmpty);
 
     if (allSectionsEmpty) {
       return _buildAnimatedEmptyFridge(); // 모든 섹션이 비어 있으면 애니메이션 표시
@@ -671,6 +697,8 @@ print(itemName);
 
   Widget _buildGridForSection(
       List<Map<String, dynamic>> items, int sectionIndex) {
+    List<Map<String, dynamic>> filteredItems = _filterItems(items);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         bool isWeb = constraints.maxWidth > 600; // 임의의 기준 너비 설정
@@ -687,9 +715,9 @@ print(itemName);
             mainAxisSpacing: 8.0,
             childAspectRatio: childAspectRatio,
           ),
-          itemCount: items.isNotEmpty ? items.length : 1,
+          itemCount: filteredItems.isNotEmpty ? filteredItems.length : 1,
           itemBuilder: (context, index) {
-            if (items.isEmpty) {
+            if (filteredItems.isEmpty) {
               return Container(
                 height: 80, // 최소 높이
                 decoration: BoxDecoration(
@@ -702,13 +730,13 @@ print(itemName);
               );
             } else {
               String currentItem =
-                  items[index]['itemName'] ?? 'Unknown Item'; // 아이템 이름
+                  filteredItems[index]['itemName'] ?? 'Unknown Item'; // 아이템 이름
               // int expirationDays = items[index].values.first;
-              int shelfLife = items[index]['shelfLife'] ?? 0;
+              int shelfLife = filteredItems[index]['shelfLife'] ?? 0;
               // 🔹 registrationDate를 안전하게 변환
-              DateTime registrationDate = (items[index]['registrationDate'] is Timestamp)
-                  ? (items[index]['registrationDate'] as Timestamp).toDate()
-                  : items[index]['registrationDate'] as DateTime;
+              DateTime registrationDate = (filteredItems[index]['registrationDate'] is Timestamp)
+                  ? (filteredItems[index]['registrationDate'] as Timestamp).toDate()
+                  : filteredItems[index]['registrationDate'] as DateTime;
 
               bool isSelected = selectedItems.contains(currentItem);
               String formattedDate =
@@ -839,16 +867,10 @@ print(itemName);
                             MaterialPageRoute(
                               builder: (context) => FridgeItemDetails(
                                 foodsName: currentItem,
-                                // 아이템 이름
                                 foodsCategory: defaultCategory,
-                                // 동적 카테고리
                                 fridgeCategory: defaultFridgeCategory,
-                                // 냉장고 섹션
                                 shoppingListCategory: shoppingListCategory,
-                                // 쇼핑 리스트 카테고리
-                                // expirationDays: expirationDays, // 유통기한
                                 consumptionDays: shelfLife,
-                                // 소비기한
                                 registrationDate: formattedDate,
                               ),
                             ),
@@ -894,6 +916,7 @@ print(itemName);
   }
 
   Widget _buildDragTargetSection(int sectionIndex) {
+    List<Map<String, dynamic>> filteredItems = _filterItems(itemLists[sectionIndex]);
     return DragTarget<String>(
       onWillAccept: (draggedItem) {
         // 드래그된 아이템이 해당 섹션에 들어올 때 true 반환
@@ -937,7 +960,7 @@ print(itemName);
         return Stack(
           children: [
             // 기존 그리드
-            _buildGridForSection(itemLists[sectionIndex], sectionIndex),
+            _buildGridForSection(filteredItems, sectionIndex),
             if (candidateData.isNotEmpty)
               Positioned.fill(
                 child: Container(
