@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
-import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/preferred_food_model.dart';
@@ -19,12 +18,16 @@ class AddItem extends StatefulWidget {
   final String addButton;
   final String sourcePage;
   final Function onItemAdded;
+  final String? selectedFridge;      // ✅ 추가된 매개변수
+  final String? selectedFridgeId;    // ✅ 추가된 매개변수
 
   AddItem({
     required this.pageTitle,
     required this.addButton,
     required this.sourcePage,
     required this.onItemAdded,
+    this.selectedFridge,      // ✅ 추가
+    this.selectedFridgeId,    // ✅ 추가
   });
 
   @override
@@ -92,45 +95,35 @@ class _AddItemState extends State<AddItem> {
   }
 
   void _loadSelectedFridge() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
     setState(() {
-      selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+      selectedFridge = widget.selectedFridge ?? '기본 냉장고';
+      selected_fridgeId = widget.selectedFridgeId ?? '';
     });
-    if (selectedFridge != null) {
-      selected_fridgeId = await fetchFridgeId(selectedFridge!);
-      if (selected_fridgeId == null) {
-        print('선택된 냉장고가 현재 계정과 일치하지 않음. 기본 냉장고로 변경합니다.');
-        _setDefaultFridge(); // 기본 냉장고로 초기화
-      } else {
-        print('선택된 냉장고 ID: $selected_fridgeId');
-      }
-    }
   }
-  void _setDefaultFridge() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    try {
-      // 현재 계정과 연결된 냉장고 가져오기
-      final snapshot = await FirebaseFirestore.instance
-          .collection('fridges')
-          .where('userId', isEqualTo: userId)
-          .get();
-
-      if (snapshot.docs.isNotEmpty) {
-        // 첫 번째 냉장고를 기본으로 설정
-        final fridgeName = snapshot.docs.first.data()['FridgeName'] ?? '기본 냉장고';
-        setState(() {
-          selectedFridge = fridgeName;
-        });
-        await prefs.setString('selectedFridge', fridgeName);
-      } else {
-        print('해당 계정에 연결된 냉장고가 없습니다.');
-      }
-    } catch (e) {
-      print('기본 냉장고 설정 중 오류 발생: $e');
-    }
-  }
+  // void _setDefaultFridge() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //
+  //   try {
+  //     // 현재 계정과 연결된 냉장고 가져오기
+  //     final snapshot = await FirebaseFirestore.instance
+  //         .collection('fridges')
+  //         .where('userId', isEqualTo: userId)
+  //         .get();
+  //
+  //     if (snapshot.docs.isNotEmpty) {
+  //       // 첫 번째 냉장고를 기본으로 설정
+  //       final fridgeName = snapshot.docs.first.data()['FridgeName'] ?? '기본 냉장고';
+  //       setState(() {
+  //         selectedFridge = fridgeName;
+  //       });
+  //       await prefs.setString('selectedFridge', fridgeName);
+  //     } else {
+  //       print('해당 계정에 연결된 냉장고가 없습니다.');
+  //     }
+  //   } catch (e) {
+  //     print('기본 냉장고 설정 중 오류 발생: $e');
+  //   }
+  // }
   Future<List<FoodsModel>> _fetchFoods() async {
     List<FoodsModel> userFoods = [];
     List<FoodsModel> defaultFoods = [];
@@ -308,6 +301,7 @@ class _AddItemState extends State<AddItem> {
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final fridgeId = selected_fridgeId;
+    print('추가된 냉장고 $selected_fridgeId');
     try {
       for (String itemName in selectedItems) {
         final matchingFood = itemsByCategory.values.expand((x) => x).firstWhere(

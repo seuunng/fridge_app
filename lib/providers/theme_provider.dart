@@ -130,7 +130,7 @@ class ThemeProvider extends ChangeNotifier {
     colorScheme: ColorScheme.light().copyWith(
         primary: Colors.black, // 하단바 아이콘, 탭버튼 제목
         onPrimary: Colors.white, // 주요 배경위 텍스트나 아이콘색
-        primaryContainer: Colors.white, //primary와 유사한 색상이지만, 더 연한 버전
+        primaryContainer: Colors.black, //primary와 유사한 색상이지만, 더 연한 버전
         onPrimaryContainer: Colors.black,
         secondary: Colors.grey[300], // 캘린더 오늘,
         onSecondary: Colors.black, // 캘렌더 컬러박스 글씨

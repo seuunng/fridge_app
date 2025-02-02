@@ -35,6 +35,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
   FridgeCategory? selectedSection;
 
   List<List<Map<String, dynamic>>> itemLists = [[], [], []];
+  List<Map<String, dynamic>> recentlyDeletedItems = [];
 
   List<String> selectedItems = [];
   bool isDeletedMode = false;
@@ -97,16 +98,16 @@ class FridgeMainPageState extends State<FridgeMainPage>
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
 
-  Future<void> _reloadFridgeData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
-    });
-    if (selectedFridge != null) {
-      selected_fridgeId = await fetchFridgeId(selectedFridge!);
-      await _loadFridgeCategoriesFromFirestore(selected_fridgeId);
-    }
-  }
+  // Future<void> _reloadFridgeData() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   setState(() {
+  //     selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+  //   });
+  //   if (selectedFridge != null) {
+  //     selected_fridgeId = await fetchFridgeId(selectedFridge!);
+  //     await _loadFridgeCategoriesFromFirestore(selected_fridgeId);
+  //   }
+  // }
 
   void _loadUserRole() async {
     try {
@@ -383,7 +384,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     );
     // 사용자가 삭제를 확인했을 때만 삭제 작업을 진행
     if (confirmDelete) {
-      _deleteSelectedItems(); // 실제 삭제 로직 실행
+      // _deleteSelectedItems(); // 실제 삭제 로직 실행
       setState(() {
         isDeletedMode = false; // 삭제 작업 후 삭제 모드 해제
       });
@@ -399,6 +400,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     }
 
     List<String> itemsToDelete = List.from(selectedItems);
+    recentlyDeletedItems.clear(); // 복원 시 기존 데이터 정리
 
     try {
       for (String item in itemsToDelete) {
@@ -411,6 +413,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
         if (snapshot.docs.isNotEmpty) {
           for (var doc in snapshot.docs) {
+            recentlyDeletedItems.add(doc.data()); // 삭제 전 데이터 저장
             await FirebaseFirestore.instance
                 .collection('fridge_items')
                 .doc(doc.id) // 문서 ID로 삭제
@@ -432,13 +435,54 @@ class FridgeMainPageState extends State<FridgeMainPage>
       });
       await _loadFridgeCategoriesFromFirestore(selected_fridgeId);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('선택된 아이템이 삭제되었습니다.')),
+        SnackBar(
+          content: Text('선택된 아이템이 삭제되었습니다. 복원하시겠습니까?'),
+          action: SnackBarAction(
+            label: '복원',
+            onPressed: _restoreDeletedItems, // 복원 함수 호출
+          ),
+          duration: Duration(seconds: 5),
+        ),
       );
     } catch (e) {
       print('Error deleting items from Firestore: $e');
     }
   }
+  void _restoreDeletedItems() async {
+    try {
+      for (var itemData in recentlyDeletedItems) {
+        await FirebaseFirestore.instance.collection('fridge_items').add(itemData);
+      }
 
+      setState(() {
+        for (var itemData in recentlyDeletedItems) {
+          String itemName = itemData['items'];
+          String fridgeCategory = itemData['fridgeCategoryId'] ?? '기타';
+          DateTime registrationDate = (itemData['registrationDate'] as Timestamp).toDate();
+
+          int index = storageSections.indexWhere(
+                  (section) => section.categoryName == fridgeCategory);
+print(itemName);
+
+
+          if (index >= 0) {
+            itemLists[index].add({
+              'itemName': itemName,  // 명시적으로 itemName 저장
+              'registrationDate': registrationDate,
+              ...itemData,
+            });
+          }
+        }
+        recentlyDeletedItems.clear(); // 복원 후 임시 리스트 초기화
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제된 아이템이 복원되었습니다.')),
+      );
+    } catch (e) {
+      print('Error restoring items: $e');
+    }
+  }
   // 삭제 모드에서 애니메이션을 시작
   void _startDeleteMode() {
     setState(() {
@@ -523,6 +567,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
                     onItemAdded: () {
                       _loadFridgeCategoriesFromFirestore(selected_fridgeId);
                     },
+                    selectedFridge: selectedFridge,      // ✅ 전달하는 냉장고 이름
+                    selectedFridgeId: selected_fridgeId,
                   ),
                 ),
               );
@@ -544,6 +590,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
                     onItemAdded: () {
                       _loadFridgeCategoriesFromFirestore(selected_fridgeId);
                     },
+                    selectedFridge: selectedFridge,      // ✅ 전달하는 냉장고 이름
+                    selectedFridgeId: selected_fridgeId,
                   ),
                 ),
               );
@@ -657,8 +705,11 @@ class FridgeMainPageState extends State<FridgeMainPage>
                   items[index]['itemName'] ?? 'Unknown Item'; // 아이템 이름
               // int expirationDays = items[index].values.first;
               int shelfLife = items[index]['shelfLife'] ?? 0;
-              DateTime registrationDate =
-                  items[index]['registrationDate'] ?? DateTime.now();
+              // 🔹 registrationDate를 안전하게 변환
+              DateTime registrationDate = (items[index]['registrationDate'] is Timestamp)
+                  ? (items[index]['registrationDate'] as Timestamp).toDate()
+                  : items[index]['registrationDate'] as DateTime;
+
               bool isSelected = selectedItems.contains(currentItem);
               String formattedDate =
                   DateFormat('yyyy-MM-dd').format(registrationDate);
