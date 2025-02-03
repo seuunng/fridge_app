@@ -53,7 +53,20 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
   String userRole = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool _isPremiumUser = false;
-
+  List<String> predefinedCategoryFridge = [
+    '채소',
+    '과일',
+    '육류',
+    '수산물',
+    '유제품',
+    '가공식품',
+    '곡류',
+    '견과류',
+    '양념',
+    '음료/주류',
+    '즉석식품',
+    '디저트/빵류',
+  ];
   @override
   void initState() {
     super.initState();
@@ -122,7 +135,14 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
 
       // 🔹 중복 제거된 리스트 변환
       final uniqueCategories = uniqueCategoriesMap.values.toList();
-
+// 🔹 predefinedCategoryFridge 순서대로 정렬
+      uniqueCategories.sort((a, b) {
+        int indexA = predefinedCategoryFridge.indexOf(a.defaultCategory);
+        int indexB = predefinedCategoryFridge.indexOf(b.defaultCategory);
+        if (indexA == -1) indexA = predefinedCategoryFridge.length; // 리스트에 없을 경우 맨 뒤로 보냄
+        if (indexB == -1) indexB = predefinedCategoryFridge.length;
+        return indexA.compareTo(indexB);
+      });
       setState(() {
         foodsCategories = uniqueCategories;
         if (widget.foodsCategory.isNotEmpty) {
@@ -172,6 +192,7 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
   Future<void> _loadShoppingListCategoriesFromFirestore() async {
     final snapshot = await FirebaseFirestore.instance
         .collection('shopping_categories')
+        .orderBy('priority', descending: false)
         .get();
 
     final categories = snapshot.docs.map((doc) {
