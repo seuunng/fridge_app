@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/constants.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/preferred_food_model.dart';
 import 'package:food_for_later_new/screens/foods/add_item_to_category.dart';
@@ -67,20 +68,6 @@ class _AddItemState extends State<AddItem> {
   double webGridMaxExtent = 200; // 웹에서 최대 크기
   double gridSpacing = 8.0;
   String userRole = '';
-  List<String> predefinedCategoryFridge = [
-    '채소',
-    '과일',
-    '육류',
-    '수산물',
-    '유제품',
-    '가공식품',
-    '곡류',
-    '견과류',
-    '양념',
-    '음료/주류',
-    '즉석식품',
-    '디저트/빵류',
-  ];
   @override
   void initState() {
     super.initState();

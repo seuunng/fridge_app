@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/constants.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:food_for_later_new/screens/recipe/recipe_webview_page.dart';
@@ -71,20 +72,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
   List<dynamic> _results = []; // 웹 검색 결과 저장
   Map<String, bool> scrapedStatus = {};
 
-  Map<String, int> categoryPriority = {
-    "육류": 10,
-    "수산물": 9,
-    "채소": 8,
-    "과일": 7,
-    "곡류": 6,
-    "유제품": 5,
-    "견과류": 5,
-    "양념": 4,
-    "가공식품": 3,
-    "즉석식품": 2,
-    "음료/주류": 1,
-    "디저트/빵류": 1,
-  };
+
 
   @override
   void initState() {

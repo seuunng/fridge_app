@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/constants.dart';
 import 'package:food_for_later_new/models/items_in_fridge.dart';
 import 'package:food_for_later_new/models/recipe_method_model.dart';
 import 'package:food_for_later_new/models/recipe_thema_model.dart';
@@ -46,28 +47,9 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     Tab(text: '조리방법별'),
   ];
 
-  Map<String, int> categoryPriority = {
-    "육류": 10,
-    "수산물": 9,
-    "채소": 8,
-    "과일": 7,
-    "유제품": 6
-  };
 
-  List<String> predefinedCategoryFridge = [
-    '채소',
-    '과일',
-    '육류',
-    '수산물',
-    '유제품',
-    '가공식품',
-    '곡류',
-    '견과류',
-    '양념',
-    '음료/주류',
-    '즉석식품',
-    '디저트/빵류',
-  ];
+
+
   @override
   void initState() {
     super.initState();

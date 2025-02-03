@@ -105,6 +105,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text('제외 키워드 카테고리 관리'),
           ),
           PopupMenuItem<String>(
+            value: 'sort_dialog',
+            child: Text('정렬'),
+          ),
+          PopupMenuItem<String>(
             child: InkWell(
               onTap: () {
                 // 텍스트를 클릭해도 동일한 동작 실행
@@ -138,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
           PopupMenuItem<String>(
             value: 'preferred_foods_categories_setting',
             child: Text('제외 키워드 카테고리 관리'),
-          )
+          ),
         ];
       case 2: // 레시피 페이지
         return [
@@ -197,7 +201,9 @@ class _HomeScreenState extends State<HomeScreen> {
         );
 
         break;
-
+      case 'sort_dialog':
+        _showSortDialog(); // 정렬 다이얼로그 표시
+        break;
       case 'recipe_search_detail_setting':
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => RecipeSearchSettings()));
@@ -238,6 +244,61 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _showSortDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('정렬 기준 선택'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.access_time),
+                title: Text('소비기한 임박순'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleFridgeSort('expiration');
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.category),
+                title: Text('카테고리순'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleFridgeSort('category');
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.date_range),
+                title: Text('입고일 순'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleFridgeSort('registration');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  void _handleFridgeSort(String selectedOption) {
+    final fridgePage = _fridgeMainPageKey.currentState;
+    if (fridgePage != null) {
+      switch (selectedOption) {
+        case 'expiration':
+          fridgePage.sortItemsByExpiration();
+          break;
+        case 'category':
+          fridgePage.sortItemsByCategory();
+          break;
+        case 'registration':
+          fridgePage.sortItemsByRegistrationDate();
+          break;
+      }
+    }
+  }
   void _updateCondimentsHiddenStatus(bool value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isCondimentsHidden', value);

@@ -6,6 +6,7 @@ import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/floating_button_with_arrow.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/constants.dart';
 import 'package:food_for_later_new/main.dart';
 import 'package:food_for_later_new/models/fridge_category_model.dart';
 import 'package:intl/intl.dart';
@@ -256,7 +257,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
     }
   }
   List<Map<String, dynamic>> _filterItems(List<Map<String, dynamic>> items) {
-    print("_filterItems: $isCondimentsHidden");
     if (isCondimentsHidden) {
       return items.where((item) {
         String categoryName = item['defaultCategory'] ?? '  기타';
@@ -264,6 +264,49 @@ class FridgeMainPageState extends State<FridgeMainPage>
       }).toList();
     }
     return items;
+  }
+  // 소비기한 마감 임박순 정렬
+  void sortItemsByExpiration() {
+    setState(() {
+      for (int i = 0; i < itemLists.length; i++) {
+        itemLists[i].sort((a, b) {
+          int daysLeftA = a['shelfLife'] - DateTime.now().difference(a['registrationDate']).inDays;
+          int daysLeftB = b['shelfLife'] - DateTime.now().difference(b['registrationDate']).inDays;
+          return daysLeftA.compareTo(daysLeftB); // 남은 일수를 기준으로 오름차순 정렬
+        });
+      }
+    });
+  }
+
+// 카테고리순 정렬
+  void sortItemsByCategory() {
+
+    setState(() {
+      for (int i = 0; i < itemLists.length; i++) {
+        itemLists[i].sort((a, b) {
+          // a와 b의 카테고리 인덱스를 사전 정의된 순서에서 찾음
+          int indexA = predefinedCategoryFridge.indexOf(a['defaultCategory']);
+          int indexB = predefinedCategoryFridge.indexOf(b['defaultCategory']);
+
+          // 카테고리가 정의되지 않았으면 리스트 끝으로 정렬
+          if (indexA == -1) indexA = predefinedCategoryFridge.length;
+          if (indexB == -1) indexB = predefinedCategoryFridge.length;
+
+          return indexA.compareTo(indexB); // 사전 정의된 순서대로 정렬
+        });
+      }
+    });
+  }
+
+// 입고일 순 정렬
+  void sortItemsByRegistrationDate() {
+    setState(() {
+      for (int i = 0; i < itemLists.length; i++) {
+        itemLists[i].sort((a, b) {
+          return a['registrationDate'].compareTo(b['registrationDate']);
+        });
+      }
+    });
   }
   Future<void> _loadSelectedFridge() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -489,8 +532,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
           int index = storageSections.indexWhere(
                   (section) => section.categoryName == fridgeCategory);
-print(itemName);
-
 
           if (index >= 0) {
             itemLists[index].add({
