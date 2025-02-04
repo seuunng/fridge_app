@@ -34,7 +34,7 @@ List<FridgeCategory> generateDefaultCategories() {
 
   return defaultCategories.map((categoryName) {
     String categoryId =
-        FirebaseFirestore.instance.collection('fridge_categories').doc().id;
+        FirebaseFirestore.instance.collection('default_fridge_categories').doc().id;
     return FridgeCategory(
       id: categoryId,
       categoryName: categoryName,
@@ -47,7 +47,7 @@ Future<void> saveDefaultCategoriesToFirestore() async {
 
   for (var category in defaultCategories) {
     await FirebaseFirestore.instance
-        .collection('fridge_categories')
+        .collection('default_fridge_categories')
         .doc(category.id)
         .set(category.toFirestore());
   }

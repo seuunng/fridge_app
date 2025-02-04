@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
@@ -16,6 +17,7 @@ class AddItemToCategory extends StatefulWidget {
 }
 
 class _AddItemToCategoryState extends State<AddItemToCategory> {
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   List<FoodsModel> foodsCategories = [];
   FoodsModel? selectedFoodsCategory;
 
@@ -117,15 +119,37 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
   }
 
   Future<void> _loadFridgeCategoriesFromFirestore() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('fridge_categories').get();
+    try {
+      // 🔹 기본 카테고리 불러오기
+      final defaultSnapshot = await FirebaseFirestore.instance
+          .collection('default_fridge_categories')
+          .get();
 
-    final categories = snapshot.docs.map((doc) {
-      return FridgeCategory.fromFirestore(doc);
-    }).toList();
+      final customSnapshot = await FirebaseFirestore.instance
+          .collection('fridge_categories')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      // 🔹 기본 카테고리 변환
+      final defaultCategories = defaultSnapshot.docs.map((doc) {
+        return FridgeCategory.fromFirestore(doc);
+      }).toList();
+
+      // 🔹 사용자 커스텀 카테고리 변환
+      final customCategories = customSnapshot.docs.map((doc) {
+        return FridgeCategory.fromFirestore(doc);
+      }).toList();
+
+      // 🔹 기본 + 커스텀 카테고리를 합쳐서 사용
     setState(() {
-      fridgeCategories = categories;
+      fridgeCategories = [
+        ...defaultCategories,
+        ...customCategories
+      ];
     });
+    } catch (e) {
+      print('카테고리 불러오기 오류: $e');
+    }
   }
 
   Future<void> _loadShoppingListCategoriesFromFirestore() async {

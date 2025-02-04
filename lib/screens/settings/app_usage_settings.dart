@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/models/fridge_category_model.dart';
 import 'package:food_for_later_new/providers/font_provider.dart';
 import 'package:food_for_later_new/providers/theme_provider.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
@@ -32,12 +33,14 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   // final List<String> _categories_them = ['Light', 'Dark']; // 카테고리 리스트
   String _selectedCategory_font = 'NanumGothic'; // 기본 선택값
   List<String> _categories_font = [];
+  List<FridgeCategory> fridgeCategories = []; // 섹션 리스트
+  FridgeCategory? selectedFridgeCategory; // 선택된 섹션
 
 
   @override
   void initState() {
     super.initState();
-    _loadFridgeCategoriesFromFirestore(); // 초기화 시 Firestore에서 데이터를 불러옴
+    _loadFridgeNameFromFirestore(); // 초기화 시 Firestore에서 데이터를 불러옴
     _loadSelectedFridge();
     _loadUserRole();
     _loadSelectedEnvironmentSettingValue();
@@ -72,7 +75,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   }
 
   // Firestore에서 냉장고 목록 불러오기
-  void _loadFridgeCategoriesFromFirestore() async {
+  void _loadFridgeNameFromFirestore() async {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('fridges')
@@ -97,6 +100,40 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       );
     }
   }
+  Future<void> _loadFridgeCategoriesFromFirestore() async {
+    try {
+      // 기본 섹션 불러오기
+      final defaultSnapshot = await FirebaseFirestore.instance
+          .collection('default_fridge_categories')
+          .get();
+      List<FridgeCategory> defaultCategories = defaultSnapshot.docs.map((doc) {
+        return FridgeCategory.fromFirestore(doc);
+      }).toList();
+
+      // 사용자 맞춤 섹션 불러오기
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('fridge_categories')
+          .where('userId', isEqualTo: userId)
+          .get();
+      List<FridgeCategory> userCategories = userSnapshot.docs.map((doc) {
+        return FridgeCategory.fromFirestore(doc);
+      }).toList();
+
+      setState(() {
+        fridgeCategories = [...defaultCategories, ...userCategories]; // 합쳐서 저장
+      });
+
+      selectedFridgeCategory = fridgeCategories.isNotEmpty
+          ? fridgeCategories.first
+          : FridgeCategory(
+        id: 'unknown',
+        categoryName: '',
+      );
+    } catch (e) {
+      print('Error loading fridge categories: $e');
+    }
+  }
+
   void _loadFonts() async {
     final fontProvider = FontProvider();
     await fontProvider.loadFonts();
@@ -198,7 +235,21 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       },
     );
   }
+  Future<void> _saveNewSectionToFirestore(String sectionName) async {
+    try {
+      final docRef = FirebaseFirestore.instance.collection('fridge_categories').doc();
+      await docRef.set({
+        'id': docRef.id,
+        'categoryName': sectionName,
+        'userId': userId,
+      });
 
+      // 저장 후 UI 갱신
+      await _loadFridgeCategoriesFromFirestore();
+    } catch (e) {
+      print('Error saving new fridge section: $e');
+    }
+  }
   // 선택된 냉장고 삭제 함수
   void _deleteCategory(
       String category, List<String> categories, String categoryType) {
@@ -357,6 +408,26 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
               Row(
                 children: [
                   Text(
+                    '냉장고 섹션 수정',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface),
+                  ),
+                  Spacer(),
+                  BasicElevatedButton(
+                    onPressed: _addNewFridgeSection,
+                    iconTitle: Icons.edit,
+                    buttonTitle: '수정',
+                  ),
+                ],
+              ),
+              Text('또 다른 섹션이 필요하다면 추가하세요',
+                  style: TextStyle(color: theme.colorScheme.onSurface)),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Text(
                     '식품 상태관리 선택',
                     style: TextStyle(
                         fontSize: 18,
@@ -421,7 +492,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                   ),
                 ],
               ),
-              Text('자주 검색하는 식품을 묶음으로 관리해요',
+              Text('자주 검색하는 식품을 그룹으로 관리해요',
                   style: TextStyle(color: theme.colorScheme.onSurface)),
               SizedBox(height: 20),
               Row(
@@ -552,6 +623,40 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
             ),
         ],
       ),
+    );
+  }
+  void _addNewFridgeSection() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String newSectionName = '';
+        return AlertDialog(
+          title: Text('새 섹션 추가'),
+          content: TextField(
+            onChanged: (value) {
+              newSectionName = value;
+            },
+            decoration: InputDecoration(hintText: '섹션 이름 입력'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('취소'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (newSectionName.isNotEmpty) {
+                  await _saveNewSectionToFirestore(newSectionName);
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('추가'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

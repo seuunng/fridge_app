@@ -157,14 +157,27 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
 
   // 냉장고 카테고리
   Future<void> _loadFridgeCategoriesFromFirestore() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('fridge_categories').get();
+    try {
+      // 기본 섹션 불러오기
+      final defaultSnapshot = await FirebaseFirestore.instance
+          .collection('default_fridge_categories')
+          .get();
+      List<FridgeCategory> defaultCategories = defaultSnapshot.docs.map((doc) {
+        return FridgeCategory.fromFirestore(doc);
+      }).toList();
 
-    final categories = snapshot.docs.map((doc) {
-      return FridgeCategory.fromFirestore(doc);
-    }).toList();
-    setState(() {
-      fridgeCategories = categories;
+      // 사용자 맞춤 섹션 불러오기
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('fridge_categories')
+          .where('userId', isEqualTo: userId)
+          .get();
+      List<FridgeCategory> userCategories = userSnapshot.docs.map((doc) {
+        return FridgeCategory.fromFirestore(doc);
+      }).toList();
+
+      setState(() {
+        fridgeCategories = [...defaultCategories, ...userCategories]; // 합쳐서 저장
+      });
 
       selectedFridgeCategory = fridgeCategories.firstWhere(
         (category) => category.categoryName == widget.fridgeCategory,
@@ -173,7 +186,9 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
           categoryName: '',
         ),
       );
-    });
+    } catch (e) {
+      print('Error loading fridge categories: $e');
+    }
   }
 
   // 쇼핑리스트 카테고리
