@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
@@ -35,6 +36,10 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   List<String> _categories_font = [];
   List<FridgeCategory> fridgeCategories = []; // 섹션 리스트
   FridgeCategory? selectedFridgeCategory; // 선택된 섹션
+  bool hasCustomSection = false;
+  List<FridgeCategory> defaultFridgeCategories = [];
+  List<FridgeCategory> userCategories = [];
+  bool isEditing = false;
 
 
   @override
@@ -45,6 +50,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
     _loadUserRole();
     _loadSelectedEnvironmentSettingValue();
     _loadFonts();
+    _loadFridgeCategoriesFromFirestore();
   }
   void _loadUserRole() async {
     try {
@@ -106,7 +112,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       final defaultSnapshot = await FirebaseFirestore.instance
           .collection('default_fridge_categories')
           .get();
-      List<FridgeCategory> defaultCategories = defaultSnapshot.docs.map((doc) {
+      defaultFridgeCategories = defaultSnapshot.docs.map((doc) {
         return FridgeCategory.fromFirestore(doc);
       }).toList();
 
@@ -115,12 +121,13 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
           .collection('fridge_categories')
           .where('userId', isEqualTo: userId)
           .get();
-      List<FridgeCategory> userCategories = userSnapshot.docs.map((doc) {
+      userCategories = userSnapshot.docs.map((doc) {
         return FridgeCategory.fromFirestore(doc);
       }).toList();
 
       setState(() {
-        fridgeCategories = [...defaultCategories, ...userCategories]; // 합쳐서 저장
+        hasCustomSection = userCategories.isNotEmpty;
+        fridgeCategories = [...defaultFridgeCategories, ...userCategories]; // 합쳐서 저장
       });
 
       selectedFridgeCategory = fridgeCategories.isNotEmpty
@@ -244,12 +251,46 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
         'userId': userId,
       });
 
-      // 저장 후 UI 갱신
       await _loadFridgeCategoriesFromFirestore();
     } catch (e) {
       print('Error saving new fridge section: $e');
     }
   }
+
+  Future<void> _deleteFridgeSection(String sectionId) async {
+      try {
+        // 섹션에 포함된 냉장고 아이템들을 가져옴
+        QuerySnapshot itemSnapshot = await FirebaseFirestore.instance
+            .collection('fridge_items')
+            .where('userId', isEqualTo: userId)
+            .where('fridgeCategoryId', isEqualTo: sectionId)
+            .get();
+
+        // 각 아이템 삭제
+        for (var doc in itemSnapshot.docs) {
+          await doc.reference.delete();
+        }
+
+        // 섹션 삭제
+        await FirebaseFirestore.instance
+            .collection('fridge_categories')
+            .doc(sectionId)
+            .delete();
+
+        // 삭제 성공 후 UI 갱신
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('섹션과 포함된 아이템이 모두 삭제되었습니다.')),
+        );
+
+        await _loadFridgeCategoriesFromFirestore(); // UI 업데이트
+      } catch (e) {
+        // 삭제 실패 시 오류 메시지 출력
+        print('섹션 또는 아이템 삭제 중 오류 발생: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('섹션 또는 아이템 삭제에 실패했습니다. 다시 시도해주세요.')),
+        );
+      }
+    }
   // 선택된 냉장고 삭제 함수
   void _deleteCategory(
       String category, List<String> categories, String categoryType) {
@@ -408,7 +449,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
               Row(
                 children: [
                   Text(
-                    '냉장고 섹션 수정',
+                    '냉장고 섹션 관리',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -626,35 +667,228 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
     );
   }
   void _addNewFridgeSection() {
+    final theme = Theme.of(context);
+    TextEditingController editingController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         String newSectionName = '';
-        return AlertDialog(
-          title: Text('새 섹션 추가'),
-          content: TextField(
-            onChanged: (value) {
-              newSectionName = value;
-            },
-            decoration: InputDecoration(hintText: '섹션 이름 입력'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('취소'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (newSectionName.isNotEmpty) {
-                  await _saveNewSectionToFirestore(newSectionName);
-                  Navigator.pop(context);
-                }
-              },
-              child: Text('추가'),
-            ),
-          ],
+        bool isEditing = false; // 로컬 변수로 편집 상태 관리
+        return StatefulBuilder(
+            builder: (context, setState) {
+            return AlertDialog(
+              title: Text('냉장고 섹션 관리',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: theme.colorScheme.onSurface),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '기본 섹션',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                  ),
+                  Divider(color: Colors.grey.shade300, thickness: 1, height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Icon(FontAwesomeIcons.carrot, color: Colors.grey, size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '냉장',
+                                  style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+                                ),
+                              ),
+                              Icon(FontAwesomeIcons.wineBottle, color: Colors.grey, size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '상온',
+                                  style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+                                ),
+                              ),
+                              Icon(FontAwesomeIcons.snowflake, color: Colors.grey, size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '냉동',
+                                  style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                  SizedBox(height: 20),
+                  // 커스텀 섹션 리스트 (수정/삭제 가능)
+                  if (userCategories.isNotEmpty) ...[
+                    Text(
+                      '커스텀 섹션',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                    ),
+                    Divider(color: Colors.grey.shade300, thickness: 1, height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Icon(FontAwesomeIcons.user, color: Colors.blueAccent, size: 20),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: GestureDetector(
+                              onDoubleTap: () {
+                                setState(() {
+                                  isEditing = true; // 더블클릭 시 편집 모드 활성화
+                                  editingController.text = userCategories[0].categoryName; // 현재 카테고리 이름 설정
+                                });
+                              },
+                              child: isEditing
+                                  ? TextField(
+                                controller: editingController,
+                                decoration: InputDecoration(
+                                  hintText: '섹션 이름 수정',
+                                  border: OutlineInputBorder(),
+                                ),
+                                style:
+                                TextStyle(color: theme.chipTheme.labelStyle!.color),
+                                onSubmitted: (newValue) async {
+                                  if (newValue.isNotEmpty && newValue != userCategories[0].categoryName) {
+                                    await FirebaseFirestore.instance
+                                        .collection('fridge_categories')
+                                        .doc(userCategories[0].id)
+                                        .update({'categoryName': newValue});
+                                    // 2. 로컬 데이터 즉시 업데이트
+                                    setState(() {
+                                      userCategories[0] = FridgeCategory(
+                                        id: userCategories[0].id,
+                                        categoryName: newValue,
+                                      );
+                                      isEditing = false; // 입력 후 편집 모드 해제
+                                    });
+                                  } else {
+                                    setState(() {
+                                      isEditing = false; // 입력 후 편집 모드 해제
+                                    });
+                                  }
+
+                                  // 3. (선택 사항) Firestore에서 다시 로드하여 최신 데이터로 유지
+                                  await _loadFridgeCategoriesFromFirestore();
+                                },
+                              )
+                                  : Text(
+                                userCategories[0].categoryName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: theme.chipTheme.labelStyle!.color),
+                            onPressed: () async {
+                              final fridgeSnapshot = await FirebaseFirestore.instance
+                                  .collection('fridge_items')
+                                  .where('userId', isEqualTo: userId)
+                                  .where('fridgeCategoryId', isEqualTo: userCategories[0].categoryName.trim())
+                                  .get();
+
+                              print('userCategories[0].id.trim()');
+                              print(userCategories[0].id.trim());
+                              print('쿼리 결과 개수: ${fridgeSnapshot.docs.length}');
+                              // 아이템이 있는지 여부를 확인
+                              final bool hasItems = fridgeSnapshot.docs.isNotEmpty;
+                              print('hasItems $hasItems');
+                              final String message = hasItems
+                                  ? '정말로 섹션과 포함된 아이템을\n모두 삭제하시겠습니까?'
+                                  : '정말로 이 섹션을 삭제하시겠습니까?';
+
+                              bool confirmDelete = await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    title: Text('섹션 삭제', style: TextStyle(color: theme.colorScheme.onSurface)),
+                                    content: Text(message, style: TextStyle(color: theme.colorScheme.onSurface)),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, false),
+                                        child: Text('취소', style: TextStyle(color: theme.colorScheme.onSurface)),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, true),
+                                        child: Text('삭제', style: TextStyle(color: theme.colorScheme.onSurface)),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              if (confirmDelete) {
+                                // 아이템이 있으면 해당 아이템도 삭제
+                                if (hasItems) {
+                                  for (var doc in fridgeSnapshot.docs) {
+                                    await doc.reference.delete(); // 각 아이템 삭제
+                                  }
+                                }
+
+                                await _deleteFridgeSection(userCategories[0].id);
+                                // 다이얼로그 내부 UI 갱신
+                                setState(() {
+                                  userCategories.removeAt(0); // 삭제된 섹션 제거
+                                });
+                                await _loadFridgeCategoriesFromFirestore();
+                              }
+                            },
+                            tooltip: '삭제',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // 새 섹션 추가 입력 필드
+                  if (!hasCustomSection)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: TextField(
+                        onChanged: (value) => newSectionName = value,
+                        decoration: InputDecoration(
+                          hintText: '커스텀 섹션 이름 입력',
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        style:
+                        TextStyle(color: theme.chipTheme.labelStyle!.color),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      isEditing = false; // 취소 시 편집 모드 해제
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Text('취소', style: TextStyle(color: theme.chipTheme.labelStyle!.color)),
+                ),
+                if (!hasCustomSection)
+                  TextButton(
+                    onPressed: () async {
+                      if (newSectionName.isNotEmpty) {
+                        await _saveNewSectionToFirestore(newSectionName);
+                        Navigator.pop(context);
+                        await _loadFridgeCategoriesFromFirestore();
+                      }
+                    },
+                    child: Text('추가', style: TextStyle(color: theme.chipTheme.labelStyle!.color)),
+                  ),
+              ],
+            );
+          }
         );
       },
     );

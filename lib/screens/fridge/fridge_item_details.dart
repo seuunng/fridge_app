@@ -178,7 +178,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
       setState(() {
         fridgeCategories = [...defaultCategories, ...userCategories]; // 합쳐서 저장
       });
-
+print('widget.fridgeCategory');
+print(widget.fridgeCategory);
       selectedFridgeCategory = fridgeCategories.firstWhere(
         (category) => category.categoryName == widget.fridgeCategory,
         orElse: () => FridgeCategory(
@@ -493,21 +494,45 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
                         selectedShoppingListCategory?.categoryName ?? '',
                     // 'expirationDate': expirationDays,
                     'shelfLife': consumptionDays,
+                    'userId': userId,
                   };
 
                   try {
                     final snapshot = await FirebaseFirestore.instance
-                        .collection('foods')
+                        .collection('default_foods')
                         .where('foodsName', isEqualTo: widget.foodsName)
                         .get();
 
                     if (snapshot.docs.isNotEmpty) {
-                      final docId = snapshot.docs.first.id; // 첫 번째 문서의 ID를 가져옴
+                      final docId = snapshot.docs.first.id; // 첫 번째 문서의 ID 가져오기
 
-                      await FirebaseFirestore.instance
+                      // 🔍 foods에서 문서를 찾고, 없으면 새로 추가
+                      final foodsDoc = await FirebaseFirestore.instance
                           .collection('foods')
                           .doc(docId)
-                          .update(updatedData);
+                          .get();
+
+                      if (foodsDoc.exists) {
+                        // ✅ 문서가 존재하면 업데이트
+                        await FirebaseFirestore.instance
+                            .collection('foods')
+                            .doc(docId)
+                            .update(updatedData);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('데이터가 성공적으로 업데이트되었습니다.')),
+                        );
+                      } else {
+                        // ❌ 문서가 없으면 새로 추가
+                        await FirebaseFirestore.instance
+                            .collection('foods')
+                            .doc(docId)
+                            .set(updatedData);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('문서가 존재하지 않아 새로 추가했습니다.')),
+                        );
+                      }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('해당 데이터를 찾을 수 없습니다.')),

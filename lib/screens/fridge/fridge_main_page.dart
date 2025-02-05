@@ -75,6 +75,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     });
 
     _loadCondimentsHiddenStatus();
+
   }
 
   @override
@@ -233,8 +234,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
           }
           int index = storageSections.indexWhere(
               (section) => section.categoryName == fridgeCategoryId);
-          print("storageSections: $storageSections");
-          print("Available categories: ${storageSections.map((section) => section.categoryName).toList()}");
           if (index >= 0) {
             setState(() {
               itemLists[index].add({
@@ -246,7 +245,23 @@ class FridgeMainPageState extends State<FridgeMainPage>
               });
             });
           } else {
-            print("Category not found: $fridgeCategoryId");
+            int defaultIndex = storageSections.indexWhere((section) =>
+            section.categoryName == '냉장');
+
+            // 만약 '냉장' 섹션이 존재하지 않으면 추가
+            if (defaultIndex == -1) {
+              FridgeCategory defaultSection = FridgeCategory(
+                id: 'default_refrigerator',
+                categoryName: '냉장',
+                userId: userId,
+              );
+
+              setState(() {
+                storageSections.add(defaultSection);
+                itemLists.add([]);
+                defaultIndex = storageSections.length - 1; // 새로 추가된 섹션의 인덱스 설정
+              });
+            }
           }
         } catch (e) {
           print('Error fetching or processing food data for $itemName: $e');
@@ -334,7 +349,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
       print('섹션 저장 중 오류 발생: $e');
     }
   }
-// 카테고리순 정렬
+  // 카테고리순 정렬
   void sortItemsByCategory() {
 
     setState(() {
@@ -411,7 +426,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
           ...customCategories
         ];
       });
-    } catch (e) {
+      } catch (e) {
       print('카테고리 불러오기 오류: $e');
     }
   }
@@ -646,7 +661,14 @@ class FridgeMainPageState extends State<FridgeMainPage>
       _controller.stop(); // 애니메이션 중지
     });
   }
+  String _getCurrentFridgeCategoryName(String fridgeCategoryId) {
+    final category = storageSections.firstWhere(
+          (section) => section.categoryName == fridgeCategoryId,
+      orElse: () => FridgeCategory(id: '기타', categoryName: '기타', userId: ''),
+    );
 
+    return category.categoryName;
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -979,6 +1001,17 @@ class FridgeMainPageState extends State<FridgeMainPage>
                     },
                     onDoubleTap: () async {
                       try {
+            String documentId = filteredItems[index]['documentId'] ?? '';
+
+            // 🔍 fridge_items 컬렉션에서 해당 아이템의 문서를 조회하여 fridgeCategoryId 가져오기
+            DocumentSnapshot itemDoc = await FirebaseFirestore.instance
+                .collection('fridge_items')
+                .doc(documentId)
+                .get();
+
+            if (itemDoc.exists) {
+            String currentCategory = itemDoc['fridgeCategoryId'] ?? '기타';
+
                         // Firestore에서 현재 선택된 아이템의 정보를 불러옵니다.
                         final foodsSnapshot = await FirebaseFirestore.instance
                             .collection('foods')
@@ -1007,14 +1040,13 @@ class FridgeMainPageState extends State<FridgeMainPage>
                         if (foodData != null) {
                           String defaultCategory =
                               foodData['defaultCategory'] ?? '기타';
-                          String defaultFridgeCategory =
-                              foodData['defaultFridgeCategory'] ?? '기타';
                           String shoppingListCategory =
                               foodData['shoppingListCategory'] ?? '기타';
                           int shelfLife = foodData['shelfLife'] ?? 0;
                           DateTime registrationDate = items[index]
                                   ['registrationDate'] ??
                               DateTime.now();
+                          // 🔑 **fridgeCategoryId를 기반으로 현재 카테고리 이름 가져오기**
 
                           Navigator.push(
                             context,
@@ -1022,7 +1054,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
                               builder: (context) => FridgeItemDetails(
                                 foodsName: currentItem,
                                 foodsCategory: defaultCategory,
-                                fridgeCategory: defaultFridgeCategory,
+                                fridgeCategory: currentCategory,
                                 shoppingListCategory: shoppingListCategory,
                                 consumptionDays: shelfLife,
                                 registrationDate: formattedDate,
@@ -1036,6 +1068,11 @@ class FridgeMainPageState extends State<FridgeMainPage>
                           print(
                               "Item not found in foods collection: $currentItem");
                         }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('해당 아이템 정보를 찾을 수 없습니다.')),
+              );
+            }
                       } catch (e) {
                         print('Error fetching food details: $e');
                       }
@@ -1088,8 +1125,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
                 .collection('fridge_items')
                 .doc(draggedItemDocumentId)
                 .update({'fridgeCategoryId': newFridgeCategoryId});
-
-            print('Fridge category updated to $newFridgeCategoryId for $draggedItemName');
 
             refreshFridgeItems();
 
@@ -1182,7 +1217,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
   Widget _buildDragTargetForFridgeTransfer() {
     return DragTarget<Map<String, dynamic>>(
       onWillAcceptWithDetails: (DragTargetDetails<Map<String, dynamic>> details) {
-        print("DragTarget에서 아이템 받음: ${details.data}");
+
         setState(() {
           isDragActive = true; // 드래그가 활성화되면 상태 업데이트
         });
@@ -1280,7 +1315,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
   Widget _buildDragTargetForAddSection() {
     return DragTarget<Map<String, dynamic>>(
       onWillAcceptWithDetails: (DragTargetDetails<Map<String, dynamic>> details) {
-        print("DragTarget에서 아이템 받음: ${details.data}");
+
         setState(() {
           isDragActive = true; // 드래그가 활성화되면 상태 업데이트
         });

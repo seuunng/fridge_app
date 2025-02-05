@@ -1,26 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FridgeCategory {
-  final String id;
-  final String categoryName;
+  String id;
+  String categoryName;
+  String? userId; // 사용자 ID 추가
 
   FridgeCategory({
     required this.id,
     required this.categoryName,
+    this.userId,
   });
 
   factory FridgeCategory.fromFirestore(
       DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
     return FridgeCategory(
-      id: doc.id,
-      categoryName: data['CategoryName'],
+      id: data['id'] ?? 'unknown_id',  // 기본값 설정
+      categoryName: data['categoryName'] ?? 'Unknown Category',
     );
   }
 
   Map<String, dynamic> toFirestore() {
     return {
-      'CategoryName': categoryName, // Firestore에 저장할 필드
+      'categoryName': categoryName, // Firestore에 저장할 필드
     };
   }
 }

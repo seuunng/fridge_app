@@ -288,38 +288,65 @@ class _AddItemState extends State<AddItem> {
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final fridgeId = selected_fridgeId;
-    print('추가된 냉장고 $selected_fridgeId');
+
     try {
       for (String itemName in selectedItems) {
-        final matchingFood = itemsByCategory.values.expand((x) => x).firstWhere(
-              (food) => food.foodsName == itemName, // itemName과 일치하는지 확인
-              orElse: () => FoodsModel(
-                id: 'unknown',
-                foodsName: itemName,
-                defaultCategory: '기타',
-                defaultFridgeCategory: '냉장',
-                shoppingListCategory: '기타',
-                shelfLife: 0,
-              ),
-            );
+        // 🔍 foods 컬렉션에서 먼저 찾기
+        final foodsSnapshot = await FirebaseFirestore.instance
+            .collection('foods')
+            .where('foodsName', isEqualTo: itemName.trim().toLowerCase())
+            .where('userId', isEqualTo: userId) // 사용자 데이터 우선
+            .get();
 
-        final fridgeCategoryId = matchingFood.defaultFridgeCategory;
+        Map<String, dynamic>? foodData;
 
+        if (foodsSnapshot.docs.isNotEmpty) {
+          // ✅ 사용자 정보가 있는 경우
+          foodData = foodsSnapshot.docs.first.data();
+          print("✅ 사용자 정의 데이터 사용: ${foodData['foodsName']}");
+        } else {
+          // 🔍 사용자 데이터가 없으면 default_foods에서 찾기
+          final defaultFoodsSnapshot = await FirebaseFirestore.instance
+              .collection('default_foods')
+              .where('foodsName', isEqualTo: itemName.trim().toLowerCase())
+              .get();
+
+          if (defaultFoodsSnapshot.docs.isNotEmpty) {
+            foodData = defaultFoodsSnapshot.docs.first.data();
+            print("✅ 기본 데이터 사용: ${foodData['foodsName']}");
+          }
+        }
+
+        if (foodData == null) {
+          // 데이터가 없으면 추가하지 않음
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$itemName 식품 정보를 찾을 수 없습니다.')),
+          );
+          continue;
+        }
+
+        final fridgeCategoryId = foodData['defaultFridgeCategory'] ?? '냉장';
+
+        // 🔍 기존에 동일한 아이템이 있는지 검사
         final existingItemSnapshot = await FirebaseFirestore.instance
             .collection('fridge_items')
-            .where('items', isEqualTo: itemName.trim().toLowerCase()) // 이름 일치
-            .where('FridgeId', isEqualTo: fridgeId) // 냉장고 일치
+            .where('items', isEqualTo: itemName.trim().toLowerCase())
+            .where('FridgeId', isEqualTo: fridgeId)
             .get();
 
         if (existingItemSnapshot.docs.isEmpty) {
+          // ✅ 새로운 아이템 추가
           await FirebaseFirestore.instance.collection('fridge_items').add({
             'items': itemName,
-            'FridgeId': fridgeId, // Firestore에 저장할 필드
-            'fridgeCategoryId': fridgeCategoryId ?? '냉장',
+            'FridgeId': fridgeId,
+            'fridgeCategoryId': fridgeCategoryId,
             'registrationDate': Timestamp.fromDate(DateTime.now()),
             'userId': userId,
           });
+
+          print("✅ $itemName 아이템이 추가되었습니다.");
         } else {
+          // 🔴 이미 존재하는 경우 메시지 표시
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('$itemName 아이템이 이미 냉장고에 있습니다.')),
           );
