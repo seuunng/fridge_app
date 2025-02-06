@@ -25,6 +25,13 @@ class FridgeCategory {
       'categoryName': categoryName, // Firestore에 저장할 필드
     };
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'categoryName': categoryName,
+    };
+  }
 }
 
 List<FridgeCategory> generateDefaultCategories() {

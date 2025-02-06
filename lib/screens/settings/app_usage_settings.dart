@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +23,9 @@ class AppUsageSettings extends StatefulWidget {
 }
 
 class _AppUsageSettingsState extends State<AppUsageSettings> {
-  String _selectedCategory_fridge = '기본 냉장고'; // 기본 선택값
+  // String _selectedCategory_fridge = '기본 냉장고'; // 기본 선택값
   List<String> _categories_fridge = []; // 카테고리 리스트
+  String _fridge_category = '';
   String _selectedCategory_foods = '입고일 기준'; // 기본 선택값
   final List<String> _categories_foods = ['소비기한 기준', '입고일 기준']; // 카테고리 리스트
   String _selectedCategory_records = '달력형'; // 기본 선택값
@@ -46,7 +49,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   void initState() {
     super.initState();
     _loadFridgeNameFromFirestore(); // 초기화 시 Firestore에서 데이터를 불러옴
-    _loadSelectedFridge();
+    // _loadSelectedFridge();
     _loadUserRole();
     _loadSelectedEnvironmentSettingValue();
     _loadFonts();
@@ -68,17 +71,17 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       print('Error loading user role: $e');
     }
   }
-  void _loadSelectedFridge() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
-    setState(() {
-      _selectedCategory_fridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
-      _selectedCategory_records =
-          prefs.getString('selectedRecordListType') ?? '달력형';
-      _selectedCategory_foods =
-          prefs.getString('selectedFoodStatusManagement') ?? '소비기한 기준';
-    });
-  }
+  // void _loadSelectedFridge() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
+  //   setState(() {
+  //     _selectedCategory_fridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+  //     _selectedCategory_records =
+  //         prefs.getString('selectedRecordListType') ?? '달력형';
+  //     _selectedCategory_foods =
+  //         prefs.getString('selectedFoodStatusManagement') ?? '소비기한 기준';
+  //   });
+  // }
 
   // Firestore에서 냉장고 목록 불러오기
   void _loadFridgeNameFromFirestore() async {
@@ -229,9 +232,9 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                   setState(() {
                     categories.add(newCategory);
                     // 추가 후 선택된 카테고리 업데이트
-                    if (categoryType == '냉장고') {
-                      _selectedCategory_fridge = newCategory;
-                    }
+                    // if (categoryType == '냉장고') {
+                    //   _selectedCategory_fridge = newCategory;
+                    // }
                   });
                 }
                 Navigator.pop(context);
@@ -252,6 +255,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       });
 
       await _loadFridgeCategoriesFromFirestore();
+      Navigator.pop(context, true);
     } catch (e) {
       print('Error saving new fridge section: $e');
     }
@@ -277,12 +281,18 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
             .doc(sectionId)
             .delete();
 
+        setState(() {
+          // 삭제된 섹션을 로컬에서 제거
+          userCategories.removeWhere((category) => category.id == sectionId);
+        });
+
         // 삭제 성공 후 UI 갱신
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('섹션과 포함된 아이템이 모두 삭제되었습니다.')),
         );
 
         await _loadFridgeCategoriesFromFirestore(); // UI 업데이트
+        Navigator.pop(context, true);
       } catch (e) {
         // 삭제 실패 시 오류 메시지 출력
         print('섹션 또는 아이템 삭제 중 오류 발생: $e');
@@ -352,7 +362,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                     setState(() {
                       _categories_fridge.remove(category);
                       if (_categories_fridge.isNotEmpty) {
-                        _selectedCategory_fridge = _categories_fridge.first;
+                        // _selectedCategory_fridge = _categories_fridge.first;
                       } else {
                         DefaultFridgeService().createDefaultFridge(userId);
                       }
@@ -384,7 +394,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       return; // 🚫 여기서 함수 종료 (저장 X)
     }
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedFridge', _selectedCategory_fridge);
+
     await prefs.setString('selectedRecordListType', _selectedCategory_records);
     await prefs.setString(
         'selectedFoodStatusManagement', _selectedCategory_foods);
@@ -412,40 +422,40 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Text(
-                    '냉장고 선택',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface),
-                  ),
-              Spacer(),
-              CustomDropdown(
-                title: '냉장고 선택',
-                items: _categories_fridge,
-                selectedItem:
-                    _categories_fridge.contains(_selectedCategory_fridge)
-                        ? _selectedCategory_fridge
-                        : '기본 냉장고', // 리스트에 없으면 기본값 설정
-                onItemChanged: (value) {
-                  setState(() {
-                    _selectedCategory_fridge = value;
-                  });
-                },
-                onItemDeleted: (item) {
-                  _deleteCategory(item, _categories_fridge, '냉장고');
-                },
-                onAddNewItem: () {
-                  _addNewCategory(_categories_fridge, '냉장고');
-                },
-              ),
-                ],
-              ),
-              Text('가장 자주 보는 냉장고를 기본냉장고로 설정하세요',
-                  style: TextStyle(color: theme.colorScheme.onSurface)),
-              SizedBox(height: 20),
+              // Row(
+              //   children: [
+              //     Text(
+              //       '냉장고 선택',
+              //       style: TextStyle(
+              //           fontSize: 18,
+              //           fontWeight: FontWeight.bold,
+              //           color: theme.colorScheme.onSurface),
+              //     ),
+              // Spacer(),
+              // CustomDropdown(
+              //   title: '냉장고 선택',
+              //   items: _categories_fridge,
+              //   selectedItem:
+              //       _categories_fridge.contains(_selectedCategory_fridge)
+              //           ? _selectedCategory_fridge
+              //           : '기본 냉장고', // 리스트에 없으면 기본값 설정
+              //   onItemChanged: (value) {
+              //     setState(() {
+              //       _selectedCategory_fridge = value;
+              //     });
+              //   },
+              //   onItemDeleted: (item) {
+              //     _deleteCategory(item, _categories_fridge, '냉장고');
+              //   },
+              //   onAddNewItem: () {
+              //     _addNewCategory(_categories_fridge, '냉장고');
+              //   },
+              // ),
+              //   ],
+              // ),
+              // Text('가장 자주 보는 냉장고를 기본냉장고로 설정하세요',
+              //     style: TextStyle(color: theme.colorScheme.onSurface)),
+              // SizedBox(height: 20),
               Row(
                 children: [
                   Text(
@@ -757,6 +767,14 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                                         .collection('fridge_categories')
                                         .doc(userCategories[0].id)
                                         .update({'categoryName': newValue});
+                                    final fridgeSnapshot = await FirebaseFirestore.instance
+                                        .collection('fridge_items')
+                                        .where('userId', isEqualTo: userId)
+                                        .where('fridgeCategoryId', isEqualTo: userCategories[0].categoryName.trim())
+                                        .get();
+                                    for (var doc in fridgeSnapshot.docs) {
+                                      await doc.reference.update({'fridgeCategoryId': newValue});
+                                    }
                                     // 2. 로컬 데이터 즉시 업데이트
                                     setState(() {
                                       userCategories[0] = FridgeCategory(
@@ -770,7 +788,6 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                                       isEditing = false; // 입력 후 편집 모드 해제
                                     });
                                   }
-
                                   // 3. (선택 사항) Firestore에서 다시 로드하여 최신 데이터로 유지
                                   await _loadFridgeCategoriesFromFirestore();
                                 },
@@ -794,14 +811,11 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                                   .where('fridgeCategoryId', isEqualTo: userCategories[0].categoryName.trim())
                                   .get();
 
-                              print('userCategories[0].id.trim()');
-                              print(userCategories[0].id.trim());
-                              print('쿼리 결과 개수: ${fridgeSnapshot.docs.length}');
                               // 아이템이 있는지 여부를 확인
                               final bool hasItems = fridgeSnapshot.docs.isNotEmpty;
                               print('hasItems $hasItems');
                               final String message = hasItems
-                                  ? '정말로 섹션과 포함된 아이템을\n모두 삭제하시겠습니까?'
+                                  ? '정말로 섹션과 포함된 재료를\n모두 삭제하시겠습니까?'
                                   : '정말로 이 섹션을 삭제하시겠습니까?';
 
                               bool confirmDelete = await showDialog(
@@ -866,15 +880,15 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      isEditing = false; // 취소 시 편집 모드 해제
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: Text('취소', style: TextStyle(color: theme.chipTheme.labelStyle!.color)),
-                ),
+                // TextButton(
+                //   onPressed: () {
+                //     setState(() {
+                //       isEditing = false; // 취소 시 편집 모드 해제
+                //     });
+                //     Navigator.pop(context);
+                //   },
+                //   child: Text('취소', style: TextStyle(color: theme.chipTheme.labelStyle!.color)),
+                // ),
                 if (!hasCustomSection)
                   TextButton(
                     onPressed: () async {

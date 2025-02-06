@@ -26,7 +26,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   List<String> fridgeName = [];
   List<ShoppingCategory> _categories = [];
 
-  String? selectedFridge = '';
+  // String? selectedFridge = '';
   String? selected_fridgeId = '';
 
   Map<String, List<String>> itemLists = {};
@@ -52,9 +52,9 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     _loadItemsFromFirestore(userId);
     _loadCategoriesFromFirestore();
     _loadFridgeCategoriesFromFirestore(userId).then((_) {
-      _loadSelectedFridge(); // 🔹 냉장고 목록을 불러온 후 기본값 설정
+      // _loadSelectedFridge(); // 🔹 냉장고 목록을 불러온 후 기본값 설정
     });
-
+    _loadFridgeId();
     setState(() {
       showCheckBoxes = false;
     });
@@ -64,13 +64,13 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   void didPopNext() {
     super.didPopNext();
     stopShoppingListDeleteMode();
-    _loadSelectedFridge();
+    // _loadSelectedFridge();
   }
 
   @override
   void dispose() {
     routeObserver.unsubscribe(this); // routeObserver 구독 해제
-    _loadSelectedFridge();
+    // _loadSelectedFridge();
     super.dispose();
   }
 
@@ -80,16 +80,27 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
 
+  Future<void> _loadFridgeId() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        // 유저의 첫 번째 냉장고 ID 사용
+        setState(() {
+          selected_fridgeId = snapshot.docs.first.id;
+        });
+      } else {
+        throw Exception('사용자 냉장고가 존재하지 않습니다.');
+      }
+    } catch (e) {
+      print('냉장고 ID 로드 중 오류 발생: $e');
+    }
+  }
   void _loadItemsFromFirestore(String userId) async {
     try {
-      // 🔹 Firestore에서 default_foods 데이터 가져오기
-      final foodsSnapshot =
-          await FirebaseFirestore.instance.collection('default_foods').get();
-
-      final List<FoodsModel> foodsList = foodsSnapshot.docs
-          .map((doc) => FoodsModel.fromFirestore(doc))
-          .toList();
-
       // 🔹 Firestore에서 쇼핑 목록 가져오기 (현재 유저의 데이터만 필터링)
       final snapshot = await FirebaseFirestore.instance
           .collection('shopping_items')
@@ -100,25 +111,37 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
-
         final itemName = data['items']?.toString() ?? 'Unknown Item';
         final isChecked = data['isChecked'] ?? false;
 
-        // 🔹 foodsList에서 해당 아이템 찾기
-        final matchingFood = foodsList.firstWhere(
-          (food) => food.foodsName == itemName,
-          orElse: () => FoodsModel(
-            id: 'unknown',
-            foodsName: itemName,
-            defaultCategory: '기타',
-            defaultFridgeCategory: '기타',
-            shoppingListCategory: '기타', // 🔹 쇼핑 카테고리가 없으면 "기타" 처리
-            shelfLife: 0,
-          ),
-        );
+        Map<String, dynamic>? foodData;
+
+        // 🔍 1. `foods` 컬렉션에서 검색
+        final foodsSnapshot = await FirebaseFirestore.instance
+            .collection('foods')
+            .where('foodsName', isEqualTo: itemName)
+            .get();
+
+        if (foodsSnapshot.docs.isNotEmpty) {
+          // ✅ 사용자 데이터가 있는 경우
+          foodData = foodsSnapshot.docs.first.data();
+        } else {
+          // 🔍 2. `default_foods`에서 검색
+          final defaultFoodsSnapshot = await FirebaseFirestore.instance
+              .collection('default_foods')
+              .where('foodsName', isEqualTo: itemName)
+              .get();
+
+          if (defaultFoodsSnapshot.docs.isNotEmpty) {
+            foodData = defaultFoodsSnapshot.docs.first.data();
+          }
+        }
+
+        // 데이터가 없는 경우 "기타"로 처리
+        final category = foodData?['shoppingListCategory'] ?? '기타';
 
         allItems.add({
-          'category': matchingFood.shoppingListCategory, // 🔹 쇼핑 카테고리
+          'category': category,
           'itemName': itemName,
           'isChecked': isChecked,
         });
@@ -230,26 +253,26 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     }
   }
 
-  void _loadSelectedFridge() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
-
-    String? savedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
-
-    // 🔹 Firestore에서 해당 냉장고 ID 가져오기
-    String? fridgeId = await fetchFridgeId(savedFridge);
-
-// 🔹 fridgeName 리스트가 비어있지 않다면 기본값 설정
-    if (fridgeName.isNotEmpty && !fridgeName.contains(savedFridge)) {
-      savedFridge = fridgeName.first; // 🔹 리스트의 첫 번째 냉장고를 기본값으로 설정
-      fridgeId = await fetchFridgeId(savedFridge);
-    }
-
-    setState(() {
-      selectedFridge = savedFridge;
-      selected_fridgeId = fridgeId; // 🔹 ID 업데이트
-    });
-  }
+//   void _loadSelectedFridge() async {
+//     SharedPreferences prefs = await SharedPreferences.getInstance();
+//     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
+//
+//     String? savedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+//
+//     // 🔹 Firestore에서 해당 냉장고 ID 가져오기
+//     String? fridgeId = await fetchFridgeId(savedFridge);
+//
+// // 🔹 fridgeName 리스트가 비어있지 않다면 기본값 설정
+//     if (fridgeName.isNotEmpty && !fridgeName.contains(savedFridge)) {
+//       savedFridge = fridgeName.first; // 🔹 리스트의 첫 번째 냉장고를 기본값으로 설정
+//       fridgeId = await fetchFridgeId(savedFridge);
+//     }
+//
+//     setState(() {
+//       selectedFridge = savedFridge;
+//       selected_fridgeId = fridgeId; // 🔹 ID 업데이트
+//     });
+//   }
 
   Future<String?> fetchFridgeId(String fridgeName) async {
     try {
@@ -324,42 +347,35 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   }
 
   Future<void> _addItemsToFridge() async {
-    final fridgeId = selected_fridgeId;
+    // final fridgeId = selected_fridgeId;
 
-    if (fridgeId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('선택된 냉장고를 찾을 수 없습니다.')),
-      );
-      return;
-    }
+    // if (fridgeId == null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('선택된 냉장고를 찾을 수 없습니다.')),
+    //   );
+    //   return;
+    // }
 
     try {
       for (var category in checkedItems.keys) {
         List<String> categoryItems = List<String>.from(itemLists[category] ?? []);
 
-        if (categoryItems.isEmpty) {
-          continue;
-        }
-
-        List<int> itemsToRemove = [];
-
         for (int index = 0; index < checkedItems[category]!.length; index++) {
           if (checkedItems[category]![index]) {
             String itemName = categoryItems[index];
 
-            // 🔹 1. `foods` 컬렉션에서 검색
-            final matchingFoodSnapshot = await FirebaseFirestore.instance
+            // 🔍 1. `foods` 컬렉션에서 검색
+            final foodsSnapshot = await FirebaseFirestore.instance
                 .collection('foods')
                 .where('foodsName', isEqualTo: itemName)
                 .get();
 
             Map<String, dynamic>? foodData;
 
-            if (matchingFoodSnapshot.docs.isNotEmpty) {
-              // `foods` 컬렉션에서 찾음
-              foodData = matchingFoodSnapshot.docs.first.data();
+            if (foodsSnapshot.docs.isNotEmpty) {
+              foodData = foodsSnapshot.docs.first.data(); // ✅ 사용자 데이터 사용
             } else {
-              // 🔹 2. `default_foods`에서 검색
+              // 🔍 2. `default_foods`에서 검색
               final defaultFoodsSnapshot = await FirebaseFirestore.instance
                   .collection('default_foods')
                   .where('foodsName', isEqualTo: itemName)
@@ -370,64 +386,21 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
               }
             }
 
-            // if (foodData == null) {
-            //   print("일치하는 음식이 없습니다: $itemName");
-            //   continue;
-            // }
+            final fridgeCategoryId = foodData?['defaultFridgeCategory'] ?? '냉장';
 
-            final fridgeCategoryId =
-                foodData?['defaultFridgeCategory'] ?? '냉장'; // 냉장고 카테고리
+            // 🔹 3. 냉장고에 추가
+            await FirebaseFirestore.instance.collection('fridge_items').add({
+              'items': itemName,
+              'FridgeId':  selected_fridgeId,
+              'fridgeCategoryId': fridgeCategoryId,
+              'userId': userId,
+              'registrationDate': Timestamp.fromDate(DateTime.now()),
+            });
 
-            // 🔹 3. 냉장고에 이미 있는지 확인
-            final existingItem = await FirebaseFirestore.instance
-                .collection('fridge_items')
-                .where('items', isEqualTo: itemName.trim().toLowerCase())
-                .where('FridgeId', isEqualTo: fridgeId.trim())
-                .get();
-
-            if (existingItem.docs.isNotEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('"$itemName"이(가) 이미 냉장고에 존재합니다.')),
-              );
-            } else {
-              // 🔹 4. 냉장고에 추가
-              await FirebaseFirestore.instance.collection('fridge_items').add({
-                'items': itemName,
-                'FridgeId': fridgeId,
-                'fridgeCategoryId': fridgeCategoryId,
-                'userId': userId,
-                'registrationDate': Timestamp.fromDate(DateTime.now()),
-              });
-            }
-
-            // 🔹 5. 장보기 목록에서 삭제
-            final snapshot = await FirebaseFirestore.instance
-                .collection('shopping_items')
-                .where('items', isEqualTo: itemName)
-                .where('userId', isEqualTo: userId) // 유저 ID로 필터
-                .get();
-
-            if (snapshot.docs.isNotEmpty) {
-              for (var doc in snapshot.docs) {
-                await FirebaseFirestore.instance
-                    .collection('shopping_items')
-                    .doc(doc.id)
-                    .delete();
-              }
-            }
-            itemsToRemove.add(index);
+            // 🔹 4. 장보기 목록에서 삭제
+            await _deleteShoppingItem(itemName);
           }
         }
-
-        setState(() {
-          for (int i = itemsToRemove.length - 1; i >= 0; i--) {
-            int removeIndex = itemsToRemove[i];
-            categoryItems.removeAt(removeIndex);
-            checkedItems[category]!.removeAt(removeIndex);
-            strikeThroughItems[category]!.removeAt(removeIndex);
-          }
-          itemLists[category] = categoryItems;
-        });
       }
     } catch (e) {
       print('아이템 추가 중 오류 발생: $e');
@@ -436,7 +409,20 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       );
     }
   }
+  Future<void> _deleteShoppingItem(String itemName) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('shopping_items')
+        .where('items', isEqualTo: itemName)
+        .where('userId', isEqualTo: userId)
+        .get();
 
+    for (var doc in snapshot.docs) {
+      await FirebaseFirestore.instance
+          .collection('shopping_items')
+          .doc(doc.id)
+          .delete();
+    }
+  }
   void _updateIsCheckedInFirestore(String itemName, bool isChecked) async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -558,38 +544,38 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
             title: Row(
               children: [
                 Text('장보기 목록'),
-                SizedBox(width: 20),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: fridgeName.contains(selectedFridge)
-                        ? selectedFridge
-                        : null,
-                    items: fridgeName.map((section) {
-                      return DropdownMenuItem(
-                        value: section,
-                        child: Text(section,
-                            style:
-                                TextStyle(color: theme.colorScheme.onSurface)),
-                      );
-                    }).toList(), // 반복문을 통해 DropdownMenuItem 생성
-                    onChanged: (value) async {
-                      String? fridgeId =
-                          await fetchFridgeId(value!); // 🔹 새 ID 가져오기
-                      setState(() {
-                        selectedFridge = value;
-                        selected_fridgeId = fridgeId; // 🔹 변경된 냉장고 ID 저장
-                      });
-                      print('Selected fridge: $selectedFridge, Fridge ID: $selected_fridgeId');
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      await prefs.setString(
-                          'selectedFridge', value); // 🔹 새 냉장고 저장
-                    },
-                    decoration: InputDecoration(
-                      labelText: '냉장고 선택',
-                    ),
-                  ),
-                ),
+                // SizedBox(width: 20),
+                // Expanded(
+                //   child: DropdownButtonFormField<String>(
+                //     value: fridgeName.contains(selectedFridge)
+                //         ? selectedFridge
+                //         : null,
+                //     items: fridgeName.map((section) {
+                //       return DropdownMenuItem(
+                //         value: section,
+                //         child: Text(section,
+                //             style:
+                //                 TextStyle(color: theme.colorScheme.onSurface)),
+                //       );
+                //     }).toList(), // 반복문을 통해 DropdownMenuItem 생성
+                //     onChanged: (value) async {
+                //       String? fridgeId =
+                //           await fetchFridgeId(value!); // 🔹 새 ID 가져오기
+                //       setState(() {
+                //         selectedFridge = value;
+                //         selected_fridgeId = fridgeId; // 🔹 변경된 냉장고 ID 저장
+                //       });
+                //       print('Selected fridge: $selectedFridge, Fridge ID: $selected_fridgeId');
+                //       SharedPreferences prefs =
+                //           await SharedPreferences.getInstance();
+                //       await prefs.setString(
+                //           'selectedFridge', value); // 🔹 새 냉장고 저장
+                //     },
+                //     decoration: InputDecoration(
+                //       labelText: '냉장고 선택',
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -655,7 +641,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                     children: [
                       Expanded(
                         child: NavbarButton(
-                          buttonTitle: '${selectedFridge ?? "선택된 냉장고"} 로 이동',
+                          buttonTitle: '냉장고로 이동',
                           onPressed: () {
                             _addItemsToFridge();
                             Navigator.push(

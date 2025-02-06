@@ -301,9 +301,7 @@ class _AddItemState extends State<AddItem> {
         Map<String, dynamic>? foodData;
 
         if (foodsSnapshot.docs.isNotEmpty) {
-          // ✅ 사용자 정보가 있는 경우
           foodData = foodsSnapshot.docs.first.data();
-          print("✅ 사용자 정의 데이터 사용: ${foodData['foodsName']}");
         } else {
           // 🔍 사용자 데이터가 없으면 default_foods에서 찾기
           final defaultFoodsSnapshot = await FirebaseFirestore.instance
@@ -313,7 +311,6 @@ class _AddItemState extends State<AddItem> {
 
           if (defaultFoodsSnapshot.docs.isNotEmpty) {
             foodData = defaultFoodsSnapshot.docs.first.data();
-            print("✅ 기본 데이터 사용: ${foodData['foodsName']}");
           }
         }
 
@@ -325,7 +322,17 @@ class _AddItemState extends State<AddItem> {
           continue;
         }
 
-        final fridgeCategoryId = foodData['defaultFridgeCategory'] ?? '냉장';
+        String fridgeCategoryId = foodData['defaultFridgeCategory'] ?? '냉장';
+        final categorySnapshot = await FirebaseFirestore.instance
+            .collection('fridge_categories')
+            .where('userId', isEqualTo: userId)
+            .where('categoryName', isEqualTo: fridgeCategoryId)
+            .get();
+
+        if (categorySnapshot.docs.isEmpty) {
+          print("⚠️ 유효하지 않은 fridgeCategoryId: $fridgeCategoryId, 기본값 '냉장' 사용");
+          fridgeCategoryId = '냉장';
+        }
 
         // 🔍 기존에 동일한 아이템이 있는지 검사
         final existingItemSnapshot = await FirebaseFirestore.instance
@@ -344,7 +351,6 @@ class _AddItemState extends State<AddItem> {
             'userId': userId,
           });
 
-          print("✅ $itemName 아이템이 추가되었습니다.");
         } else {
           // 🔴 이미 존재하는 경우 메시지 표시
           ScaffoldMessenger.of(context).showSnackBar(
