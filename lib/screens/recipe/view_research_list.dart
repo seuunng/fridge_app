@@ -16,13 +16,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' show parse; // parse 메서드를 가져옵니다.
 import 'package:uuid/uuid.dart';
-// import 'package:html/dom.dart'; // DOM 작업에 필요한 클래스 가져오기
 import 'package:webview_flutter/webview_flutter.dart'; // HTTP 요청 처리
 
 class ViewResearchList extends StatefulWidget {
   final List<String>? category;
   final bool useFridgeIngredients;
   final List<String>? initialKeywords;
+  String? selected_fridgeId = '';
 
   ViewResearchList({
     this.category,
@@ -80,13 +80,12 @@ class _ViewResearchListState extends State<ViewResearchList> {
     useFridgeIngredientsState = widget.useFridgeIngredients;
     keywords = widget.initialKeywords ?? [];
     keywords = widget.category ?? [];
-    _loadPreferredFoodsByCategory().then((_) {
-      _initializeSearch();
-    });
+    // print('keywords $keywords');
+
+    _initializePageData();
     _loadSearchSettingsFromLocal();
     _loadFridgeItemsFromFirestore();
     _loadUserRole();
-    _initializeFridgeData();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000)) // 투명 배경 설정
@@ -110,8 +109,33 @@ class _ViewResearchListState extends State<ViewResearchList> {
       ..loadRequest(Uri.parse('https://flutter.dev'));
     _updateQuery();
     _mangaeUpdateQuery();
+    _loadFridgeId();
   }
+  void _initializePageData() async {
+    // ✅ 순서를 보장하기 위해 async/await 사용
+    await _loadPreferredFoodsByCategory();
+    await _initializeFridgeData(); // 냉장고 데이터도 완전히 불러온 후 실행
+    await _initializeSearch(); // 모든 초기화 작업이 끝난 후 검색 실행
+  }
+  Future<void> _loadFridgeId() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridges')
+          .where('userId', isEqualTo: userId)
+          .get();
 
+      if (snapshot.docs.isNotEmpty) {
+        // 유저의 첫 번째 냉장고 ID 사용
+        setState(() {
+          selected_fridgeId = snapshot.docs.first.id;
+        });
+      } else {
+        throw Exception('사용자 냉장고가 존재하지 않습니다.');
+      }
+    } catch (e) {
+      print('냉장고 ID 로드 중 오류 발생: $e');
+    }
+  }
   void _updateQuery() {
     setState(() {
       final queryKeywords = [...keywords, ...topIngredients];
@@ -132,17 +156,17 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
 
   //선택된 냉장고 불러오기
-  Future<void> _loadSelectedFridge() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
-    setState(() {
-      selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
-    });
-
-    if (selectedFridge != null) {
-      selected_fridgeId = await fetchFridgeId(selectedFridge!);
-    }
-  }
+  // Future<void> _loadSelectedFridge() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
+  //   setState(() {
+  //     selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+  //   });
+  //
+  //   if (selectedFridge != null) {
+  //     selected_fridgeId = await fetchFridgeId(selectedFridge!);
+  //   }
+  // }
 
   //선택된 냉장고의 Id불러오기
   Future<String?> fetchFridgeId(String fridgeName) async {
@@ -258,7 +282,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       setState(() {
         itemsByCategory = filteredCategoryData;
       });
-      print('itemsByCategory ${itemsByCategory} ');
+      // print('itemsByCategory ${itemsByCategory} ');
     } catch (e) {
       print('Error loading preferred foods by category: $e');
     }
@@ -266,7 +290,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
   //순차적으로 냉장고속아이템 불러오기
   Future<void> _initializeFridgeData() async {
-    await _loadSelectedFridge(); // selected_fridgeId를 먼저 로드
+    // await _loadSelectedFridge(); // selected_fridgeId를 먼저 로드
     if (selected_fridgeId != null) {
       await _loadFridgeItemsFromFirestore(); // selected_fridgeId를 사용해 데이터 로드
     } else {
@@ -276,6 +300,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       try {
         await _loadFridgeItemsFromFirestore();
         topIngredients = await _applyCategoryPriority(fridgeIngredients);
+        // print('_initializeFridgeData() $topIngredients');
       } catch (error) {
         print('Error initializing fridge ingredients: $error');
       }
@@ -288,7 +313,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
       final snapshot = await FirebaseFirestore.instance
           .collection('fridge_items')
           .where('userId', isEqualTo: userId)
-          .where('FridgeId', isEqualTo: selected_fridgeId)
           .get();
 
       List<String> validIngredients = [];
@@ -321,6 +345,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       setState(() {
         fridgeIngredients = validIngredients; // 유효한 아이템만 fridgeIngredients에 추가
       });
+
     } catch (e) {
       print('Error loading fridge items: $e');
     }
@@ -329,7 +354,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
   // 냉장고 재료 우선순위에 따라 10개 추리기
   Future<List<String>> _applyCategoryPriority(
       List<String> fridgeIngredients) async {
-    // print('fridgeIngredients $fridgeIngredients');
+
     Map<String, String> ingredientToCategory =
         await _loadIngredientCategoriesFromFirestore();
 
@@ -343,7 +368,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
     prioritizedIngredients.sort((a, b) => b.value.compareTo(a.value));
     List<String> topIngredients =
         prioritizedIngredients.map((entry) => entry.key).take(10).toList();
-    print('topIngredients $topIngredients');
+// print('_applyCategoryPriority $topIngredients');
     return topIngredients;
   }
 
@@ -375,7 +400,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
     await fetchRecipes(
         keywords: keywords,
         topIngredients: topIngredients,
-        cookingMethods: this.selectedCookingMethods);
+        cookingMethods: this.selectedCookingMethods
+    );
+    // print('_initializeSearch() $topIngredients');
   }
 
   //제외 키워드 카테고리에 따른 레시피 불러오기
@@ -421,6 +448,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
     List<String>? cookingMethods,
     bool filterExcluded = true,
   }) async {
+    // print('검색 키워드: $keywords');
+    // print('상위 재료: $topIngredients');
     try {
       keywords =
           keywords?.where((keyword) => keyword.trim().isNotEmpty).toList() ??
@@ -450,6 +479,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
               ?.where((ingredient) => ingredient.trim().isNotEmpty)
               .toList() ??
           [];
+
+//       print('topIngredients $topIngredients');
+// print('cleanedTopIngredients $cleanedTopIngredients');
 
       List<DocumentSnapshot> keywordResults = [];
       List<DocumentSnapshot> topIngredientResults = [];
@@ -502,14 +534,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
               .collection('recipe')
               .where('foods', arrayContainsAny: cleanedTopIngredients)
               .get(),
-          _db
-              .collection('recipe')
-              .where('methods', arrayContainsAny: cleanedTopIngredients)
-              .get(),
-          _db
-              .collection('recipe')
-              .where('themes', arrayContainsAny: cleanedTopIngredients)
-              .get(),
+          // _db
+          //     .collection('recipe')
+          //     .where('methods', arrayContainsAny: cleanedTopIngredients)
+          //     .get(),
+          // _db
+          //     .collection('recipe')
+          //     .where('themes', arrayContainsAny: cleanedTopIngredients)
+          //     .get(),
         ]);
         for (var snapshot in querySnapshots) {
           topIngredientResults.addAll(snapshot.docs);
@@ -527,13 +559,19 @@ class _ViewResearchListState extends State<ViewResearchList> {
           combinedResults.add(doc);
         }
       }
-
       for (var doc in topIngredientResults) {
         if (!processedIds.contains(doc.id)) {
           processedIds.add(doc.id);
           combinedResults.add(doc);
         }
       }
+
+      // print('keywordResults레시피 $keywordResults');
+      // print('titleResults레시피 $titleResults');
+      // print('topIngredientResults레시피 $topIngredientResults');
+      keywordResults.forEach((doc) {
+        // print('Recipe ID: ${doc.id}, Rating: ${doc.data().['rating']}');
+      });
 
       // 제외 키워드 필터링
       if (filterExcluded &&
@@ -551,8 +589,10 @@ class _ViewResearchListState extends State<ViewResearchList> {
         final createdAtB = b['date'] as Timestamp?;
         final viewCountA = a['views'] as int? ?? 0;
         final viewCountB = b['views'] as int? ?? 0;
-        final likeCountA = (a['rating'] as num?)?.toDouble() ?? 0.0; // 수정된 부분
-        final likeCountB = (b['rating'] as num?)?.toDouble() ?? 0.0; // 수정된 부분
+        // final likeCountA = (a['rating'] as num?)?.toDouble() ?? 0.0; // 수정된 부분
+        // final likeCountB = (b['rating'] as num?)?.toDouble() ?? 0.0; // 수정된 부분
+        final likeCountA = ((a.data() as Map<String, dynamic>)['rating'] as num?)?.toDouble() ?? 0.0;
+        final likeCountB = ((b.data() as Map<String, dynamic>)['rating'] as num?)?.toDouble() ?? 0.0;
 
         // 최신순
         if (createdAtA != null && createdAtB != null) {
@@ -600,8 +640,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
   Future<Map<String, dynamic>> loadScrapedData(String recipeId,
       {String? link}) async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    print(link);
-    print(recipeId);
     try {
       QuerySnapshot<Map<String, dynamic>> snapshot;
 
@@ -613,10 +651,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
             .where('link', isEqualTo: link)
             .get();
 
-        print("Scraped docs count: ${snapshot.docs.length}");
-        snapshot.docs.forEach((doc) {
-          print("Doc data: ${doc.data()}");
-        });
       } else if (recipeId.isNotEmpty) {
         // 🔹 Firestore 레시피의 경우 recipeId로 확인
         snapshot = await FirebaseFirestore.instance
@@ -1142,9 +1176,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
             RecipeModel recipe = matchingRecipes[index];
 
             String recipeName = recipe.recipeName;
-            double recipeRating = recipe.rating;
+            double recipeRating = recipe.rating ?? 0.0;
             bool hasMainImage = recipe.mainImages.isNotEmpty; // 이미지가 있는지 확인
-
+  print('hasMainImage $hasMainImage');
             List<String> keywordList = [
               ...recipe.foods, // 이 레시피의 food 키워드들
               ...recipe.methods, // 이 레시피의 method 키워드들
@@ -1333,8 +1367,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
 
   Widget _buildRatingStars(double rating) {
-    int fullStars = rating.floor(); // 정수 부분의 별
-    bool hasHalfStar = (rating - fullStars) >= 0.5; // 반 별이 필요한지 확인
+    double safeRating = rating ?? 0.0;
+    int fullStars = safeRating.floor(); // 정수 부분의 별
+    bool hasHalfStar = (safeRating - fullStars) >= 0.5; // 반 별이 필요한지 확인
 
     return Row(
       children: List.generate(5, (index) {

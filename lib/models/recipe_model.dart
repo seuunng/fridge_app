@@ -46,7 +46,15 @@ class RecipeModel {
         }),
       );
     }
-
+// 필드가 없거나 null일 경우 기본값 0.0을 할당
+    double ratingValue = 0.0;
+    if (data.containsKey('rating') && data['rating'] != null) {
+      try {
+        ratingValue = (data['rating'] as num).toDouble();
+      } catch (e) {
+        print('Error converting rating: $e');
+      }
+    }
     return RecipeModel(
       id: data['ID'] ?? '',
       date: (data['date'] as Timestamp).toDate(),
@@ -60,9 +68,9 @@ class RecipeModel {
       time: data['time'] ?? 0,
       userID: data['userID'] ?? '',
       mainImages: List<String>.from(data['mainImages'] ?? []),
-      rating: (data['rating'] ?? 0).toDouble(),
+      rating: ratingValue,
       views: data['views'] ?? 0,
-      link: data['link'],  // Firestore 데이터에 링크가 있으면 저장
+      link: data['link'],// Firestore 데이터에 링크가 있으면 저장
     );
   }
   @override

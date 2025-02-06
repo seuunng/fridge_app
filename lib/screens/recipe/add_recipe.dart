@@ -289,6 +289,7 @@ class _AddRecipeState extends State<AddRecipe> {
           recipeName: recipeNameController.text,
           steps: stepsWithImages.isNotEmpty ? stepsWithImages : [],
           mainImages: mainImages.isNotEmpty ? mainImages : [],
+          rating : 0.0,
         );
 
         await _db.collection('recipe').doc(newItem.id).set({
@@ -367,10 +368,10 @@ class _AddRecipeState extends State<AddRecipe> {
       final uniqueFileName =
           'recipe_main_image_${DateTime.now().millisecondsSinceEpoch}';
       final imageRef = storageRef.child('images/recipes/$uniqueFileName');
-      final metadata = SettableMetadata(
-        contentType: 'image/jpeg', // 이미지의 MIME 타입 설정
-      );
-      final uploadTask = imageRef.putFile(compressedFile, metadata);
+      // final metadata = SettableMetadata(
+      //   contentType: 'image/jpeg', // 이미지의 MIME 타입 설정
+      // );
+      final uploadTask = imageRef.putFile(compressedFile);
       final snapshot = await uploadTask.whenComplete(() {});
       final downloadURL = await snapshot.ref.getDownloadURL();
       return downloadURL;
@@ -423,15 +424,16 @@ class _AddRecipeState extends State<AddRecipe> {
     final ImagePicker picker = ImagePicker();
     final List<XFile>? pickedFiles = await picker.pickMultiImage();
     if (pickedFiles != null) {
-      // 새로운 이미지 중복 필터링
-      List<String> newImages = pickedFiles
-          .where((file) {
-            final imagePath = file.path;
-            return !mainImages.contains(imagePath); // 중복 이미지 걸러내기
-          })
-          .map((file) => file.path)
-          .toList();
+      // 중복 방지
+      List<String> newImages = [];
 
+      // 이미지를 업로드하고 URL을 가져오는 부분 추가
+      for (XFile file in pickedFiles) {
+        String imageUrl = await uploadMainImage(File(file.path));
+        if (imageUrl.isNotEmpty && !mainImages.contains(imageUrl)) {
+          newImages.add(imageUrl); // URL 추가
+        }
+      }
       // 초과 이미지 제거
       if (mainImages.length + newImages.length > 4) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
