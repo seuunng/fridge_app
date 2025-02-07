@@ -303,7 +303,8 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
           'unit': '레시피 보기',  // 고정값 혹은 다른 값으로 대체 가능
           'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
           'images': recipeData['mainImages'] ?? [], // 이미지 배열
-          'link': recipe.link
+          'link': recipe.link,
+          'recipeId': recipe.id,
         }
       ];
       // 저장할 데이터 구조 정의

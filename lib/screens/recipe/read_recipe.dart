@@ -571,7 +571,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
           'unit': '레시피 보기',  // 고정값 혹은 다른 값으로 대체 가능
           'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
           'images': recipeData['mainImages'] ?? [], // 이미지 배열
-          'link': recipeData['link']
+          'link': recipeData['link'],
+          'recipeId': recipeData['ID'],
         }
       ];
 

@@ -174,7 +174,8 @@ class _ReadRecordState extends State<ReadRecord> {
           'unit': '레시피 보기',  // 고정값 혹은 다른 값으로 대체 가능
           'contents': recipeData['recipeName'] ?? 'Unnamed Recipe',
           'images': recipeData['mainImages'] ?? [], // 이미지 배열
-          'link': recipe.link
+          'link': recipe.link,
+          'recipeId': recipe.id,
         }
       ];
 
@@ -330,14 +331,14 @@ class _ReadRecordState extends State<ReadRecord> {
                     final rec = record.records[index];
                     return GestureDetector(
                       onTap: () async {
-                        // 클릭 시 레시피 페이지로 이동
                         if (rec.unit == '레시피 보기') {
+                          final recipeId = rec.recipeId ?? '';
+
                           final RecipeModel recipe = RecipeModel(
-                            id: rec.recipeId ?? '',
+                            id: recipeId,
                             recipeName: rec.contents ?? '',
                             link: rec.link ?? '',
-                            mainImages: rec.images != null ? List<String>.from(
-                                rec.images) : <String>[],
+                            mainImages: List<String>.from(rec.images ?? []),
                             rating: 0.0,
                             userID: userId,
                             difficulty: '',
@@ -349,26 +350,25 @@ class _ReadRecordState extends State<ReadRecord> {
                             steps: <Map<String, String>>[],
                             date: DateTime.now(),
                           );
+
                           final Map<String, dynamic> scrapedData = await loadScrapedData(recipe.id, link: recipe.link);
                           bool initialScraped = scrapedData['isScraped'] ?? false;
 
                           if ((rec.link ?? '').isNotEmpty) {
-                            _openRecipeLink(
-                                rec.link ?? '', rec.contents, recipe, initialScraped);
+                            _openRecipeLink(rec.link ?? '', rec.contents, recipe, initialScraped);
                           } else {
-                            // 링크가 없으면 기존 ReadRecipe 페이지로 이동
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    ReadRecipe(
-                                      recipeId: recipe.id,
-                                      searchKeywords: [],
-                                    ),
+                                builder: (context) => ReadRecipe(
+                                  recipeId: recipe.id,
+                                  searchKeywords: [],
+                                ),
                               ),
                             );
                           }
-                        }},
+                        }
+                      },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -437,8 +437,10 @@ class _ReadRecordState extends State<ReadRecord> {
                           ],
                         ),
                       ),
+
                     );
                   },
+
                 ),
               ),
               Container(
