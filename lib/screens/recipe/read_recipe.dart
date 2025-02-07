@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
+import 'package:food_for_later_new/ad/interstitial_ad_service.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/screens/recipe/add_recipe.dart';
 import 'package:food_for_later_new/screens/recipe/add_recipe_review.dart';
@@ -58,10 +59,12 @@ class _ReadRecipeState extends State<ReadRecipe> {
   late String recipeUrl;
 
   String userRole = '';
+  final InterstitialAdService _adManager = InterstitialAdService();
 
   @override
   void initState() {
     super.initState();
+    _adManager.loadInterstitialAd();
     // 유저 정보 초기화
     userId = currentUser?.uid ?? '';
     fromEmail = currentUser?.email ?? '이메일 없음';
@@ -595,10 +598,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
     try {
       // 레시피 데이터를 불러옵니다.
       var recipeData = await fetchRecipeData(widget.recipeId);
-
       // 내일 날짜로 저장
       DateTime tomorrow = getTomorrowDate().toUtc();
-
       // records 배열 구성
       List<Map<String, dynamic>> records = [
         {
@@ -609,7 +610,6 @@ class _ReadRecipeState extends State<ReadRecipe> {
           'recipeId': recipeData['ID'],
         }
       ];
-
       // 저장할 데이터 구조 정의
       Map<String, dynamic> recordData = {
         'id': Uuid().v4(),  // 고유 ID 생성
@@ -647,12 +647,19 @@ class _ReadRecipeState extends State<ReadRecipe> {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back), // 뒤로가기 아이콘
+          onPressed: () async {
+            if (userRole != 'admin' && userRole != 'paid_user')
+            await _adManager.showInterstitialAd(context); // 전면 광고 호출
+            Navigator.pop(context); // 이전 화면으로 이동
+          },
+        ),
         title: Row(
           children: [
             Expanded(
@@ -737,6 +744,11 @@ class _ReadRecipeState extends State<ReadRecipe> {
                   _buildIngredientsSection(ingredients),
                   _buildCookingStepsSection(methods),
                   _buildThemesSection(themes),
+                  if (userRole != 'admin' && userRole != 'paid_user')
+                    SafeArea(
+                      bottom: false, // 하단 여백 제거
+                      child: BannerAdWidget(),
+                    ),
                   _buildRecipeSection(steps),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,

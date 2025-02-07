@@ -617,6 +617,16 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
   }
 
   Widget _buildRecipeGrid() {
+    // 광고를 삽입한 리스트 만들기
+    List<dynamic> resultsWithAds = [];
+    int adFrequency = 5; // 광고를 몇 개마다 넣을지 설정
+
+    for (int i = 0; i < recipeList.length; i++) {
+      resultsWithAds.add(recipeList[i]);
+      if ((i + 1) % adFrequency == 0) {
+        resultsWithAds.add('ad'); // 광고 위치를 표시하는 문자열
+      }
+    }
     return GridView.builder(
       shrinkWrap: true,
       padding: EdgeInsets.all(8.0),
@@ -628,6 +638,14 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
       ),
       itemCount: recipeList.length,
       itemBuilder: (context, index) {
+        if (resultsWithAds[index] == 'ad') {
+          // 광고 위젯
+          if (userRole != 'admin' && userRole != 'paid_user')
+            return SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            );
+        }
         final Map<String, dynamic> recipeEntry = recipeList[index];
         final String docId = recipeEntry['id']; // 🔹 정확히 Firestore 문서 ID 가져오기
         final RecipeModel recipe = recipeEntry['recipe']; // 🔹 RecipeModel 가져오기

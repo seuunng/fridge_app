@@ -1407,6 +1407,16 @@ class _ViewResearchListState extends State<ViewResearchList> {
             TextStyle(fontSize: 14, color: theme.chipTheme.labelStyle!.color),
       ));
     }
+    // 광고를 삽입한 리스트 만들기
+    List<dynamic> resultsWithAds = [];
+    int adFrequency = 5; // 광고를 몇 개마다 넣을지 설정
+
+    for (int i = 0; i < _results.length; i++) {
+      resultsWithAds.add(_results[i]);
+      if ((i + 1) % adFrequency == 0) {
+        resultsWithAds.add('ad'); // 광고 위치를 표시하는 문자열
+      }
+    }
 
     return LayoutBuilder(builder: (context, constraints) {
       // 화면 너비에 따라 레이아웃 조정
@@ -1428,6 +1438,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
         ),
         itemCount: _results.length,
         itemBuilder: (context, index) {
+          if (resultsWithAds[index] == 'ad') {
+            // 광고 위젯
+            if (userRole != 'admin' && userRole != 'paid_user')
+            return SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            );
+          }
           final result = _results[index];
           final title = result['title'] ?? 'No title available';
           final snippet = result['snippet'] ?? 'No description available';
@@ -1530,7 +1548,17 @@ class _ViewResearchListState extends State<ViewResearchList> {
         ),
       );
     }
+    List<Map<String, dynamic>> limitedRecipes = recipes.take(20).toList();
+// 광고를 삽입한 리스트 만들기
+    List<dynamic> resultsWithAds = [];
+    int adFrequency = 5; // 광고를 몇 개마다 넣을지 설정
 
+    for (int i = 0; i <  limitedRecipes.length; i++) {
+      resultsWithAds.add( limitedRecipes[i]);
+      if ((i + 1) % adFrequency == 0) {
+        resultsWithAds.add('ad'); // 광고 위치를 표시하는 문자열
+      }
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         // 'constraints'로 수정
@@ -1550,9 +1578,18 @@ class _ViewResearchListState extends State<ViewResearchList> {
             // 앱에서만 비율 적용
             mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
           ),
-          itemCount: recipes.length,
+          itemCount: limitedRecipes.length,
           itemBuilder: (context, index) {
-            final recipe = recipes[index];
+            if (index >= limitedRecipes.length) return SizedBox.shrink(); // 예외 방지
+            if (resultsWithAds[index] == 'ad') {
+              // 광고 위젯
+              if (userRole != 'admin' && userRole != 'paid_user')
+              return SafeArea(
+                bottom: false, // 하단 여백 제거
+                child: BannerAdWidget(),
+              );
+            }
+            final recipe = limitedRecipes[index];
             final String title = recipe['title'] ?? '제목 없음';
             final List<String> ingredients = recipe['ingredients'] ?? [];
             final String link = recipe['link'] ?? '';

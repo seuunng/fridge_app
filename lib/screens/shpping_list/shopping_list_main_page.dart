@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/floating_button_with_arrow.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
@@ -26,7 +27,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   List<String> fridgeName = [];
   List<ShoppingCategory> _categories = [];
   List<Map<String, dynamic>> recentlyDeletedItems = [];
-
+  String userRole = '';
 
   // String? selectedFridge = '';
   String? selected_fridgeId = '';
@@ -60,6 +61,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     setState(() {
       showCheckBoxes = false;
     });
+    _loadUserRole();
   }
 
   @override
@@ -80,6 +82,21 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
   }
 
   Future<void> _loadFridgeId() async {
@@ -671,40 +688,53 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                       },
                     )
                   : null,
-          bottomNavigationBar: showCheckBoxes && shouldShowMoveToFridgeButton()
-              ? Container(
-                  color: Colors.transparent,
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: NavbarButton(
-                          buttonTitle: '냉장고로 이동',
-                          onPressed: () {
-                            _addItemsToFridge();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => HomeScreen()
-                              ),
-                            ).then((_) {
-                            // 🔹 Navigator.pop 후 다시 돌아왔을 때 데이터 로드
-                            _loadItemsFromFirestore(userId);
-                            });
-                          },
-                        ),
+          bottomNavigationBar:
+              Column(
+                mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if(showCheckBoxes && shouldShowMoveToFridgeButton())
+                  Container(
+                      color: Colors.transparent,
+                      padding: EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: NavbarButton(
+                              buttonTitle: '냉장고로 이동',
+                              onPressed: () {
+                                _addItemsToFridge();
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => HomeScreen()
+                                  ),
+                                ).then((_) {
+                                // 🔹 Navigator.pop 후 다시 돌아왔을 때 데이터 로드
+                                _loadItemsFromFirestore(userId);
+                                });
+                              },
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          NavbarButton(
+                            buttonTitle: '삭제',
+                            onPressed: () async {
+                              await _deleteSelectedItems();
+                            },
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 10),
-                      NavbarButton(
-                        buttonTitle: '삭제',
-                        onPressed: () async {
-                          await _deleteSelectedItems();
-                        },
-                      ),
-                    ],
-                  ),
-                )
-              : null,
+                    ),
+                  if (userRole != 'admin' && userRole != 'paid_user')
+                    SafeArea(
+                      bottom: false, // 하단 여백 제거
+                      child: BannerAdWidget(),
+                    ),
+                ],
+              )
+
+
         ));
   }
 
@@ -766,10 +796,18 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     if (items.isEmpty) {
       return Container();
     }
+    List<dynamic> resultsWithAds = [];
+    int adFrequency = 10;
     if (!checkedItems.containsKey(category) ||
         checkedItems[category]!.length != items.length) {
       checkedItems[category] =
           List<bool>.filled(items.length, false, growable: true); // 수정!
+    }
+    for (int i = 0; i < items.length; i++) {
+      resultsWithAds.add(items[i]);
+      if ((i + 1) % adFrequency == 0) {
+        resultsWithAds.add('ad'); // 광고 위치를 표시하는 문자열
+      }
     }
     if (!strikeThroughItems.containsKey(category) ||
         strikeThroughItems[category]!.length != items.length) {
@@ -797,6 +835,14 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           ),
           itemCount: items.length,
           itemBuilder: (context, index) {
+            if (resultsWithAds[index] == 'ad') {
+              // 광고 위젯
+              if (userRole != 'admin' && userRole != 'paid_user')
+                return SafeArea(
+                  bottom: false, // 하단 여백 제거
+                  child: BannerAdWidget(),
+                );
+            }
             return GestureDetector(
               onTap: () {
                 setState(() {

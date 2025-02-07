@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
+import 'package:food_for_later_new/ad/interstitial_ad_service.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/constants.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
@@ -68,9 +69,12 @@ class _AddItemState extends State<AddItem> {
   double webGridMaxExtent = 200; // 웹에서 최대 크기
   double gridSpacing = 8.0;
   String userRole = '';
+  final InterstitialAdService _adManager = InterstitialAdService();
+
   @override
   void initState() {
     super.initState();
+    _adManager.loadInterstitialAd();
     _loadSelectedFridge();
     if (widget.sourcePage == 'preferred_foods_category') {
       _loadPreferredFoodsCategoriesFromFirestore();
@@ -285,7 +289,8 @@ class _AddItemState extends State<AddItem> {
       );
       return; // 🚫 게스트 사용자는 추가 불가
     }
-
+    if (userRole != 'admin' && userRole != 'paid_user')
+    await _adManager.showInterstitialAd(context);
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final fridgeId = selected_fridgeId;
 
@@ -385,7 +390,8 @@ class _AddItemState extends State<AddItem> {
       );
       return; // 🚫 게스트 사용자는 추가 불가
     }
-
+    if (userRole != 'admin' && userRole != 'paid_user')
+    await _adManager.showInterstitialAd(context);
     try {
       for (String itemName in selectedItems) {
         final existingItemSnapshot = await FirebaseFirestore.instance

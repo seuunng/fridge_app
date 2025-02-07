@@ -7,7 +7,6 @@ import 'package:food_for_later_new/constants.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/fridge_category_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
-import 'package:food_for_later_new/screens/admin_page/admin_main_page.dart';
 import 'package:intl/intl.dart';
 
 class FridgeItemDetails extends StatefulWidget {

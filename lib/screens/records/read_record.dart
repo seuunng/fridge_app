@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
+import 'package:food_for_later_new/ad/interstitial_ad_service.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/full_screen_image_view.dart';
@@ -32,10 +33,12 @@ class _ReadRecordState extends State<ReadRecord> {
   String userRole = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool isScraped = false;
+  final InterstitialAdService _adManager = InterstitialAdService();
 
   @override
   void initState() {
     super.initState();
+    _adManager.loadInterstitialAd();
     _fetchRecordCategories(); // 초기화 시 record_categories 불러오기
     _loadUserRole();
   }
@@ -267,6 +270,14 @@ class _ReadRecordState extends State<ReadRecord> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back), // 뒤로가기 아이콘
+          onPressed: () async {
+            if (userRole != 'admin' && userRole != 'paid_user')
+              await _adManager.showInterstitialAd(context); // 전면 광고 호출
+            Navigator.pop(context); // 이전 화면으로 이동
+          },
+        ),
         title: Text('기록 보기'),
         actions: [
           TextButton(

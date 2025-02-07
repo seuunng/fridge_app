@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
+import 'package:food_for_later_new/ad/interstitial_ad_service.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/record_model.dart';
 import 'package:food_for_later_new/services/record_category_service.dart';
@@ -49,10 +50,13 @@ class _CreateRecordState extends State<CreateRecord> {
   // 이미지 선택을 위한 ImagePicker 인스턴스
   List<AssetEntity> images = [];
   List<String>? _imageFiles = [];
+  final InterstitialAdService _adManager = InterstitialAdService();
 
   @override
   void initState() {
     super.initState();
+    _adManager.loadInterstitialAd();
+
     categoryController = TextEditingController();
     fieldController = TextEditingController();
     dateController = TextEditingController();
@@ -337,6 +341,9 @@ class _CreateRecordState extends State<CreateRecord> {
     });
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    if (userRole != 'admin' && userRole != 'paid_user')
+      await _adManager.showInterstitialAd(context);
 
     if (_imageFiles != null && _imageFiles!.length > 4) {
       ScaffoldMessenger.of(context).showSnackBar(

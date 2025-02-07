@@ -152,7 +152,6 @@ class _RecordsListViewState extends State<RecordsListView> {
         .collection('record')
         .where('userId', isEqualTo: userId)
         .orderBy('date', descending: true);
-
     return StreamBuilder<QuerySnapshot>(
       stream: query.snapshots(),
       builder: (BuildContext context,
@@ -179,12 +178,29 @@ class _RecordsListViewState extends State<RecordsListView> {
             .where((record) => record != null)
             .toList();
 
+        List<dynamic> resultsWithAds = [];
+        int adFrequency = 5; // 광고를 몇 개마다 넣을지 설정
+
+        for (int i = 0; i < recordsList.length; i++) {
+          resultsWithAds.add(recordsList[i]);
+          if ((i + 1) % adFrequency == 0) {
+            resultsWithAds.add('ad'); // 광고 위치를 표시하는 문자열
+          }
+        }
         return SingleChildScrollView(
           child: ListView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             itemCount: recordsList.length,
             itemBuilder: (context, index) {
+              if (resultsWithAds[index] == 'ad') {
+                // 광고 위젯
+                if (userRole != 'admin' && userRole != 'paid_user')
+                  return SafeArea(
+                    bottom: false, // 하단 여백 제거
+                    child: BannerAdWidget(),
+                  );
+              }
               final record = recordsList[index];
               // 🔹 같은 unit을 그룹화
               Map<String, List<RecordDetail>> groupedRecords = {};
