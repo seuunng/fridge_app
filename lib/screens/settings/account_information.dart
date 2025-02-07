@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
+import 'package:food_for_later_new/screens/auth/user_details_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -214,9 +215,9 @@ class _AccountInformationState extends State<AccountInformation> {
               children: [
                 Spacer(),
                 GestureDetector(
-                  onTap: () {
-                    _showAvatarChangeDialog(); // 아바타 변경 다이얼로그 호출
-                  },
+                  // onTap: () {
+                  //   _showAvatarChangeDialog(); // 아바타 변경 다이얼로그 호출
+                  // },
                   child: CircleAvatar(
                     radius: 20, // 아바타 크기
                     backgroundImage: _avatar.startsWith('http')
@@ -239,7 +240,10 @@ class _AccountInformationState extends State<AccountInformation> {
                 Spacer(),
                 BasicElevatedButton(
                   onPressed: () {
-                    _showNicknameChangeDialog(); // 검색 버튼 클릭 시 검색어 필터링
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => UserDetailsPage()),
+                    );
                   },
                   iconTitle: Icons.edit,
                   buttonTitle: '수정',
@@ -603,60 +607,60 @@ class _AccountInformationState extends State<AccountInformation> {
     );
   }
 
-  Future<void> _showAvatarChangeDialog() async {
-    final theme = Theme.of(context);
-    List<String> avatarList = List.generate(
-      25,
-      (index) =>
-          'assets/avatar/avatar-${(index + 1).toString().padLeft(2, '0')}.png',
-    );
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('아바타 선택',
-              style: TextStyle(color: theme.colorScheme.onSurface)),
-          content: Container(
-            width: double.maxFinite,
-            child: GridView.builder(
-              shrinkWrap: true,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5, // 한 줄에 5개의 아바타 표시
-                crossAxisSpacing: 5,
-                mainAxisSpacing: 5,
-              ),
-              itemCount: avatarList.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () async {
-                    String selectedAvatar = avatarList[index];
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user?.uid)
-                        .set({'avatar': selectedAvatar},
-                            SetOptions(merge: true));
-                    setState(() {
-                      _avatar = selectedAvatar;
-                    });
-                    Navigator.pop(context); // 다이얼로그 닫기
-                  },
-                  child: CircleAvatar(
-                    radius: 30,
-                    backgroundImage: AssetImage(avatarList[index]),
-                  ),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: Text('닫기'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // Future<void> _showAvatarChangeDialog() async {
+  //   final theme = Theme.of(context);
+  //   List<String> avatarList = List.generate(
+  //     25,
+  //     (index) =>
+  //         'assets/avatar/avatar-${(index + 1).toString().padLeft(2, '0')}.png',
+  //   );
+  //
+  //   await showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: Text('아바타 선택',
+  //             style: TextStyle(color: theme.colorScheme.onSurface)),
+  //         content: Container(
+  //           width: double.maxFinite,
+  //           child: GridView.builder(
+  //             shrinkWrap: true,
+  //             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //               crossAxisCount: 5, // 한 줄에 5개의 아바타 표시
+  //               crossAxisSpacing: 5,
+  //               mainAxisSpacing: 5,
+  //             ),
+  //             itemCount: avatarList.length,
+  //             itemBuilder: (context, index) {
+  //               return GestureDetector(
+  //                 onTap: () async {
+  //                   String selectedAvatar = avatarList[index];
+  //                   await FirebaseFirestore.instance
+  //                       .collection('users')
+  //                       .doc(user?.uid)
+  //                       .set({'avatar': selectedAvatar},
+  //                           SetOptions(merge: true));
+  //                   setState(() {
+  //                     _avatar = selectedAvatar;
+  //                   });
+  //                   Navigator.pop(context); // 다이얼로그 닫기
+  //                 },
+  //                 child: CircleAvatar(
+  //                   radius: 30,
+  //                   backgroundImage: AssetImage(avatarList[index]),
+  //                 ),
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             child: Text('닫기'),
+  //             onPressed: () => Navigator.pop(context),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 }

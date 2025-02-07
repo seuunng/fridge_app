@@ -28,6 +28,7 @@ class ReadRecord extends StatefulWidget {
 
 class _ReadRecordState extends State<ReadRecord> {
   Map<String, List<String>> categoryMap = {};
+  List<Map<String, dynamic>> recentlyDeletedRecords = [];
   String userRole = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool isScraped = false;
@@ -113,12 +114,33 @@ class _ReadRecordState extends State<ReadRecord> {
   // Firestore에서 해당 기록을 삭제하는 함수
   Future<void> _deleteRecord(String recordId) async {
     try {
+      // Firestore에서 삭제 전 레코드 정보를 불러와서 저장
+      final recordSnapshot = await FirebaseFirestore.instance
+          .collection('record')
+          .doc(recordId)
+          .get();
+
+      if (recordSnapshot.exists) {
+        final recordData = recordSnapshot.data();
+        if (recordData != null) {
+          recentlyDeletedRecords.add({
+            'recordId': recordId,
+            'recordData': recordData, // 레코드의 모든 데이터 저장
+          });
+        }
+      }
       await FirebaseFirestore.instance
           .collection('record')
           .doc(recordId)
           .delete();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('기록이 삭제되었습니다.')),
+        SnackBar(
+          content: Text('기록이 삭제되었습니다.'),
+          action: SnackBarAction(
+            label: '복원',
+            onPressed: _restoreDeletedRecord, // 복원 로직 연결
+          ),
+        ),
       );
       Navigator.pop(context); // 기록 삭제 후 이전 화면으로 돌아가기
     } catch (e) {
@@ -128,7 +150,30 @@ class _ReadRecordState extends State<ReadRecord> {
       );
     }
   }
+  void _restoreDeletedRecord() async {
+    if (recentlyDeletedRecords.isNotEmpty) {
+      final lastDeletedRecord = recentlyDeletedRecords.removeLast(); // 마지막 삭제된 항목 가져오기
+      final recordId = lastDeletedRecord['recordId'];
+      final recordData = lastDeletedRecord['recordData'];
 
+      try {
+        // Firestore에 레코드 복원
+        await FirebaseFirestore.instance
+            .collection('record')
+            .doc(recordId)
+            .set(recordData);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('기록이 복원되었습니다.')),
+        );
+      } catch (e) {
+        print('Error restoring record: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('기록 복원에 실패했습니다. 다시 시도해주세요.')),
+        );
+      }
+    }
+  }
   void _openRecipeLink(String link, String title, RecipeModel recipe, bool initialScraped) {
     Navigator.push(
       context,

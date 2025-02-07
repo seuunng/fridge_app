@@ -10,15 +10,51 @@ class UserDetailsPage extends StatefulWidget {
 }
 
 class _UserDetailsPageState extends State<UserDetailsPage> {
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   String? _selectedGender;
   int? _birthYear; // 기본값 설정
+  String _avatar = 'assets/avatar/avatar-01.png';
   bool _agreedToPrivacyPolicy = false; // 개인정보 제공 동의 체크박스 상태
   TextEditingController _nicknameController = TextEditingController();
   @override
   void initState() {
     super.initState();
-    _nicknameController = TextEditingController();
-    _setRandomNickname(); // 랜덤 별명 설정
+    _loadUserDetails();
+  }
+// 사용자 정보를 Firestore에서 불러옴
+  void _loadUserDetails() async {
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+      if (userDoc.exists) {
+        final data = userDoc.data()!;
+        final existingNickname = data['nickname'] ?? ''; // 기존 별명 불러오기
+        final existingAvatar = data['avatar'] ?? _avatar; // 저장된 아바타 불러오기
+        final existingAgreement = data['privacyAgreed'] ?? false; // 동의 여부 불러오기
+
+        setState(() {
+            _nicknameController.text = existingNickname; // 기존 별명 사용
+            _avatar = existingAvatar;
+            _agreedToPrivacyPolicy = existingAgreement;
+            _selectedGender = _genderFromFirestore(data['gender']);
+            _birthYear = (data['birthYear'] is int)
+                ? data['birthYear'] // Firestore에서 숫자 타입으로 저장된 경우
+                : int.tryParse(data['birthYear'].toString()); // 문자열인 경우 파싱
+        });
+      } else {
+        // 사용자 정보가 없으면 랜덤 별명 추천
+        setState(() {
+          _nicknameController.text = _generateRandomNickname();
+        });
+      }
+    } catch (e) {
+      print('Error loading user details: $e');
+    }
+  }
+  String? _genderFromFirestore(String? genderCode) {
+    if (genderCode == 'M') return '남성';
+    if (genderCode == 'F') return '여성';
+    return '선택하지 않음';
   }
   // 두그룹 합쳐서 별명 만들기
   String _generateRandomNickname() {
@@ -26,6 +62,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
     final randomNoun = (nouns.toList()..shuffle()).first;
     return '$randomAdjective$randomNoun';
   }
+
   //랜덤으로 하나골라서 추천하기
   void _setRandomNickname() {
     final randomNickname = _generateRandomNickname();
@@ -33,6 +70,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       _nicknameController.text = randomNickname;
     });
   }
+
   void _saveUserDetails() async {
     if (!_agreedToPrivacyPolicy &&
         !((_selectedGender == '선택하지 않음' || _selectedGender == null) &&
@@ -52,14 +90,20 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
 
     if (user != null) {
       final userId = user.uid;
-      final gender=_selectedGender=='여성'? 'F': _selectedGender=='남성'? 'M':'S';
+      final gender = _selectedGender == '여성'
+          ? 'F'
+          : _selectedGender == '남성'
+              ? 'M'
+              : 'S';
       if (_selectedGender != null) {
         try {
           // Firestore에 사용자 정보 저장
           await FirebaseFirestore.instance.collection('users').doc(userId).set({
             'nickname': _nicknameController.text.trim(),
             'gender': gender,
-            'birthYear': _birthYear ?? '선택하지 않음',
+            'birthYear': _birthYear ?? '0',
+            'avatar': _avatar,
+            'privacyAgreed': _agreedToPrivacyPolicy,
           }, SetOptions(merge: true));
 
           // 다른 페이지로 이동 (예: 홈 화면)
@@ -77,6 +121,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       }
     }
   }
+
   void _showYearPicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -94,12 +139,12 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
               setState(() {
                 _birthYear = index == 0
                     ? null
-                    : DateTime.now().year - (index - 1); // 선택하지 않음 처리
+                    : DateTime.now().year - (index); // 선택하지 않음 처리
               });
             },
             children: List<Widget>.generate(
               121, // 1900년부터 현재 연도까지
-                  (int index) {
+              (int index) {
                 return Center(
                   child: Text(
                     '${DateTime.now().year - index}',
@@ -118,139 +163,225 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text('회원 정보 입력')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('닉네임 입력',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface)),
-            SizedBox(height: 10),
-            TextField(
-              controller: _nicknameController,
-              decoration: InputDecoration(
-                hintText: '닉네임을 입력하세요',
-                border: OutlineInputBorder(),
-              ),style:
-            TextStyle(color: theme.chipTheme.labelStyle!.color),
-            ),
-            SizedBox(height: 16),
-            Text('성별 선택',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface)),
-            Row(
+        appBar: AppBar(title: Text('회원 정보 입력')),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: Text('남성'),
-                    value: '남성',
-                    groupValue: _selectedGender,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedGender = value;
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: Text('여성'),
-                    value: '여성',
-                    groupValue: _selectedGender,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedGender = value;
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: Text('선택하지 않음'),
-                    value: '선택하지 않음',
-                    groupValue: _selectedGender,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedGender = value;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Text('출생연도',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface)),
-            SizedBox(height: 10,),
-            GestureDetector(
-              onTap: () => _showYearPicker(context),
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: theme.colorScheme.primary, width: 1),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Text('닉네임 입력',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface)),
+                SizedBox(height: 10),
+                Row(
                   children: [
-                    Text(
-                      _birthYear == null ? '선택하지 않음' : '$_birthYear',
-                      style: TextStyle(fontSize: 18,
-                        color: theme.chipTheme.labelStyle!.color,),
+                    GestureDetector(
+                      onTap: () {
+                        _showAvatarChangeDialog(); // 아바타 변경 다이얼로그 호출
+                      },
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundImage: _avatar.startsWith('http')
+                            ? NetworkImage(_avatar)
+                            : AssetImage(_avatar) as ImageProvider,
+                        onBackgroundImageError: (_, __) {
+                          // URL이 잘못된 경우 기본 아바타 표시
+                          setState(() {
+                            _avatar = 'assets/avatar/avatar-01.png'; // 기본 아바타로 설정
+                          });
+                        },
+                      ),
                     ),
-                    Icon(Icons.arrow_drop_down),
+                    SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _nicknameController,
+                    decoration: InputDecoration(
+                      hintText: '닉네임을 입력하세요',
+                      border: OutlineInputBorder(),
+                    ),
+                    style: TextStyle(color: theme.chipTheme.labelStyle!.color),
+                  ),
+                ),
                   ],
                 ),
-              ),
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Checkbox(
-                  value: _agreedToPrivacyPolicy,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _agreedToPrivacyPolicy = value ?? false;
-                    });
-                  },
+                SizedBox(height: 16),
+                Text('성별 선택',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text('남성'),
+                        value: '남성',
+                        groupValue: _selectedGender,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value;
+                          });
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text('여성'),
+                        value: '여성',
+                        groupValue: _selectedGender,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value;
+                          });
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text('선택하지 않음'),
+                        value: '선택하지 않음',
+                        groupValue: _selectedGender,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Text(
-                    '개인정보 제공에 동의합니다.(성별/출생연도)',
-                    style: TextStyle(color: theme.colorScheme.onSurface),
+                SizedBox(height: 16),
+                Text('출생연도',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface)),
+                SizedBox(
+                  height: 10,
+                ),
+                GestureDetector(
+                  onTap: () => _showYearPicker(context),
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                    decoration: BoxDecoration(
+                      border:
+                          Border.all(color: theme.colorScheme.primary, width: 1),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _birthYear == null ? '선택하지 않음' : '$_birthYear',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: theme.chipTheme.labelStyle!.color,
+                          ),
+                        ),
+                        Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
                   ),
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _agreedToPrivacyPolicy,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _agreedToPrivacyPolicy = value ?? false;
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: Text(
+                        '개인정보 제공에 동의합니다.(성별/출생연도)',
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
         bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
-    mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
-    children: [
-    Container(
-    color: Colors.transparent,
-    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-    child: SizedBox(
-    width: double.infinity,
-      child: NavbarButton(
-    onPressed: _saveUserDetails,
-    buttonTitle: '저장하기',
-    ),
-    ),
-        ),
-      ]
-        )
+            mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+            mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+            children: [
+              Container(
+                color: Colors.transparent,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: NavbarButton(
+                    onPressed: _saveUserDetails,
+                    buttonTitle: '저장하기',
+                  ),
+                ),
+              ),
+            ]));
+  }
+  Future<void> _showAvatarChangeDialog() async {
+    final theme = Theme.of(context);
+    List<String> avatarList = List.generate(
+      25,
+          (index) =>
+      'assets/avatar/avatar-${(index + 1).toString().padLeft(2, '0')}.png',
+    );
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('아바타 선택',
+              style: TextStyle(color: theme.colorScheme.onSurface)),
+          content: Container(
+            width: double.maxFinite,
+            child: GridView.builder(
+              shrinkWrap: true,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5, // 한 줄에 5개의 아바타 표시
+                crossAxisSpacing: 5,
+                mainAxisSpacing: 5,
+              ),
+              itemCount: avatarList.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () async {
+                    String selectedAvatar = avatarList[index];
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(userId)
+                        .set({'avatar': selectedAvatar},
+                        SetOptions(merge: true));
+                    setState(() {
+                      _avatar = selectedAvatar;
+                    });
+                    Navigator.pop(context); // 다이얼로그 닫기
+                  },
+                  child: CircleAvatar(
+                    radius: 30,
+                    backgroundImage: AssetImage(avatarList[index]),
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('닫기'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
     );
   }
 }

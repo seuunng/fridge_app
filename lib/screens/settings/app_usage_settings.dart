@@ -40,6 +40,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   List<FridgeCategory> fridgeCategories = []; // 섹션 리스트
   FridgeCategory? selectedFridgeCategory; // 선택된 섹션
   bool hasCustomSection = false;
+  List<FridgeCategory> recentlyDeletedSections = [];
   List<FridgeCategory> defaultFridgeCategories = [];
   List<FridgeCategory> userCategories = [];
   bool isEditing = false;
@@ -269,7 +270,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
             .where('userId', isEqualTo: userId)
             .where('fridgeCategoryId', isEqualTo: sectionId)
             .get();
-
+        final sectionToDelete = userCategories.firstWhere((section) => section.id == sectionId);
         // 각 아이템 삭제
         for (var doc in itemSnapshot.docs) {
           await doc.reference.delete();
@@ -282,13 +283,17 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
             .delete();
 
         setState(() {
-          // 삭제된 섹션을 로컬에서 제거
+          recentlyDeletedSections.add(sectionToDelete);
           userCategories.removeWhere((category) => category.id == sectionId);
         });
 
         // 삭제 성공 후 UI 갱신
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('섹션과 포함된 아이템이 모두 삭제되었습니다.')),
+          SnackBar(content: Text('섹션과 포함된 아이템이 모두 삭제되었습니다.'),
+            action: SnackBarAction(
+              label: '복원',
+              onPressed: _restoreDeletedSection, // 복원 함수 호출
+            ),),
         );
 
         await _loadFridgeCategoriesFromFirestore(); // UI 업데이트
@@ -301,88 +306,118 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
         );
       }
     }
-  // 선택된 냉장고 삭제 함수
-  void _deleteCategory(
-      String category, List<String> categories, String categoryType) {
-    if (categories.length <= 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('최소 한 개의 냉장고는 필요합니다.')),
-      );
-      return;
-    }
-    final fridgeRef = FirebaseFirestore.instance.collection('fridges');
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('냉장고 삭제',
-            style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
-            ),
-          ),
-          content: Text('$category를 삭제하시겠습니까?',
-            style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: Text('취소'),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            TextButton(
-                child: Text('삭제'),
-                onPressed: () async {
-                  try {
-                    if (_categories_fridge.length <= 1) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('최소 한 개의 냉장고는 필요합니다.')),
-                      );
-                      Navigator.pop(context);
-                      return;
-                    }
-                    // 해당 냉장고 이름과 일치하는 문서를 찾음
-                    final snapshot = await fridgeRef
-                        .where('FridgeName', isEqualTo: category)
-                        .where('userId', isEqualTo: userId)
-                        .get();
+  void _restoreDeletedSection() async {
+    if (recentlyDeletedSections.isNotEmpty) {
+      final sectionToRestore = recentlyDeletedSections.removeLast();
 
-                    for (var doc in snapshot.docs) {
-                      // Firestore에서 문서 삭제
-                      await fridgeRef.doc(doc.id).delete();
-                    }
+      try {
+        // Firestore에 섹션 복원
+        await FirebaseFirestore.instance
+            .collection('fridge_categories')
+            .doc(sectionToRestore.id)
+            .set({
+          'id': sectionToRestore.id,
+          'categoryName': sectionToRestore.categoryName,
+          'userId': userId,
+        });
 
-                    // UI 업데이트
-                    setState(() {
-                      _categories_fridge.remove(category);
-                      if (_categories_fridge.isNotEmpty) {
-                        // _selectedCategory_fridge = _categories_fridge.first;
-                      } else {
-                        DefaultFridgeService().createDefaultFridge(userId);
-                      }
-                    });
-
-                    Navigator.pop(context);
-                  } catch (e) {
-                    print('Error deleting fridge: $e');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('냉장고를 삭제하는 중 오류가 발생했습니다.')),
-                    );
-                    Navigator.pop(context);
-                  }
-                  ;
-                }),
-          ],
+        setState(() {
+          userCategories.add(sectionToRestore); // 로컬 상태에 섹션 복원
+        });
+        await _loadFridgeCategoriesFromFirestore();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${sectionToRestore.categoryName} 섹션이 복원되었습니다.')),
         );
-      },
-    );
+      } catch (e) {
+        print('섹션 복원 중 오류 발생: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('섹션 복원에 실패했습니다. 다시 시도해주세요.')),
+        );
+      }
+    }
   }
+  // 선택된 냉장고 삭제 함수
+  // void _deleteCategory(
+  //     String category, List<String> categories, String categoryType) {
+  //   if (categories.length <= 1) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('최소 한 개의 냉장고는 필요합니다.')),
+  //     );
+  //     return;
+  //   }
+  //   final fridgeRef = FirebaseFirestore.instance.collection('fridges');
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text('냉장고 삭제',
+  //           style: TextStyle(
+  //             color: Theme.of(context).brightness == Brightness.dark
+  //                 ? Colors.white
+  //                 : Colors.black,
+  //           ),
+  //         ),
+  //         content: Text('$category를 삭제하시겠습니까?',
+  //           style: TextStyle(
+  //             color: Theme.of(context).brightness == Brightness.dark
+  //                 ? Colors.white
+  //                 : Colors.black,
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             child: Text('취소'),
+  //             onPressed: () {
+  //               Navigator.pop(context);
+  //             },
+  //           ),
+  //           TextButton(
+  //               child: Text('삭제'),
+  //               onPressed: () async {
+  //                 try {
+  //                   if (_categories_fridge.length <= 1) {
+  //                     ScaffoldMessenger.of(context).showSnackBar(
+  //                       SnackBar(content: Text('최소 한 개의 냉장고는 필요합니다.')),
+  //                     );
+  //                     Navigator.pop(context);
+  //                     return;
+  //                   }
+  //                   // 해당 냉장고 이름과 일치하는 문서를 찾음
+  //                   final snapshot = await fridgeRef
+  //                       .where('FridgeName', isEqualTo: category)
+  //                       .where('userId', isEqualTo: userId)
+  //                       .get();
+  //
+  //                   for (var doc in snapshot.docs) {
+  //                     // Firestore에서 문서 삭제
+  //                     await fridgeRef.doc(doc.id).delete();
+  //                   }
+  //
+  //                   // UI 업데이트
+  //                   setState(() {
+  //                     _categories_fridge.remove(category);
+  //                     if (_categories_fridge.isNotEmpty) {
+  //                       // _selectedCategory_fridge = _categories_fridge.first;
+  //                     } else {
+  //                       DefaultFridgeService().createDefaultFridge(userId);
+  //                     }
+  //                   });
+  //
+  //                   Navigator.pop(context);
+  //                 } catch (e) {
+  //                   print('Error deleting fridge: $e');
+  //                   ScaffoldMessenger.of(context).showSnackBar(
+  //                     SnackBar(content: Text('냉장고를 삭제하는 중 오류가 발생했습니다.')),
+  //                   );
+  //                   Navigator.pop(context);
+  //                 }
+  //                 ;
+  //               }),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   void _saveSettings() async {
     final user = FirebaseAuth.instance.currentUser;

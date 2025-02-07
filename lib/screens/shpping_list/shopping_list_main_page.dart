@@ -25,6 +25,8 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
   List<String> fridgeName = [];
   List<ShoppingCategory> _categories = [];
+  List<Map<String, dynamic>> recentlyDeletedItems = [];
+
 
   // String? selectedFridge = '';
   String? selected_fridgeId = '';
@@ -410,6 +412,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     }
   }
   Future<void> _deleteShoppingItem(String itemName) async {
+
     final snapshot = await FirebaseFirestore.instance
         .collection('shopping_items')
         .where('items', isEqualTo: itemName)
@@ -457,7 +460,11 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
         for (int index = 0; index < checkedItems[category]!.length; index++) {
           if (checkedItems[category]![index]) {
             String itemName = categoryItems[index];
-
+// 🔹 Firestore에서 삭제 전 아이템을 임시 저장
+            recentlyDeletedItems.add({
+              'category': category,
+              'itemName': itemName,
+            });
             final snapshot = await FirebaseFirestore.instance
                 .collection('shopping_items')
                 .where('items', isEqualTo: itemName)
@@ -500,7 +507,12 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('아이템이 삭제되었습니다.')),
+        SnackBar(content: Text('아이템이 삭제되었습니다.'),
+          action: SnackBarAction(
+          label: '복원',
+          onPressed: _restoreDeletedItems,
+          ),
+        ),
       );
     } catch (e) {
       print('아이템 삭제 중 오류 발생: $e');
@@ -509,7 +521,33 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       );
     }
   }
+  void _restoreDeletedItems() async {
+    for (var item in recentlyDeletedItems) {
+      final category = item['category'];
+      final itemName = item['itemName'];
 
+      // 1. Firestore에 다시 추가
+      await FirebaseFirestore.instance.collection('shopping_items').add({
+        'userId': userId,
+        'items': itemName,
+        'isChecked': false, // 복원 시 기본값은 미체크 상태
+      });
+
+      // 2. 상태 업데이트 (UI에 다시 추가)
+      setState(() {
+        if (!itemLists.containsKey(category)) {
+          itemLists[category] = [];
+          checkedItems[category] = [];
+          strikeThroughItems[category] = [];
+        }
+        itemLists[category]!.add(itemName);
+        checkedItems[category]!.add(false);
+        strikeThroughItems[category]!.add(false);
+      });
+    }
+
+    recentlyDeletedItems.clear(); // 복원 후 임시 저장 리스트 초기화
+  }
   void stopShoppingListDeleteMode() {
     if (!mounted) return;
     setState(() {

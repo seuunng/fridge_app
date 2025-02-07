@@ -46,6 +46,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
 
   List<String> fridgeIngredients = []; // 냉장고에 있는 재료들
   List<String> searchKeywords = []; // 검색 키워드
+  List<Map<String, dynamic>> recentlyDeletedRecipes = [];
 
   bool isLiked = false; // 좋아요 상태
   bool isScraped = false; // 스크랩 상태
@@ -360,44 +361,34 @@ class _ReadRecipeState extends State<ReadRecipe> {
                 // bool isLiked = recipe[index]['isLiked'] ?? false;
 
                 try {
+                  DocumentSnapshot<Map<String, dynamic>> recipeSnapshot =
+                  await FirebaseFirestore.instance
+                      .collection('recipe')
+                      .doc(widget.recipeId)
+                      .get();
+
+                  if (recipeSnapshot.exists) {
+                    recentlyDeletedRecipes.add({
+                      'recipeId': widget.recipeId,
+                      'recipeData': recipeSnapshot.data(),
+                    });
+                  }
                   await FirebaseFirestore.instance
                       .collection('recipe')
                       .doc(widget.recipeId)
                       .delete();
 
-                  // 관련된 스크랩된 데이터 삭제
-                  QuerySnapshot<Map<String, dynamic>> scrapedRecipesSnapshot =
-                      await FirebaseFirestore.instance
-                          .collection('scraped_recipes')
-                          .where('recipeId', isEqualTo: widget.recipeId)
-                          .get();
-
-                  for (var doc in scrapedRecipesSnapshot.docs) {
-                    await FirebaseFirestore.instance
-                        .collection('scraped_recipes')
-                        .doc(doc.id)
-                        .delete();
-                  }
-
-                  // 관련된 좋아요 데이터 삭제
-                  QuerySnapshot<Map<String, dynamic>> likedRecipesSnapshot =
-                      await FirebaseFirestore.instance
-                          .collection('liked_recipes')
-                          .where('recipeId', isEqualTo: widget.recipeId)
-                          .get();
-
-                  for (var doc in likedRecipesSnapshot.docs) {
-                    await FirebaseFirestore.instance
-                        .collection('liked_recipes')
-                        .doc(doc.id)
-                        .delete();
-                  }
+                  await _deleteRelatedData(widget.recipeId);
 
                   Navigator.of(context).pop();
                   // 상위 페이지로 결과 전달 및 페이지 나가기
                   Navigator.of(context).pop(); // AlertDialog 닫기
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text('레시피가 삭제되었습니다.'),
+                    action: SnackBarAction(
+                      label: '복원',
+                      onPressed: _restoreDeletedRecipe, // 복원 함수 호출
+                    ),
                   ));
                   Navigator.of(context).pop(true); // 삭제 성공 신호를 상위 페이지로 전달
                 } catch (e) {
@@ -413,7 +404,50 @@ class _ReadRecipeState extends State<ReadRecipe> {
       },
     );
   }
+  Future<void> _deleteRelatedData(String recipeId) async {
+    // 🔹 스크랩 및 좋아요 데이터 삭제
+    await _deleteCollectionData('scraped_recipes', recipeId);
+    await _deleteCollectionData('liked_recipes', recipeId);
+  }
 
+  Future<void> _deleteCollectionData(String collection, String recipeId) async {
+    QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+        .instance
+        .collection(collection)
+        .where('recipeId', isEqualTo: recipeId)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      await FirebaseFirestore.instance.collection(collection).doc(doc.id).delete();
+    }
+  }
+  void _restoreDeletedRecipe() async {
+    if (recentlyDeletedRecipes.isNotEmpty) {
+      final lastDeletedRecipe = recentlyDeletedRecipes.removeLast(); // 마지막 삭제된 레시피 가져오기
+      final recipeId = lastDeletedRecipe['recipeId'];
+      final recipeData = lastDeletedRecipe['recipeData'];
+
+      try {
+        // Firestore에 레시피 복원
+        await FirebaseFirestore.instance
+            .collection('recipe')
+            .doc(recipeId)
+            .set(recipeData!);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('레시피가 복원되었습니다.')),
+        );
+
+        // 필요 시 레시피 데이터를 다시 로드하여 UI 갱신
+        _refreshRecipeData();
+      } catch (e) {
+        print('레시피 복원 실패: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('레시피 복원에 실패했습니다. 다시 시도해주세요.')),
+        );
+      }
+    }
+  }
   List<String> _collectAllImages(
       List<String> mainImages, List<Map<String, String>> steps) {
     List<String> allImages = [];

@@ -19,6 +19,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
   Color _selectedColor = Colors.grey[300]!; // 기본 색상
   List<String> units = [];
   String userRole = '';
+  List<Map<String, dynamic>> recentlyDeletedCategories = [];
 
   @override
   void initState() {
@@ -58,11 +59,12 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
         // Firestore에서 데이터 가져오기
         final categories = snapshot.docs.map((doc) {
           final data = doc.data();
+          final colorString = data['color'] ?? '#BDBDBD'; // 기본 회색으로 설정
           return {
             'id': doc.id, // Firestore 문서 ID 저장
             '기록 카테고리': data['zone'],
             '분류': List<String>.from(data['units']),
-            '색상': Color(int.parse(data['color'].replaceFirst('#', '0xff'))),
+            '색상': Color(int.tryParse(colorString.replaceFirst('#', '0xff')) ?? 0xFFBDBDBD),
           };
         }).toList();
 
@@ -407,32 +409,48 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
     }
   }
 
-  // Firestore에서 카테고리를 삭제하는 함수
-  Future<void> _deleteCategory(int index) async {
-    String deletedZone = userData[index]['기록 카테고리'];
-    List<String> deletedUnits = List<String>.from(userData[index]['분류']);
+  Future<void> _deleteCategoryById(String categoryId) async {
     try {
-      // 로컬 데이터에서 즉시 제거
-      setState(() {
-        userData[index]['isDeleted'] = true; // 삭제 상태로 표시
-      });
-
       await FirebaseFirestore.instance
           .collection('record_categories')
-          .doc(userData[index]['id'])
+          .doc(categoryId)
           .update({'isDeleted': true});
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${userData[index]['기록 카테고리']}가 삭제되었습니다.')),
-      );
     } catch (e) {
       print('Error deleting category: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 삭제에 실패했습니다. 다시 시도해주세요.')),
-      );
+      throw e; // 삭제 중 문제가 발생하면 예외 던짐
     }
   }
+  void _restoreDeletedCategory() async {
+    if (recentlyDeletedCategories.isNotEmpty) {
+      final lastDeletedCategory = recentlyDeletedCategories.last;// 마지막 삭제된 카테고리 가져오기
+      try {
+        await FirebaseFirestore.instance
+            .collection('record_categories')
+            .doc(lastDeletedCategory['id'])
+            .update({'isDeleted': false}); // Firestore에서 복원
 
+        // 로컬 상태에 복원된 카테고리 추가
+        setState(() {
+          // final colorString = lastDeletedCategory['색상'] ?? '#BDBDBD';
+          userData.add({
+            'id': lastDeletedCategory['id'],
+            '기록 카테고리': lastDeletedCategory['기록 카테고리'],
+            '분류': lastDeletedCategory['분류'],
+            '색상':  lastDeletedCategory['색상'],
+            'isDeleted': false,
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${lastDeletedCategory['기록 카테고리']} 카테고리가 복원되었습니다.')),
+        );
+      } catch (e) {
+        print('Error restoring category: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('카테고리 복원에 실패했습니다. 다시 시도해주세요.')),
+        );
+      }
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -447,15 +465,35 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
           return Dismissible(
               key: Key(record['id']), // 각 항목에 고유한 키를 부여
               direction: DismissDirection.endToStart, // 오른쪽에서 왼쪽으로만 스와이프 가능
-              onDismissed: (direction) {
+              onDismissed: (direction) async {
+                final categoryToDelete = userData[index];
+
+                recentlyDeletedCategories.add(categoryToDelete);
+                print('recentlyDeletedCategories $recentlyDeletedCategories');
                 setState(() {
                   userData.removeAt(index);
                 });
 
-                _deleteCategory(index);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${record['기록 카테고리']} 삭제됨')),
-                );
+                try {
+                  await _deleteCategoryById(categoryToDelete['id']);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${categoryToDelete['기록 카테고리']}가 삭제되었습니다.'),
+                      action: SnackBarAction(
+                        label: '복원',
+                        onPressed: _restoreDeletedCategory,
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  // 에러 발생 시 삭제를 취소하고 다시 로컬 상태에 항목 추가
+                  setState(() {
+                    userData.insert(index, categoryToDelete);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('카테고리 삭제에 실패했습니다. 다시 시도해주세요.')),
+                  );
+                }
               },
               background: Container(
                 color: Colors.redAccent,

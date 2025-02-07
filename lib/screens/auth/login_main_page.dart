@@ -28,7 +28,15 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: [
+      'email',
+      'profile',
+      'https://www.googleapis.com/auth/user.birthday.read',
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/user.gender.read',
+    ],
+  );
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _emailFocusNode = FocusNode(); // 이메일 입력 필드의 포커스 노드
@@ -62,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
       {String? nickname,
       String? email,
       String? gender,
-      String? birthYear,
+      int? birthYear,
        String? avatar,}) async {
     final userDoc =
         FirebaseFirestore.instance.collection('users').doc(user.uid);
@@ -74,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
         'email': email ?? user.email ?? '이메일 없음',
         'signupdate': formattedDate,
         'gender': gender ?? '알 수 없음',
-        'birthYear': birthYear ?? '알 수 없음',
+        'birthYear': birthYear ?? '0',
         'role': 'user',
         'avatar': avatar,
       });
@@ -228,7 +236,18 @@ class _LoginPageState extends State<LoginPage> {
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      await fetchGoogleUserInfo(googleAuth.accessToken!);
+      // Google People API로 추가 정보 가져오기
+      final googleUserInfo = await fetchGoogleUserInfo(googleAuth.accessToken!);
+      final String gender = (googleUserInfo['gender'] == "female")
+          ? 'F'
+          : (googleUserInfo['gender'] == "male")
+          ? 'M'
+          : '알 수 없음'; // 기타 또는 null 처리
+      final int birthYear = int.tryParse(googleUserInfo['birthYear'] ?? '0') ?? 0;
+      final String photoUrl = googleUser.photoUrl ?? '';
+
+      print('photoUrl $photoUrl');
+
 
       final firebase_auth.OAuthCredential credential =
           firebase_auth.GoogleAuthProvider.credential(
@@ -240,13 +259,18 @@ class _LoginPageState extends State<LoginPage> {
       firebase_auth.UserCredential result =
           await _auth.signInWithCredential(credential);
       if (result.user != null) {
-        await addUserToFirestore(result.user!); // Firestore에 사용자 추가
+        await addUserToFirestore(result.user!,
+          gender: gender,
+          birthYear: birthYear,
+          avatar: photoUrl,
+        ); // Firestore에 사용자 추가
         await FirebaseService.recordSessionStart();
         assignRandomAvatarToUser(result.user!.uid);
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
         }
       }
+
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -259,6 +283,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> signInWithGoogleWeb() async {
     final firebase_auth.FirebaseAuth auth = firebase_auth.FirebaseAuth.instance;
+    await auth.setLanguageCode('ko');
     try {
       final googleProvider = firebase_auth.GoogleAuthProvider();
       final userCredential = await auth.signInWithPopup(googleProvider);
@@ -268,7 +293,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> fetchGoogleUserInfo(String accessToken) async {
+  Future<Map<String, String>> fetchGoogleUserInfo(String accessToken) async {
     final response = await http.get(
       Uri.parse(
           'https://people.googleapis.com/v1/people/me?personFields=genders,birthdays'),
@@ -277,11 +302,21 @@ class _LoginPageState extends State<LoginPage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final String? gender = data['genders']?[0]['value']; // 성별
-      final String? birthYear =
-          data['birthdays']?[0]['date']['year'].toString(); // 출생연도
+      print('Google API 응답 데이터: $data');  // 응답 전체 출력
+      final String gender = data['genders'] != null && data['genders'].isNotEmpty
+          ? data['genders'][0]['value']
+          : '알 수 없음';
+
+      final String birthYear = data['birthdays'] != null &&
+          data['birthdays'].isNotEmpty &&
+          data['birthdays'][0]['date']?['year'] != null
+          ? data['birthdays'][0]['date']['year'].toString()
+          : '0';
+
+      return {'gender': gender, 'birthYear': birthYear};
     } else {
-      print('Google 사용자 정보 가져오기 실패: ${response.body}');
+      print('Google API 호출 실패: ${response.statusCode} - ${response.body}');
+      return {'gender': 'N/A', 'birthYear': 'N/A'};
     }
   }
   // Future<void> signInWithKakao() async {
@@ -336,7 +371,7 @@ class _LoginPageState extends State<LoginPage> {
   // }
 
   Future<void> signInWithNaver() async {
-    print('signInWithNaver() 실행');
+    // print('signInWithNaver() 실행');
     try {
       await Future.delayed(Duration(milliseconds: 100));
       final NaverLoginResult res = await FlutterNaverLogin.logIn();
@@ -350,15 +385,15 @@ class _LoginPageState extends State<LoginPage> {
         if (response != null) {
           await Future.delayed(Duration(milliseconds: 100));
           final firebaseUser = await _auth.signInWithCustomToken(response);
-          print('naver로그인');
-          print(res.account.profileImage);
+          // print('naver로그인');
+          // print(res.account.profileImage);
           if (firebaseUser.user != null) {
             await addUserToFirestore(
               firebaseUser.user!,
               nickname: res.account.nickname,
               email: res.account.email,
               gender: res.account.gender ?? '알 수 없음',
-              birthYear: res.account.birthyear ?? '알 수 없음',
+              birthYear: int.tryParse(res.account.birthyear ?? '0') ?? 0,
               avatar: res.account.profileImage ?? '알 수 없음',
             );
             // assignRandomAvatarToUser(firebaseUser.user!.uid);
@@ -430,14 +465,14 @@ class _LoginPageState extends State<LoginPage> {
   void assignRandomAvatarToUser(String userId) async {
     // 랜덤으로 아바타 선택
     int randomAvatarIndex = Random().nextInt(25) + 1; // 1~25 사이 랜덤 숫자
-    String avatarPath =
-        'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png';
+    // String avatarPath =
+    //     'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png';
 
     // Firestore에 저장
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .set({'avatar': avatarPath}, SetOptions(merge: true));
+    // await FirebaseFirestore.instance
+    //     .collection('users')
+    //     .doc(userId)
+    //     .set({'avatar': avatarPath}, SetOptions(merge: true));
   }
   Future<void> _launchPrivacyPolicy() async {
     final Uri url = Uri.parse(
