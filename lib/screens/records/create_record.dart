@@ -285,9 +285,7 @@ class _CreateRecordState extends State<CreateRecord> {
   }
 
   void _saveWithConfirmation() {
-
-    print('_tempImageFiles $_tempImageFiles');
-    print('_imageFiles $_imageFiles');
+    final theme = Theme.of(context);
     if (contentsController.text.trim().isNotEmpty ||
         (_tempImageFiles != null && _tempImageFiles!.isNotEmpty)) {
       // 저장되지 않은 상태인지 확인
@@ -295,8 +293,14 @@ class _CreateRecordState extends State<CreateRecord> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('저장되지 않은 내용이 있습니다.'),
-            content: Text('현재 입력된 내용만 저장할까요?'),
+            title: Text('저장되지 않은 내용이 있습니다.',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
+            content: Text('현재 입력된 내용만 저장할까요?',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
             actions: [
               TextButton(
                 onPressed: () {
@@ -323,7 +327,6 @@ class _CreateRecordState extends State<CreateRecord> {
   }
 // 저장 버튼 누르면 레시피 추가 또는 수정 처리
   void _saveRecord() async {
-    print('_saveRecord() 실행');
     if (isSaving) {
       print('저장 중입니다. 중복 실행 방지');
       return;
@@ -453,6 +456,20 @@ class _CreateRecordState extends State<CreateRecord> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEditing ? '기록 수정' : '기록하기'),
+        actions: [
+          TextButton(
+            child: Text(
+              '저장',
+              style: TextStyle(
+                fontSize: 20, // 글씨 크기를 20으로 설정
+              ),
+            ),
+            onPressed: _saveWithConfirmation,
+          ),
+          SizedBox(
+            width: 20,
+          )
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -517,13 +534,13 @@ class _CreateRecordState extends State<CreateRecord> {
           mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
           mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
           children: [
-            SizedBox(
-              width: double.infinity,
-              child: NavbarButton(
-                buttonTitle: '저장하기',
-                onPressed: _saveWithConfirmation,
-              ),
-            ),
+            // SizedBox(
+            //   width: double.infinity,
+            //   child: NavbarButton(
+            //     buttonTitle: '저장하기',
+            //     onPressed: _saveWithConfirmation,
+            //   ),
+            // ),
             if (userRole != 'admin' && userRole != 'paid_user')
               SafeArea(
                 child: BannerAdWidget(),
@@ -609,22 +626,21 @@ class _CreateRecordState extends State<CreateRecord> {
               color: theme.colorScheme.onSurface),
         ),
         // SizedBox(height: 8.0),
-        ListView.builder(
+        ReorderableListView.builder(
           shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
+          physics: NeverScrollableScrollPhysics(), // 스크롤 방지
           itemCount: recordsWithImages.length,
           itemBuilder: (context, index) {
-            final List<String> imagePaths =
-                List<String>.from(recordsWithImages[index]['images'] ?? []);
-
+            final step = recordsWithImages[index];
             return ListTile(
+              key: ValueKey(step),
               onTap: () {
                 setState(() {
                   selectedRecordIndex = index; // 선택한 기록의 인덱스를 저장
                   selectedField = recordsWithImages[index]['field'] as String;
                   contentsController.text =
                       recordsWithImages[index]['contents'] as String;
-                  _tempImageFiles = imagePaths;
+                  _tempImageFiles = List<String>.from(recordsWithImages[index]['images'] ?? []);
                 });
               },
               title: Column(
@@ -694,6 +710,16 @@ class _CreateRecordState extends State<CreateRecord> {
                     size: 18, color: theme.colorScheme.onSurface),
               ),
             );
+          },
+          onReorder: (oldIndex, newIndex) {
+            setState(() {
+              if (newIndex > oldIndex) {
+                newIndex -= 1;
+              }
+              // ✅ 아이템 순서 재정렬
+              final item = recordsWithImages.removeAt(oldIndex);
+              recordsWithImages.insert(newIndex, item);
+            });
           },
         ),
         SizedBox(height: 16.0),

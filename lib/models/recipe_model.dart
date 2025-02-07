@@ -102,6 +102,7 @@ class RecipeModel {
           .toList(),
       'views': views,
       'date': date,
+      'mainImages': mainImages,
       'link': link,
     };
   }

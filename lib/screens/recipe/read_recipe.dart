@@ -61,7 +61,6 @@ class _ReadRecipeState extends State<ReadRecipe> {
   @override
   void initState() {
     super.initState();
-
     // 유저 정보 초기화
     userId = currentUser?.uid ?? '';
     fromEmail = currentUser?.email ?? '이메일 없음';
@@ -89,8 +88,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
     _pageController.dispose(); // 페이지 컨트롤러 해제
     super.dispose();
   }
-  void _loadUserRole() async {
 
+  void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -189,6 +188,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
       print("Error fetching recipe isScraped data: $e");
     }
   }
+
   Future<void> loadLikedData(String recipeId) async {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
@@ -874,7 +874,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
       return Container(
         height: 400,
         // color: Colors.grey,
-        child: Icon(Icons.image, color: Colors.white, size: 100),
+        child: Center(child: Icon(Icons.image, color: Colors.white, size: 100)),
       );
     }
 
