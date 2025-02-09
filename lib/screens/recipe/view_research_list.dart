@@ -72,8 +72,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
   List<dynamic> _results = []; // 웹 검색 결과 저장
   Map<String, bool> scrapedStatus = {};
 
-
-
   @override
   void initState() {
     super.initState();
@@ -111,12 +109,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
     _mangaeUpdateQuery();
     _loadFridgeId();
   }
+
   void _initializePageData() async {
     // ✅ 순서를 보장하기 위해 async/await 사용
     await _loadPreferredFoodsByCategory();
     await _initializeFridgeData(); // 냉장고 데이터도 완전히 불러온 후 실행
     await _initializeSearch(); // 모든 초기화 작업이 끝난 후 검색 실행
   }
+
   Future<void> _loadFridgeId() async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -136,6 +136,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       print('냉장고 ID 로드 중 오류 발생: $e');
     }
   }
+
   void _updateQuery() {
     setState(() {
       final queryKeywords = [...keywords, ...topIngredients];
@@ -153,20 +154,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
       mangaeQuery = queryKeywords.join(" ");
       // print('Updated query: $query');
     });
+    print('만개의 레시피 쿼리: $mangaeQuery');
   }
-
-  //선택된 냉장고 불러오기
-  // Future<void> _loadSelectedFridge() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
-  //   setState(() {
-  //     selectedFridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
-  //   });
-  //
-  //   if (selectedFridge != null) {
-  //     selected_fridgeId = await fetchFridgeId(selectedFridge!);
-  //   }
-  // }
 
   //선택된 냉장고의 Id불러오기
   Future<String?> fetchFridgeId(String fridgeName) async {
@@ -345,7 +334,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
       setState(() {
         fridgeIngredients = validIngredients; // 유효한 아이템만 fridgeIngredients에 추가
       });
-
     } catch (e) {
       print('Error loading fridge items: $e');
     }
@@ -354,7 +342,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
   // 냉장고 재료 우선순위에 따라 10개 추리기
   Future<List<String>> _applyCategoryPriority(
       List<String> fridgeIngredients) async {
-
     Map<String, String> ingredientToCategory =
         await _loadIngredientCategoriesFromFirestore();
 
@@ -400,8 +387,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
     await fetchRecipes(
         keywords: keywords,
         topIngredients: topIngredients,
-        cookingMethods: this.selectedCookingMethods
-    );
+        cookingMethods: this.selectedCookingMethods);
     // print('_initializeSearch() $topIngredients');
   }
 
@@ -418,7 +404,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
       await fetchRecipes(
           keywords: keywords,
           topIngredients: topIngredients,
-          cookingMethods: this.selectedCookingMethods);
+          cookingMethods: this.selectedCookingMethods
+      );
     } catch (e) {
       print('Error loading recipes by preferred foods category: $e');
     }
@@ -591,8 +578,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
         final viewCountB = b['views'] as int? ?? 0;
         // final likeCountA = (a['rating'] as num?)?.toDouble() ?? 0.0; // 수정된 부분
         // final likeCountB = (b['rating'] as num?)?.toDouble() ?? 0.0; // 수정된 부분
-        final likeCountA = ((a.data() as Map<String, dynamic>)['rating'] as num?)?.toDouble() ?? 0.0;
-        final likeCountB = ((b.data() as Map<String, dynamic>)['rating'] as num?)?.toDouble() ?? 0.0;
+        final likeCountA =
+            ((a.data() as Map<String, dynamic>)['rating'] as num?)
+                    ?.toDouble() ??
+                0.0;
+        final likeCountB =
+            ((b.data() as Map<String, dynamic>)['rating'] as num?)
+                    ?.toDouble() ??
+                0.0;
 
         // 최신순
         if (createdAtA != null && createdAtB != null) {
@@ -650,7 +643,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
             .where('userId', isEqualTo: userId)
             .where('link', isEqualTo: link)
             .get();
-
       } else if (recipeId.isNotEmpty) {
         // 🔹 Firestore 레시피의 경우 recipeId로 확인
         snapshot = await FirebaseFirestore.instance
@@ -751,39 +743,40 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
 
   Future<void> fetchSearchResultsFromWeb(String query) async {
-    final String baseUrl =
-        'https://www.googleapis.com/customsearch/v1?q=$query&key=$apiKey&cx=$cx';
-
-    try {
-      final response = await http.get(Uri.parse(baseUrl));
+    final queries = [query + " 레시피", query + " 요리", query + " 만드는법"];
+    final requests = queries.map((q) async {
+      final url =
+          'https://www.googleapis.com/customsearch/v1?q=$q&key=$apiKey&cx=$cx';
+      final response = await http.get(Uri.parse(url));
+      print("HTTP 요청 상태 코드: ${response.statusCode}");
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        // 데이터를 변환하며 null-safe 접근 및 기본값 설정
-        final items = (data['items'] as List<dynamic>?)
-                ?.map((item) => {
-                      'title': item['title'] ?? 'Unknown Title',
-                      'snippet': item['snippet'] ?? 'No description',
-                      'imageUrl': item['pagemap']?['cse_thumbnail']?[0]
-                              ?['src'] ??
-                          'https://via.placeholder.com/150', // 기본 이미지
-                      'link': item['link'] ?? '',
-                    })
-                .toList() ??
-            [];
-
-        setState(() {
-          _results = items; // 상태 업데이트
-        });
+        return json.decode(response.body);
       } else {
-        throw Exception('웹 검색 실패: ${response.statusCode}');
+        print("HTTP 요청 실패: 상태 코드 ${response.statusCode}");
+        return []; // 에러 발생 시 빈 리스트 반환
       }
-    } catch (e) {
-      print("웹 검색 중 오류 발생: $e");
-      setState(() {
-        _results = []; // 오류 시 빈 리스트로 설정
-      });
-    }
+    });
+
+    final results = await Future.wait(requests);
+    setState(() {
+      _results = results
+          .expand((result) => (result?['items'] ?? []) as List<dynamic>)
+          .map((item) {
+        final pagemap = item['pagemap'] ?? {};
+        final imageUrl = (pagemap['cse_image'] != null &&
+            pagemap['cse_image'].isNotEmpty)
+            ? pagemap['cse_image'][0]['src']
+            : 'https://seuunng.github.io/food_for_later_policy/favicon.png';
+
+        return {
+          'title': item['title'] ?? '',
+          'snippet': item['snippet'] ?? '',
+          'link': item['link'] ?? '',
+          'imageUrl': imageUrl, // 이미지 URL 추가
+        };
+      })
+          .toList();
+    });
   }
 
   Future<List<Map<String, dynamic>>> fetchRecipesFromMangnaeya(
@@ -792,14 +785,10 @@ class _ViewResearchListState extends State<ViewResearchList> {
       isLoading = true; // 검색 시작 시 로딩 상태 활성화
     });
     try {
-      final String url =
-          'https://www.10000recipe.com/recipe/list.html?q=$query';
-
+      final String url = 'https://www.10000recipe.com/recipe/list.html?q=$query';
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final document = parse(response.body);
-
-        // 첫 번째 레시피의 상세 링크를 찾기
         final recipeLinks = document.querySelectorAll('.common_sp_link');
         final recipeTitles =
             document.querySelectorAll('.common_sp_caption_tit');
@@ -808,41 +797,32 @@ class _ViewResearchListState extends State<ViewResearchList> {
         }
 
         List<Map<String, dynamic>> recipes = [];
-        for (int i = 0; i < recipeLinks.length; i++) {
+        final recipeRequests = recipeLinks.map((linkElement) async {
           final link =
-              'https://www.10000recipe.com${recipeLinks[i].attributes['href']}';
-
+              'https://www.10000recipe.com${linkElement.attributes['href']}';
           final recipeResponse = await http.get(Uri.parse(link));
-
           if (recipeResponse.statusCode == 200) {
-            final recipeDocument = parse(recipeResponse.body);
-
-            final title = recipeDocument
-                    .querySelector('.view2_summary.st3 h3')
-                    ?.text
-                    .trim() ??
-                'Unknown';
-            final ingredientsElements =
-                recipeDocument.querySelectorAll('.ready_ingre3 > ul > li');
-            final ingredients = ingredientsElements
-                .map((e) =>
-                    e.text.trim().split(RegExp(r'\s+'))[0]) // 공백 전 첫 단어만 가져오기
-                .where((ingredient) => !ingredient.endsWith("구매"))
-                .toList();
-            final imageElement =
-                recipeDocument.querySelector('.centeredcrop img');
-            final imageUrl = imageElement?.attributes['src'] ?? '';
-
-            // 반환 데이터
-            recipes.add({
-              'title': title,
-              'ingredients': ingredients,
-              'image': imageUrl,
-              'link': link,
-            });
+            final recipeData =
+                await _parseRecipeData(link, recipeResponse.body);
+            return recipeData;
+          } else {
+            print('HTTP 요청 실패: ${recipeResponse.statusCode}, 링크: $link');
+            return null;
           }
-        }
-        return recipes; // 모든 레시피 데이터 반환
+        }).toList();
+        // print('recipeRequests 갯수 (비동기 작업 시작 전): ${recipeRequests.length}');
+
+        // 🔹 모든 비동기 요청이 끝날 때까지 기다리기
+        print(recipeRequests.length);
+        // List<Map<String, dynamic>> recipes = [];
+        final fetchedRecipes = await Future.wait(recipeRequests);
+        recipes = fetchedRecipes
+            .where((recipe) => recipe != null)
+            .cast<Map<String, dynamic>>()
+            .toList();
+
+        // print('레시피 갯수 (비동기 작업 완료 후): ${recipes.length}');
+        return recipes;
       }
     } catch (e) {
       print('Error fetching recipes from Mangnaeya: $e');
@@ -854,6 +834,49 @@ class _ViewResearchListState extends State<ViewResearchList> {
     return [];
   }
 
+  Future<Map<String, dynamic>> _parseRecipeData(
+      String link, String body) async {
+    final document = parse(body);
+
+    // 🔹 레시피 제목 가져오기
+    final title =
+        document.querySelector('.view2_summary h3')?.text.trim() ?? 'Unknown';
+    // print("레시피 제목: $title");
+    // 🔹 재료 목록 가져오기
+    final ingredientsElements =
+        document.querySelectorAll('.ready_ingre3 ul li');
+    final ingredients = ingredientsElements
+        .map((e) => e.text.trim().split(RegExp(r'\s+'))[0]) // 공백 전 단어만 추출
+        .where((ingredient) => !ingredient.endsWith("구매")) // '구매'가 포함된 항목 제거
+        .toList();
+    // print("재료 목록: $ingredients");
+    // 🔹 메인 이미지 URL 가져오기
+    final imageElement = document.querySelector('.centeredcrop img');
+    final imageUrl = imageElement?.attributes['src'] ?? '';
+    // if (ingredients.isEmpty) {
+    //   print("재료가 비어 있습니다. 기본값으로 설정합니다.");
+    //   ingredients.add('알 수 없는 재료');
+    // }
+    if (title == null || title.isEmpty || ingredients.isEmpty) {
+      print("파싱 오류 발생: 제목 또는 재료가 비어 있습니다.");
+      // return;
+    }
+    // 반환할 데이터 맵 구성
+    return {
+      'title': title,
+      'ingredients': ingredients,
+      'image': imageUrl,
+      'link': link,
+    };
+  }
+  // Future<void> loadMoreRecipes() async {
+  //   currentPage++; // 다음 페이지로 이동
+  //   final newRecipes = await fetchRecipesFromMangnaeya(mangaeQuery);
+  //
+  //   setState(() {
+  //     _mangaeresults.addAll(newRecipes);
+  //   });
+  // }
   void _openRecipeLink(
       String link, String title, RecipeModel recipe, bool initialScraped) {
     Navigator.push(
@@ -1052,6 +1075,19 @@ class _ViewResearchListState extends State<ViewResearchList> {
                   ),
                 ),
               ),
+            // if (_mangaeresults.length >= 10)
+            //   Container(
+            //       color: Colors.transparent,
+            //       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            //       child: SizedBox(
+            //         width: double.infinity,
+            //         child: NavbarButton(
+            //           buttonTitle: '더 불러오기',
+            //           onPressed: () async {
+            //             await loadMoreRecipes();
+            //            }
+            //         ),
+            //       )),
             if (userRole != 'admin' && userRole != 'paid_user')
               SafeArea(
                 bottom: false, // 하단 여백 제거
@@ -1179,7 +1215,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
             String recipeName = recipe.recipeName;
             double recipeRating = recipe.rating ?? 0.0;
             bool hasMainImage = recipe.mainImages.isNotEmpty; // 이미지가 있는지 확인
-  print('hasMainImage $hasMainImage');
+            print('hasMainImage $hasMainImage');
             List<String> keywordList = [
               ...recipe.foods, // 이 레시피의 food 키워드들
               ...recipe.methods, // 이 레시피의 method 키워드들
@@ -1441,10 +1477,10 @@ class _ViewResearchListState extends State<ViewResearchList> {
           if (resultsWithAds[index] == 'ad') {
             // 광고 위젯
             if (userRole != 'admin' && userRole != 'paid_user')
-            return SafeArea(
-              bottom: false, // 하단 여백 제거
-              child: BannerAdWidget(),
-            );
+              return SafeArea(
+                bottom: false, // 하단 여백 제거
+                child: BannerAdWidget(),
+              );
           }
           final result = _results[index];
           final title = result['title'] ?? 'No title available';
@@ -1464,6 +1500,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
                       body: WebViewWidget(
                         controller: WebViewController()
                           ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                          ..setNavigationDelegate(
+                            NavigationDelegate(
+                              onPageStarted: (url) =>
+                                  print('Page loading started: $url'),
+                              onPageFinished: (url) =>
+                                  print('Page loaded: $url'),
+                            ),
+                          )
                           ..loadRequest(Uri.parse(link)),
                       ),
                     ),
@@ -1548,13 +1592,13 @@ class _ViewResearchListState extends State<ViewResearchList> {
         ),
       );
     }
-    List<Map<String, dynamic>> limitedRecipes = recipes.take(20).toList();
+    // List<Map<String, dynamic>> limitedRecipes = recipes.take(10).toList();
 // 광고를 삽입한 리스트 만들기
     List<dynamic> resultsWithAds = [];
     int adFrequency = 5; // 광고를 몇 개마다 넣을지 설정
 
-    for (int i = 0; i <  limitedRecipes.length; i++) {
-      resultsWithAds.add( limitedRecipes[i]);
+    for (int i = 0; i < recipes.length; i++) {
+      resultsWithAds.add(recipes[i]);
       if ((i + 1) % adFrequency == 0) {
         resultsWithAds.add('ad'); // 광고 위치를 표시하는 문자열
       }
@@ -1578,18 +1622,19 @@ class _ViewResearchListState extends State<ViewResearchList> {
             // 앱에서만 비율 적용
             mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
           ),
-          itemCount: limitedRecipes.length,
+          itemCount: recipes.length,
           itemBuilder: (context, index) {
-            if (index >= limitedRecipes.length) return SizedBox.shrink(); // 예외 방지
+            if (index >= recipes.length)
+              return SizedBox.shrink(); // 예외 방지
             if (resultsWithAds[index] == 'ad') {
               // 광고 위젯
               if (userRole != 'admin' && userRole != 'paid_user')
-              return SafeArea(
-                bottom: false, // 하단 여백 제거
-                child: BannerAdWidget(),
-              );
+                return SafeArea(
+                  bottom: false, // 하단 여백 제거
+                  child: BannerAdWidget(),
+                );
             }
-            final recipe = limitedRecipes[index];
+            final recipe = recipes[index];
             final String title = recipe['title'] ?? '제목 없음';
             final List<String> ingredients = recipe['ingredients'] ?? [];
             final String link = recipe['link'] ?? '';
@@ -1699,12 +1744,13 @@ class _ViewResearchListState extends State<ViewResearchList> {
                                             color: Colors.black,
                                           ), // 스크랩 아이콘 크기 조정
                                           onPressed: () async {
-                                            bool newState = await toggleScraped(recipeModel.id, link);
+                                            bool newState = await toggleScraped(
+                                                recipeModel.id, link);
 
                                             // 🔹 UI 업데이트 (정확한 키로 상태 반영)
                                             setState(() {
                                               scrapedStatus[_generateScrapedKey(
-                                                  recipeModel.id, link)] =
+                                                      recipeModel.id, link)] =
                                                   newState;
                                             });
                                           },
