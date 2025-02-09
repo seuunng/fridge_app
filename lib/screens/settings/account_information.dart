@@ -337,6 +337,7 @@ class _AccountInformationState extends State<AccountInformation> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (context) => LoginPage()),
+
                         );
                       },
                     ),
@@ -527,9 +528,10 @@ class _AccountInformationState extends State<AccountInformation> {
               onPressed: () async {
                 logout();
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.of(context).pushReplacement(
+                  Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(
-                        builder: (context) => LoginPage()), // 로그인 페이지로 이동
+                        builder: (context) => LoginPage()),
+                        (route) => false,// 로그인 페이지로 이동
                   );
                 });
               },

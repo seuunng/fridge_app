@@ -42,6 +42,7 @@ class _LoginPageState extends State<LoginPage> {
   final FocusNode _emailFocusNode = FocusNode(); // 이메일 입력 필드의 포커스 노드
   final FocusNode _passwordFocusNode = FocusNode(); // 비밀번호 입력 필드의 포커스
   String errorMessage = '';
+  bool _isLoading = false; // 로딩 상태 관리
 
   final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   @override
@@ -101,6 +102,9 @@ class _LoginPageState extends State<LoginPage> {
       );
       return;
     }
+    setState(() {
+      _isLoading = true; // 로딩 상태 시작
+    });
     try {
       firebase_auth.UserCredential result =
           await _auth.signInWithEmailAndPassword(
@@ -161,6 +165,10 @@ class _LoginPageState extends State<LoginPage> {
         errorMessage = '로그인 실패: 알 수 없는 오류 - ${e.toString()}';
       });
       print('로그인 실패: 알 수 없는 오류 - ${e.toString()}');
+    } finally {
+      setState(() {
+        _isLoading = false; // 로딩 상태 종료
+      });
     }
   }
 
@@ -230,6 +238,11 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> signInWithGoogle() async {
+    if (_isLoading) return; // 이미 로딩 중이면 함수 종료
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return;
@@ -245,9 +258,6 @@ class _LoginPageState extends State<LoginPage> {
           : '알 수 없음'; // 기타 또는 null 처리
       final int birthYear = int.tryParse(googleUserInfo['birthYear'] ?? '0') ?? 0;
       final String photoUrl = googleUser.photoUrl ?? '';
-
-      print('photoUrl $photoUrl');
-
 
       final firebase_auth.OAuthCredential credential =
           firebase_auth.GoogleAuthProvider.credential(
@@ -277,7 +287,10 @@ class _LoginPageState extends State<LoginPage> {
           errorMessage = 'Google 로그인 실패: ${e.toString()}';
         });
       }
-      print('Google 로그인 실패: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -371,6 +384,10 @@ class _LoginPageState extends State<LoginPage> {
   // }
 
   Future<void> signInWithNaver() async {
+    if (_isLoading) return; // 이미 로딩 중이면 함수 종료
+    setState(() {
+      _isLoading = true;
+    });
     // print('signInWithNaver() 실행');
     try {
       await Future.delayed(Duration(milliseconds: 100));
@@ -411,6 +428,10 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       print("네이버 로그인 중 오류 발생: $e");
+    } finally {
+      setState(() {
+        _isLoading = false; // 로딩 상태 해제
+      });
     }
   }
 
@@ -526,7 +547,11 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(height: 12),
                     BasicElevatedButton(
-                      onPressed: signInWithEmailAndPassword,
+                      onPressed: () {
+                        if (!_isLoading) {
+                          signInWithEmailAndPassword();
+                        }
+                      },
                       iconTitle: Icons.login,
                       buttonTitle: '로그인',
                     ),
@@ -560,40 +585,45 @@ class _LoginPageState extends State<LoginPage> {
                       buttonTitle: 'Google로 로그인',
                       image: 'assets/images/google_logo.png',
                       onPressed: () {
-                        if (kIsWeb) {
-                          signInWithGoogleWeb(); // 웹용 네이버 로그인
-                        } else {
-                          signInWithGoogle(); // 모바일용 네이버 로그인
+                        if (!_isLoading) {
+                          if (kIsWeb) {
+                            signInWithGoogleWeb(); // 웹용 네이버 로그인
+                          } else {
+                            signInWithGoogle(); // 모바일용 네이버 로그인
+                          }
                         }
-                      },
+                      }
                     ),
                     SizedBox(height: 12),
                     LoginElevatedButton(
                       buttonTitle: 'Kakao Talk으로 로그인',
                       image: 'assets/images/kakao_talk_logo.png',
                       onPressed: () {
-                        if (kIsWeb) {
-                          web.signInWithKakao(); // 웹용 카카오 로그인
-                        } else {
-                          mobile.signInWithKakao(context); // 모바일용 카카오 로그인
+                        if (!_isLoading) {
+                          if (kIsWeb) {
+                            web.signInWithKakao(); // 웹용 카카오 로그인
+                          } else {
+                            mobile.signInWithKakao(context); // 모바일용 카카오 로그인
+                          }
                         }
-                      },
+                      }
                     ),
                     SizedBox(height: 12),
                     LoginElevatedButton(
                       buttonTitle: 'Naver로 로그인',
                       image: 'assets/images/naver_logo.png',
                       onPressed: () {
-                        if (kIsWeb) {
-                          signInWithNaverWeb(); // 웹용 네이버 로그인
-                        } else {
-                          signInWithNaver(); // 모바일용 네이버 로그인
+                        if (!_isLoading) {
+                          if (kIsWeb) {
+                            signInWithNaverWeb(); // 웹용 네이버 로그인
+                          } else {
+                            signInWithNaver(); // 모바일용 네이버 로그인
+                          }
                         }
-                      },
+                      }
                     ),
                   ],
                 ),
-        
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(

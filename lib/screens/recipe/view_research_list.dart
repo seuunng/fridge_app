@@ -992,7 +992,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
                                 keyboardType: TextInputType.text,
                                 textInputAction: TextInputAction.search,
                                 decoration: InputDecoration(
-                                  hintText: '검색어 입력',
+                                  hintText: '재료 등 검색어를 입력해주세요',
                                   border: OutlineInputBorder(),
                                   contentPadding: EdgeInsets.symmetric(
                                       vertical: 8.0, horizontal: 10.0),

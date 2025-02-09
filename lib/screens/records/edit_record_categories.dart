@@ -345,7 +345,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(
-            '색상 선택',
+            '색상을 선택해주세요!',
             style: TextStyle(color: theme.colorScheme.onSurface),
           ),
           content: SingleChildScrollView(
@@ -354,8 +354,12 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
               onColorChanged: (Color color) {
                 pickedColor = color;
               },
-              showLabel: true,
+              paletteType: PaletteType.hsv, // 기본 팔레트
+              showLabel: false,
               pickerAreaHeightPercent: 0.8,
+              labelTextStyle: TextStyle(
+                color: theme.colorScheme.onSurface, // 레이블 텍스트 색상 적용
+              ),
             ),
           ),
           actions: [
