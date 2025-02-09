@@ -43,6 +43,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   List<FridgeCategory> recentlyDeletedSections = [];
   List<FridgeCategory> defaultFridgeCategories = [];
   List<FridgeCategory> userCategories = [];
+  List<Map<String, dynamic>> recentlyDeletedFoods = [];
   bool isEditing = false;
 
 
@@ -334,6 +335,55 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
           SnackBar(content: Text('섹션 복원에 실패했습니다. 다시 시도해주세요.')),
         );
       }
+    }
+  }
+  Future<void> _deleteUserFoods() async {
+    try {
+      QuerySnapshot userFoodsSnapshot = await FirebaseFirestore.instance
+          .collection('foods')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      recentlyDeletedFoods.clear(); // 삭제할 때마다 초기화
+
+      for (var doc in userFoodsSnapshot.docs) {
+        // 삭제 전 데이터를 저장
+        recentlyDeletedFoods.add(doc.data() as Map<String, dynamic>);
+        await doc.reference.delete(); // 각 문서 삭제
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('모든 식품 세부정보가 초기화되었습니다.'),
+          action: SnackBarAction(
+            label: '복원',
+            onPressed: _restoreDeletedFoods, // 복원 버튼 클릭 시 호출
+          ),
+        ),
+      );
+    } catch (e) {
+      print('Error deleting user foods: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('식품 초기화에 실패했습니다. 다시 시도해주세요.')),
+      );
+    }
+  }
+  Future<void> _restoreDeletedFoods() async {
+    try {
+      for (var foodData in recentlyDeletedFoods) {
+        await FirebaseFirestore.instance.collection('foods').add(foodData);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제된 식품 정보가 복원되었습니다.')),
+      );
+
+      // 복원 후 임시 저장 리스트 초기화
+      recentlyDeletedFoods.clear();
+    } catch (e) {
+      print('Error restoring foods: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('식품 복원에 실패했습니다.')),
+      );
     }
   }
   // 선택된 냉장고 삭제 함수
@@ -683,6 +733,24 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                   ),
                 ],
               ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Text(
+                    '식품 정보 초기화',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface),
+                  ),
+                  Spacer(), // 텍스트와 드롭다운 사이 간격
+                  BasicElevatedButton(
+                    onPressed: _showResetConfirmationDialog,
+                    iconTitle: Icons.refresh,
+                    buttonTitle: '초기화',
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -942,4 +1010,36 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       },
     );
   }
+  void _showResetConfirmationDialog() {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('식품 정보 초기화',
+              style: TextStyle(color: theme.colorScheme.onSurface)),
+          content: Text(
+            '수정한 식품 세부정보를 모두 삭제하시겠습니까?',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // 팝업 닫기
+              },
+              child: Text('취소', style: TextStyle(color: theme.colorScheme.onSurface)),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context); // 팝업 닫기 후 삭제 실행
+                await _deleteUserFoods(); // 삭제 함수 호출
+              },
+              child: Text('확인', style: TextStyle(color: theme.colorScheme.error)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 }

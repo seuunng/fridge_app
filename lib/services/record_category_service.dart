@@ -9,12 +9,14 @@ class RecordCategoryService {
           'zone': '식사',
           'units': ['아침', '점심', '저녁'],
           'color': '#BBDEFB', // 스카이 블루
+          'order': 0,
           'isDeleted': false
         },
         {
           'zone': '외식',
           'units': ['배달','외식','간식'],
           'color': '#FFC1CC', // 핑크 블러쉬
+          'order': 1,
           'isDeleted': false
         },
       ];

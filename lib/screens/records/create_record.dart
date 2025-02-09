@@ -116,7 +116,7 @@ class _CreateRecordState extends State<CreateRecord> {
           .collection('record_categories')
           .where('userId', isEqualTo: userId)
           .where('isDeleted', isEqualTo: false)
-          .orderBy('createdAt', descending: true) // 최신순 정렬
+          .orderBy('order')  // 순서대로 정렬
           .get();
 
       if (snapshot.docs.isEmpty) {

@@ -54,6 +54,7 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
           .collection('record_categories')
           .where('userId', isEqualTo: userId)
           .where('isDeleted', isEqualTo: false) // 최신순 정렬
+          .orderBy('order')  // 순서대로 정렬
           .get();
 
       if (snapshot.docs.isEmpty) {

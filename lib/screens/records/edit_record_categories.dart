@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/services/record_category_service.dart';
 
@@ -27,6 +28,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
     _loadCategories(); // 카테고리 데이터를 로
     _loadUserRole();
   }
+
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -42,6 +44,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
       print('Error loading user role: $e');
     }
   }
+
   // Firestore에서 카테고리 데이터를 로드하는 함수
   void _loadCategories() async {
     try {
@@ -49,7 +52,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
           .collection('record_categories')
           .where('userId', isEqualTo: userId)
           .where('isDeleted', isEqualTo: false)
-          .orderBy('createdAt', descending: true) // 최신순 정렬
+          .orderBy('order')  // 순서대로 정렬
           .get();
 
       if (snapshot.docs.isEmpty) {
@@ -64,7 +67,8 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
             'id': doc.id, // Firestore 문서 ID 저장
             '기록 카테고리': data['zone'],
             '분류': List<String>.from(data['units']),
-            '색상': Color(int.tryParse(colorString.replaceFirst('#', '0xff')) ?? 0xFFBDBDBD),
+            '색상': Color(int.tryParse(colorString.replaceFirst('#', '0xff')) ??
+                0xFFBDBDBD),
           };
         }).toList();
 
@@ -81,11 +85,12 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
   }
 
   Future<void> _createDefaultCategories() async {
-    await RecordCategoryService.createDefaultCategories(userId, context, _loadCategories);
+    await RecordCategoryService.createDefaultCategories(
+        userId, context, _loadCategories);
   }
+
   // 데이터 추가 함수
   void _addOrEditCategory({int? index}) {
-    String? errorMessage; // 에러 메시지를 표시하기 위한 상태 관리
     if (index != null) {
       // 수정 모드
       _recordCategoryController.text = userData[index]['기록 카테고리'];
@@ -130,14 +135,12 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                     children: [
                       for (var color in [
                         Color(0xFFFFC1CC), // 핑크 블러쉬
-                        Color(0xFFB2EBF2), // 민트 블루
-                        Color(0xFFD1C4E9), // 라벤더 퍼플
                         Color(0xFFFFE0B2), // 피치 오렌지
                         Color(0xFFFFF9C4), // 바닐라 옐로우
                         Color(0xFFDCEDC8), // 라이트 그린
+                        Color(0xFFB2EBF2), // 민트 블루
                         Color(0xFFBBDEFB), // 스카이 블루
-                        Color(0xFFE1BEE7), // 라일락 퍼플
-                        Color(0xFFD7CCC8), // 소프트 베이지
+                        Color(0xFFD1C4E9), // 라벤더 퍼플
                       ])
                         GestureDetector(
                           onTap: () {
@@ -160,6 +163,26 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                             ),
                           ),
                         ),
+                      GestureDetector(
+                        onTap: () {
+                          _showColorPickerDialog(context, (color) {
+                            setState(() {
+                              _selectedColor = color; // 선택된 색상으로 업데이트
+                            });
+                          });
+                        },
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: _selectedColor,
+                            shape: BoxShape.circle,
+                            // border: Border.all(color: Colors.black, width: 2),
+                          ),
+                          child: Icon(Icons.add,
+                              size: 16, color: theme.colorScheme.onSurface),
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 10),
@@ -183,11 +206,9 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                             horizontal: 1.0, vertical: 5.0),
                         deleteIcon: Transform.translate(
                           offset: Offset(-4, 0), // x, y 좌표로 이동, x는 좌우, y는 상하
-                          child: Icon(
-                            Icons.close,
-                            size: 16.0, // 삭제 아이콘 크기
-                              color: theme.colorScheme.onSurface
-                          ),
+                          child: Icon(Icons.close,
+                              size: 16.0, // 삭제 아이콘 크기
+                              color: theme.colorScheme.onSurface),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8.0),
@@ -314,16 +335,60 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
     );
   }
 
+  void _showColorPickerDialog(
+      BuildContext context, Function(Color) onColorPicked) {
+    final theme = Theme.of(context);
+    Color pickedColor = _selectedColor;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            '색상 선택',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: pickedColor,
+              onColorChanged: (Color color) {
+                pickedColor = color;
+              },
+              showLabel: true,
+              pickerAreaHeightPercent: 0.8,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  onColorPicked(pickedColor); // 선택된 색상 콜백 호출
+                  Navigator.of(context).pop();
+                });
+              },
+              child: Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Firestore에 카테고리를 저장하거나 수정하는 함수
   Future<void> _saveCategory({int? index}) async {
+    final order = index != null ? userData[index]['order'] : userData.length;
     // 입력 검증: 카테고리 이름과 분류 리스트가 비어있으면 저장 중단
     if (_recordCategoryController.text.isEmpty) {
-
       return; // 저장 중단
     }
 
     if (units.isEmpty) {
-
       return; // 저장 중단
     }
 
@@ -332,6 +397,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
       'units': units,
       'color': '#${_selectedColor.value.toRadixString(16).padLeft(8, '0')}',
       'userId': userId,
+      'order': order,  // 순서 정보 추가
       'createdAt': FieldValue.serverTimestamp(), // 생성 시간 추가
       'isDeleted': false,
       'isDefault': false
@@ -420,9 +486,11 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
       throw e; // 삭제 중 문제가 발생하면 예외 던짐
     }
   }
+
   void _restoreDeletedCategory() async {
     if (recentlyDeletedCategories.isNotEmpty) {
-      final lastDeletedCategory = recentlyDeletedCategories.last;// 마지막 삭제된 카테고리 가져오기
+      final lastDeletedCategory =
+          recentlyDeletedCategories.last; // 마지막 삭제된 카테고리 가져오기
       try {
         await FirebaseFirestore.instance
             .collection('record_categories')
@@ -436,12 +504,14 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
             'id': lastDeletedCategory['id'],
             '기록 카테고리': lastDeletedCategory['기록 카테고리'],
             '분류': lastDeletedCategory['분류'],
-            '색상':  lastDeletedCategory['색상'],
+            '색상': lastDeletedCategory['색상'],
             'isDeleted': false,
           });
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${lastDeletedCategory['기록 카테고리']} 카테고리가 복원되었습니다.')),
+          SnackBar(
+              content:
+                  Text('${lastDeletedCategory['기록 카테고리']} 카테고리가 복원되었습니다.')),
         );
       } catch (e) {
         print('Error restoring category: $e');
@@ -451,92 +521,124 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
       }
     }
   }
+  Future<void> _updateCategoryOrderInFirestore() async {
+    for (int i = 0; i < userData.length; i++) {
+      final categoryId = userData[i]['id'];
+      final newOrder = i;
+
+      await FirebaseFirestore.instance.collection('record_categories').doc(categoryId).update({
+        'order': newOrder,
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('기록 카테고리 관리'),
       ),
-      body: ListView.builder(
-        itemCount: userData.length,
-        itemBuilder: (context, index) {
-          final theme = Theme.of(context);
-          final record = userData[index];
-          return Dismissible(
-              key: Key(record['id']), // 각 항목에 고유한 키를 부여
-              direction: DismissDirection.endToStart, // 오른쪽에서 왼쪽으로만 스와이프 가능
-              onDismissed: (direction) async {
-                final categoryToDelete = userData[index];
-
-                recentlyDeletedCategories.add(categoryToDelete);
-                print('recentlyDeletedCategories $recentlyDeletedCategories');
-                setState(() {
-                  userData.removeAt(index);
-                });
-
-                try {
-                  await _deleteCategoryById(categoryToDelete['id']);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${categoryToDelete['기록 카테고리']}가 삭제되었습니다.'),
-                      action: SnackBarAction(
-                        label: '복원',
-                        onPressed: _restoreDeletedCategory,
-                      ),
-                    ),
-                  );
-                } catch (e) {
-                  // 에러 발생 시 삭제를 취소하고 다시 로컬 상태에 항목 추가
-                  setState(() {
-                    userData.insert(index, categoryToDelete);
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('카테고리 삭제에 실패했습니다. 다시 시도해주세요.')),
-                  );
-                }
-              },
-              background: Container(
-                color: Colors.redAccent,
-                alignment: Alignment.centerRight,
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Icon(Icons.delete, color: Colors.white),
-              ),
-              child: Card(
-                color: record['색상'] ?? Colors.grey[300],
-                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                child: ListTile(
-                  title: Text(
-                    record['기록 카테고리'],
-                    style: TextStyle(
-                      fontSize: 18.0, // 제목 글씨 크기 키우기
-                      fontWeight: FontWeight.bold, // 제목 글씨 굵게
-                      color: theme.colorScheme.onSecondary,
-                    ),
+      body: ReorderableListView(
+        onReorder: (oldIndex, newIndex) {
+          setState(() {
+            if (oldIndex < newIndex) {
+              newIndex -= 1; // 드래그된 아이템의 올바른 위치를 맞춤
+            }
+            final movedItem = userData.removeAt(oldIndex);
+            userData.insert(newIndex, movedItem);
+          });
+          _updateCategoryOrderInFirestore();
+        },
+        children: [
+          for (int index = 0; index < userData.length; index++)
+            // Dismissible(
+            //       key: ValueKey(userData[index]['id']),  // 각 항목에 고유한 키를 부여
+            //       direction: DismissDirection.endToStart, // 오른쪽에서 왼쪽으로만 스와이프 가능
+            //       onDismissed: (direction) async {
+            //         final categoryToDelete = userData[index];
+            //
+            //         recentlyDeletedCategories.add(categoryToDelete);
+            //         print('recentlyDeletedCategories $recentlyDeletedCategories');
+            //         setState(() {
+            //           userData.removeAt(index);
+            //         });
+            //
+            //         try {
+            //           await _deleteCategoryById(categoryToDelete['id']);
+            //           ScaffoldMessenger.of(context).showSnackBar(
+            //             SnackBar(
+            //               content: Text('${categoryToDelete['기록 카테고리']}가 삭제되었습니다.'),
+            //               action: SnackBarAction(
+            //                 label: '복원',
+            //                 onPressed: _restoreDeletedCategory,
+            //               ),
+            //             ),
+            //           );
+            //         } catch (e) {
+            //           // 에러 발생 시 삭제를 취소하고 다시 로컬 상태에 항목 추가
+            //           setState(() {
+            //             userData.insert(index, categoryToDelete);
+            //           });
+            //           ScaffoldMessenger.of(context).showSnackBar(
+            //             SnackBar(content: Text('카테고리 삭제에 실패했습니다. 다시 시도해주세요.')),
+            //           );
+            //         }
+            //       },
+            //       background: Container(
+            //         color: Colors.redAccent,
+            //         alignment: Alignment.centerRight,
+            //         padding: EdgeInsets.symmetric(horizontal: 20),
+            //         child: Icon(Icons.delete, color: Colors.white),
+            //       ),
+            //       child:
+            Card(
+              key: ValueKey(userData[index]['id']),
+              color: userData[index]['색상'] ?? Colors.grey[300],
+              margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: ListTile(
+                leading: ReorderableDragStartListener(
+                  index: index,
+                  child: Icon(Icons.drag_handle, color: Colors.grey),
+                ),
+                title: Text(
+                  userData[index]['기록 카테고리'],
+                  style: TextStyle(
+                    fontSize: 18.0, // 제목 글씨 크기 키우기
+                    fontWeight: FontWeight.bold, // 제목 글씨 굵게
+                    color: theme.colorScheme.onSecondary,
                   ),
-                  subtitle: Text(
-                    '${record['분류'].join(', ')}',
-                    style: TextStyle(
-                      fontSize: 18.0, // 분류 글씨 크기 키우기
-                      color: theme.colorScheme.onSecondary,
-                    ),
+                ),
+                subtitle: Text(
+                  '${userData[index]['분류'].join(', ')}',
+                  style: TextStyle(
+                    fontSize: 18.0, // 분류 글씨 크기 키우기
+                    color: theme.colorScheme.onSecondary,
                   ),
-                  trailing: record['isDeleted'] == true
-                      ? null
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
+                ),
+                trailing: userData[index]['isDeleted'] == true
+                    ? null
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.edit,
+                              color: theme.colorScheme.onSecondary,
+                            ),
+                            onPressed: () => _addOrEditCategory(index: index),
+                          ),
+                          IconButton(
                               icon: Icon(
-                                Icons.edit,
+                                Icons.delete,
                                 color: theme.colorScheme.onSecondary,
                               ),
-                              onPressed: () => _addOrEditCategory(index: index),
-                            ),
-                          ],
-                        ),
-                ),
-              ));
-        },
+                              onPressed: () =>
+                                  _showDeleteConfirmationDialog(index)),
+                        ],
+                      ),
+              ),
+            )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'record_category_add_button',
@@ -546,8 +648,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
           borderRadius: BorderRadius.circular(12), // 버튼의 모서리를 둥글게
         ),
       ),
-      bottomNavigationBar:
-      Column(
+      bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
         mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
         children: [
@@ -556,8 +657,56 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
               child: BannerAdWidget(),
             ),
         ],
-
       ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(int index) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            '삭제 확인',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
+          content: Text(
+            '${userData[index]['기록 카테고리']}를 삭제하시겠습니까?',
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+              },
+              child: Text('취소'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+                final categoryToDelete = userData[index];
+                recentlyDeletedCategories.add(categoryToDelete);
+                setState(() {
+                  userData.removeAt(index);
+                });
+
+                await _deleteCategoryById(categoryToDelete['id']);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${categoryToDelete['기록 카테고리']}가 삭제되었습니다.'),
+                    action: SnackBarAction(
+                      label: '복원',
+                      onPressed: _restoreDeletedCategory,
+                    ),
+                  ),
+                );
+              },
+              child: Text('삭제', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

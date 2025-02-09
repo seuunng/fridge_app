@@ -68,6 +68,7 @@ dependencies:
   table_calendar: ^3.0.6 # 달력 위젯 제공 (스케줄 관리 등)
   fl_chart: ^0.69.0
   flutter_native_splash: ^2.2.19
+  flutter_colorpicker: ^ 1.0.3
   #  font_awesome_flutter: ^10.5.0  # 아이콘
   #  google_fonts: ^4.0.4  # 다양한 폰트 적용
   #  cupertino_icons: ^1.0.8
