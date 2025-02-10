@@ -403,7 +403,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
       ),
       bottomNavigationBar: Container(
         color: Colors.transparent,
-        padding: EdgeInsets.only(bottom: 16),
+        padding: EdgeInsets.only(bottom: 0),
         child: Column(
           mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
           mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬

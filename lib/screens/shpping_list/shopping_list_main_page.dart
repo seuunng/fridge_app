@@ -696,7 +696,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                   if(showCheckBoxes && shouldShowMoveToFridgeButton())
                   Container(
                       color: Colors.transparent,
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                       child: Row(
                         children: [
                           Expanded(
