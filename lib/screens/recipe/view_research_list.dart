@@ -1461,124 +1461,127 @@ class _ViewResearchListState extends State<ViewResearchList> {
       double aspectRatio = isWeb ? 1.2 : 3.0; // 웹에서는 더 넓은 비율
       double imageSize = isWeb ? 120.0 : 60.0; // 웹에서는 더 큰 이미지 크기
 
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: BouncingScrollPhysics(), // 스크롤 가능하게 설정
-        padding: EdgeInsets.symmetric(horizontal: 11.0),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 1, // 한 줄에 하나씩 표시
-          crossAxisSpacing: 8.0, // 아이템 간 가로 간격
-          mainAxisSpacing: 8.0, // 아이템 간 세로 간격
-          childAspectRatio: isWeb ? 1.2 : (aspectRatio ?? 3.0), // 세로 비율 조정
-          mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
-        ),
-        itemCount: _results.length,
-        itemBuilder: (context, index) {
-          if (resultsWithAds[index] == 'ad') {
-            // 광고 위젯
-            if (userRole != 'admin' && userRole != 'paid_user')
-              return SafeArea(
-                bottom: false, // 하단 여백 제거
-                child: BannerAdWidget(),
-              );
-          }
-          final result = _results[index];
-          final title = result['title'] ?? 'No title available';
-          final snippet = result['snippet'] ?? 'No description available';
-          final link = result['link'] ?? '';
-          final imageUrl = result['imageUrl'] ??
-              'https://seuunng.github.io/food_for_later_policy/favicon.png'; // 기본 이미지
-
-          return GestureDetector(
-            onTap: () {
-              if (link.isNotEmpty) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Scaffold(
-                      appBar: AppBar(title: Text(title)),
-                      body: WebViewWidget(
-                        controller: WebViewController()
-                          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                          ..setNavigationDelegate(
-                            NavigationDelegate(
-                              onPageStarted: (url) =>
-                                  print('Page loading started: $url'),
-                              onPageFinished: (url) =>
-                                  print('Page loaded: $url'),
-                            ),
-                          )
-                          ..loadRequest(Uri.parse(link)),
-                      ),
-                    ),
-                  ),
+      return Container(
+        margin: EdgeInsets.symmetric(vertical: 4.0),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: BouncingScrollPhysics(), // 스크롤 가능하게 설정
+          padding: EdgeInsets.symmetric(horizontal: 11.0),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 1, // 한 줄에 하나씩 표시
+            crossAxisSpacing: 8.0, // 아이템 간 가로 간격
+            mainAxisSpacing: 8.0, // 아이템 간 세로 간격
+            childAspectRatio: isWeb ? 1.2 : (aspectRatio ?? 3.0), // 세로 비율 조정
+            mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
+          ),
+          itemCount: _results.length,
+          itemBuilder: (context, index) {
+            if (resultsWithAds[index] == 'ad') {
+              // 광고 위젯
+              if (userRole != 'admin' && userRole != 'paid_user')
+                return SafeArea(
+                  bottom: false, // 하단 여백 제거
+                  child: BannerAdWidget(),
                 );
-              }
-            },
-            child: Container(
-              padding: EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: Offset(0, 3), // 그림자의 위치 조정
-                  ),
-                ],
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 왼쪽 이미지
-                  Container(
-                    width: imageSize,
-                    height: imageSize,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8.0),
-                      color: Colors.grey[300],
-                      image: DecorationImage(
-                        image: NetworkImage(imageUrl),
-                        fit: BoxFit.cover,
+            }
+            final result = _results[index];
+            final title = result['title'] ?? 'No title available';
+            final snippet = result['snippet'] ?? 'No description available';
+            final link = result['link'] ?? '';
+            final imageUrl = result['imageUrl'] ??
+                'https://seuunng.github.io/food_for_later_policy/favicon.png'; // 기본 이미지
+
+            return GestureDetector(
+              onTap: () {
+                if (link.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(title: Text(title)),
+                        body: WebViewWidget(
+                          controller: WebViewController()
+                            ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                            ..setNavigationDelegate(
+                              NavigationDelegate(
+                                onPageStarted: (url) =>
+                                    print('Page loading started: $url'),
+                                onPageFinished: (url) =>
+                                    print('Page loaded: $url'),
+                              ),
+                            )
+                            ..loadRequest(Uri.parse(link)),
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 10.0), // 이미지와 텍스트 간격
-                  // 텍스트 영역
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        // SizedBox(height: 8.0),
-                        Text(
-                          snippet,
-                          style: TextStyle(
-                            fontSize: 12.0,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                  );
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3), // 그림자의 위치 조정
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 왼쪽 이미지
+                    Container(
+                      width: imageSize,
+                      height: imageSize,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8.0),
+                        color: Colors.grey[300],
+                        image: DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10.0), // 이미지와 텍스트 간격
+                    // 텍스트 영역
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          // SizedBox(height: 8.0),
+                          Text(
+                            snippet,
+                            style: TextStyle(
+                              fontSize: 12.0,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     });
   }
@@ -1609,231 +1612,233 @@ class _ViewResearchListState extends State<ViewResearchList> {
         bool isWeb = constraints.maxWidth > 600; // 올바르게 수정된 변수 이름
         double aspectRatio = isWeb ? 1.2 : 3.0; // 웹에서는 더 넓은 비율
         double imageSize = isWeb ? 120.0 : 60.0; // 웹에서는 더 큰 이미지
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 3.0),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 1,
-            // 열 개수
-            crossAxisSpacing: 2.0,
-            mainAxisSpacing: 2.0,
-            childAspectRatio: isWeb ? 1.2 : (aspectRatio ?? 3.0),
-            // 앱에서만 비율 적용
-            mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
-          ),
-          itemCount: recipes.length,
-          itemBuilder: (context, index) {
-            if (index >= recipes.length)
-              return SizedBox.shrink(); // 예외 방지
-            if (resultsWithAds[index] == 'ad') {
-              // 광고 위젯
-              if (userRole != 'admin' && userRole != 'paid_user')
-                return SafeArea(
-                  bottom: false, // 하단 여백 제거
-                  child: BannerAdWidget(),
-                );
-            }
-            final recipe = recipes[index];
-            final String title = recipe['title'] ?? '제목 없음';
-            final List<String> ingredients = recipe['ingredients'] ?? [];
-            final String link = recipe['link'] ?? '';
-            final String image = recipe['image'] ?? '';
-            final RecipeModel recipeModel = RecipeModel(
-              id: '', // 해당 정보가 없으면 빈 문자열 또는 적절한 기본값 사용
-              recipeName: title,
-              link: link,
-              mainImages: image.isNotEmpty ? [image] : [],
-              rating: 0.0,
-              userID: userId,
-              difficulty: '',
-              serving: 0,
-              time: 0,
-              foods: <String>[],
-              themes: <String>[],
-              methods: <String>[],
-              steps: <Map<String, String>>[],
-              date: DateTime.now(),
-            );
+        return Container(
+          margin: EdgeInsets.symmetric(vertical: 4.0),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 10.0),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 1,
+              // 열 개수
+              crossAxisSpacing: 2.0,
+              mainAxisSpacing: 5.0,
+              childAspectRatio: isWeb ? 1.2 : (aspectRatio ?? 3.0),
+              // 앱에서만 비율 적용
+              mainAxisExtent: isWeb ? 200 : null, // 웹에서 세로 고정
+            ),
+            itemCount: recipes.length,
+            itemBuilder: (context, index) {
+              if (index >= recipes.length)
+                return SizedBox.shrink(); // 예외 방지
+              if (resultsWithAds[index] == 'ad') {
+                // 광고 위젯
+                if (userRole != 'admin' && userRole != 'paid_user')
+                  return SafeArea(
+                    bottom: false, // 하단 여백 제거
+                    child: BannerAdWidget(),
+                  );
+              }
+              final recipe = recipes[index];
+              final String title = recipe['title'] ?? '제목 없음';
+              final List<String> ingredients = recipe['ingredients'] ?? [];
+              final String link = recipe['link'] ?? '';
+              final String image = recipe['image'] ?? '';
+              final RecipeModel recipeModel = RecipeModel(
+                id: '', // 해당 정보가 없으면 빈 문자열 또는 적절한 기본값 사용
+                recipeName: title,
+                link: link,
+                mainImages: image.isNotEmpty ? [image] : [],
+                rating: 0.0,
+                userID: userId,
+                difficulty: '',
+                serving: 0,
+                time: 0,
+                foods: <String>[],
+                themes: <String>[],
+                methods: <String>[],
+                steps: <Map<String, String>>[],
+                date: DateTime.now(),
+              );
 
-            return FutureBuilder<Map<String, dynamic>>(
-                future: loadScrapedData(recipeModel.id, link: recipeModel.link),
-                builder: (context, snapshot) {
-                  bool isScraped = false;
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    // 로딩 중일 때 기본 상태 (또는 로딩 위젯)을 표시할 수 있습니다.
-                    isScraped = false;
-                  } else if (snapshot.hasData) {
-                    isScraped = snapshot.data?['isScraped'] ?? false;
-                  }
-                  return GestureDetector(
-                    onTap: () {
-                      // 타일 클릭 시 WebView 페이지로 이동
-                      if (link.isNotEmpty) {
-                        _openRecipeLink(
-                            link ?? '', title, recipeModel, isScraped);
-                      } else {
-                        print('Link is empty or invalid');
-                      }
-                    },
-                    child: Container(
-                      margin:
-                          EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-                      padding: EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3), // 그림자 위치
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          // 이미지
-                          Image.network(
-                            image,
-                            width: imageSize,
-                            height: imageSize,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.image, // 기본 이미지 대체
-                                size: 40,
-                                color: Colors.grey,
-                              );
-                            },
-                          ),
-                          SizedBox(width: 10.0), // 간격 추가
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // 레시피 제목
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.5,
-                                      child: Text(
-                                        title,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
+              return FutureBuilder<Map<String, dynamic>>(
+                  future: loadScrapedData(recipeModel.id, link: recipeModel.link),
+                  builder: (context, snapshot) {
+                    bool isScraped = false;
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      // 로딩 중일 때 기본 상태 (또는 로딩 위젯)을 표시할 수 있습니다.
+                      isScraped = false;
+                    } else if (snapshot.hasData) {
+                      isScraped = snapshot.data?['isScraped'] ?? false;
+                    }
+                    return GestureDetector(
+                      onTap: () {
+                        // 타일 클릭 시 WebView 페이지로 이동
+                        if (link.isNotEmpty) {
+                          _openRecipeLink(
+                              link ?? '', title, recipeModel, isScraped);
+                        } else {
+                          print('Link is empty or invalid');
+                        }
+                      },
+                      child: Container(
+                        margin: EdgeInsets.all(1.0),
+                        padding: EdgeInsets.all(9.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.3),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3), // 그림자 위치
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            // 이미지
+                            Image.network(
+                              image,
+                              width: imageSize,
+                              height: imageSize,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.image, // 기본 이미지 대체
+                                  size: 40,
+                                  color: Colors.grey,
+                                );
+                              },
+                            ),
+                            SizedBox(width: 10.0), // 간격 추가
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // 레시피 제목
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: MediaQuery.of(context).size.width *
+                                            0.5,
+                                        child: Text(
+                                          title,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 8.0),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          IconButton(
+                                            icon: Icon(
+                                              isScraped
+                                                  ? Icons.bookmark
+                                                  : Icons.bookmark_border,
+                                              size: 20,
+                                              color: Colors.black,
+                                            ), // 스크랩 아이콘 크기 조정
+                                            onPressed: () async {
+                                              bool newState = await toggleScraped(
+                                                  recipeModel.id, link);
+
+                                              // 🔹 UI 업데이트 (정확한 키로 상태 반영)
+                                              setState(() {
+                                                scrapedStatus[_generateScrapedKey(
+                                                        recipeModel.id, link)] =
+                                                    newState;
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  // SizedBox(height: 8.0), // 간격 추가
+
+                                  // 재료 칩
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Wrap(
+                                            spacing: 6.0,
+                                            runSpacing: 4.0,
+                                            children:
+                                                ingredients.map((ingredient) {
+                                              bool inFridge = fridgeIngredients
+                                                  .contains(ingredient);
+                                              bool isKeyword = keywords
+                                                      .contains(ingredient) ||
+                                                  (useFridgeIngredientsState &&
+                                                      topIngredients
+                                                          .contains(ingredient));
+                                              ;
+                                              bool isFromPreferredFoods =
+                                                  itemsByCategory.values.any(
+                                                      (list) => list
+                                                          .contains(ingredient));
+                                              return Container(
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 2.0,
+                                                    horizontal: 4.0),
+                                                decoration: BoxDecoration(
+                                                  // color: Colors.transparent,
+                                                  color: isKeyword ||
+                                                          isFromPreferredFoods ||
+                                                          topIngredients.contains(
+                                                              ingredient) // 추가된 조건
+                                                      ? Colors.lightGreen
+                                                      : inFridge
+                                                          ? Colors.grey
+                                                          : Colors.transparent,
+                                                  border: Border.all(
+                                                    color: Colors.grey,
+                                                    width: 0.5,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8.0),
+                                                ),
+                                                child: Text(
+                                                  ingredient,
+                                                  style: TextStyle(
+                                                    fontSize: 12.0,
+                                                    color: isKeyword ||
+                                                            isFromPreferredFoods
+                                                        ? Colors.white
+                                                        : inFridge
+                                                            ? Colors.white
+                                                            : Colors.black,
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    SizedBox(height: 8.0),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(
-                                            isScraped
-                                                ? Icons.bookmark
-                                                : Icons.bookmark_border,
-                                            size: 20,
-                                            color: Colors.black,
-                                          ), // 스크랩 아이콘 크기 조정
-                                          onPressed: () async {
-                                            bool newState = await toggleScraped(
-                                                recipeModel.id, link);
-
-                                            // 🔹 UI 업데이트 (정확한 키로 상태 반영)
-                                            setState(() {
-                                              scrapedStatus[_generateScrapedKey(
-                                                      recipeModel.id, link)] =
-                                                  newState;
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                // SizedBox(height: 8.0), // 간격 추가
-
-                                // 재료 칩
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Wrap(
-                                          spacing: 6.0,
-                                          runSpacing: 4.0,
-                                          children:
-                                              ingredients.map((ingredient) {
-                                            bool inFridge = fridgeIngredients
-                                                .contains(ingredient);
-                                            bool isKeyword = keywords
-                                                    .contains(ingredient) ||
-                                                (useFridgeIngredientsState &&
-                                                    topIngredients
-                                                        .contains(ingredient));
-                                            ;
-                                            bool isFromPreferredFoods =
-                                                itemsByCategory.values.any(
-                                                    (list) => list
-                                                        .contains(ingredient));
-                                            return Container(
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 2.0,
-                                                  horizontal: 4.0),
-                                              decoration: BoxDecoration(
-                                                // color: Colors.transparent,
-                                                color: isKeyword ||
-                                                        isFromPreferredFoods ||
-                                                        topIngredients.contains(
-                                                            ingredient) // 추가된 조건
-                                                    ? Colors.lightGreen
-                                                    : inFridge
-                                                        ? Colors.grey
-                                                        : Colors.transparent,
-                                                border: Border.all(
-                                                  color: Colors.grey,
-                                                  width: 0.5,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                              ),
-                                              child: Text(
-                                                ingredient,
-                                                style: TextStyle(
-                                                  fontSize: 12.0,
-                                                  color: isKeyword ||
-                                                          isFromPreferredFoods
-                                                      ? Colors.white
-                                                      : inFridge
-                                                          ? Colors.white
-                                                          : Colors.black,
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ],
-                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                });
-          },
+                    );
+                  });
+            },
+          ),
         );
       },
     );

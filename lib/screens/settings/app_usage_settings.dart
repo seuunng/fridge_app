@@ -51,7 +51,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
   void initState() {
     super.initState();
     _loadFridgeNameFromFirestore(); // 초기화 시 Firestore에서 데이터를 불러옴
-    // _loadSelectedFridge();
+    _loadSelectedFridge();
     _loadUserRole();
     _loadSelectedEnvironmentSettingValue();
     _loadFonts();
@@ -73,17 +73,17 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
       print('Error loading user role: $e');
     }
   }
-  // void _loadSelectedFridge() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
-  //   setState(() {
-  //     _selectedCategory_fridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
-  //     _selectedCategory_records =
-  //         prefs.getString('selectedRecordListType') ?? '달력형';
-  //     _selectedCategory_foods =
-  //         prefs.getString('selectedFoodStatusManagement') ?? '소비기한 기준';
-  //   });
-  // }
+  void _loadSelectedFridge() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
+    setState(() {
+      // _selectedCategory_fridge = prefs.getString('selectedFridge') ?? '기본 냉장고';
+      _selectedCategory_records =
+          prefs.getString('selectedRecordListType') ?? '달력형';
+      _selectedCategory_foods =
+          prefs.getString('selectedFoodStatusManagement') ?? '소비기한 기준';
+    });
+  }
 
   // Firestore에서 냉장고 목록 불러오기
   void _loadFridgeNameFromFirestore() async {
@@ -483,7 +483,6 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
     await prefs.setString('selectedRecordListType', _selectedCategory_records);
     await prefs.setString(
         'selectedFoodStatusManagement', _selectedCategory_foods);
-    Navigator.pop(context);
     await prefs.setString('themeMode', _tempTheme.toString().split('.').last);
     await prefs.setString('fontType', _selectedCategory_font); // 저장할 때만 테마를 변경
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);

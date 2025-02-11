@@ -167,7 +167,7 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
   }
 
   void _saveOrUpdateFood() async {
-    final userId = FirebaseFirestore.instance.collection('users').doc().id;
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     if (foodNameController.text.isNotEmpty &&
         selectedFoodsCategory != null &&

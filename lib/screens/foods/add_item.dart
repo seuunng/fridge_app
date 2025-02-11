@@ -320,23 +320,35 @@ class _AddItemState extends State<AddItem> {
         }
 
         if (foodData == null) {
-          // 데이터가 없으면 추가하지 않음
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$itemName 식품 정보를 찾을 수 없습니다.')),
-          );
-          continue;
+          foodData = {
+            'foodsName': itemName,  // 입력된 이름 그대로 저장
+            'defaultFridgeCategory': '냉장',
+            'shelfLife': 365,  // 기본 유통기한 1년 설정
+          };
         }
 
         String fridgeCategoryId = foodData['defaultFridgeCategory'] ?? '냉장';
-        final categorySnapshot = await FirebaseFirestore.instance
-            .collection('fridge_categories')
-            .where('userId', isEqualTo: userId)
+        final defaultCategorySnapshot = await FirebaseFirestore.instance
+            .collection('default_fridge_categories')
             .where('categoryName', isEqualTo: fridgeCategoryId)
             .get();
 
-        if (categorySnapshot.docs.isEmpty) {
+        if (defaultCategorySnapshot.docs.isEmpty) {
+          // 🔍 기본 카테고리에 없으면 사용자 정의 카테고리 fridge_categories에서 찾기
+          final customCategorySnapshot = await FirebaseFirestore.instance
+              .collection('fridge_categories')
+              .where('userId', isEqualTo: userId)  // 사용자별 맞춤 카테고리 확인
+              .where('categoryName', isEqualTo: fridgeCategoryId)
+              .get();
+
+          if (customCategorySnapshot.docs.isEmpty) {
           print("⚠️ 유효하지 않은 fridgeCategoryId: $fridgeCategoryId, 기본값 '냉장' 사용");
           fridgeCategoryId = '냉장';
+        } else {
+            print("✅ fridge_categories에서 $fridgeCategoryId 찾음");
+          }
+        } else {
+          print("✅ default_fridge_categories에서 $fridgeCategoryId 찾음");
         }
 
         // 🔍 기존에 동일한 아이템이 있는지 검사
