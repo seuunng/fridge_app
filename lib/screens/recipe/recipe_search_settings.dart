@@ -37,7 +37,7 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
     super.initState();
     _loadMethodFromFirestore();
     _loadSearchSettingsFromLocal();
-    _loadPreferredFoodsCategoriesFromFirestore();
+    // _loadPreferredFoodsCategoriesFromFirestore();
     _loadUserRole();
   }
   void _loadUserRole() async {
@@ -78,50 +78,50 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
     }
   }
 
-  Future<void> _loadPreferredFoodsCategoriesFromFirestore() async {
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('preferred_foods_categories')
-          .where('userId', isEqualTo: userId)
-          .get();
+  // Future<void> _loadPreferredFoodsCategoriesFromFirestore() async {
+  //   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  //   try {
+  //     final snapshot = await FirebaseFirestore.instance
+  //         .collection('preferred_foods_categories')
+  //         .where('userId', isEqualTo: userId)
+  //         .get();
+  //
+  //     if (snapshot.docs.isEmpty) {
+  //       // 데이터가 없는 경우 기본 데이터 추가
+  //       await _addDefaultPreferredCategories();
+  //     } else {
+  //       final categories = snapshot.docs.map((doc) {
+  //         return PreferredFoodModel.fromFirestore(doc.data());
+  //       }).toList();
+  //
+  //       setState(() {
+  //         itemsByPreferredCategory = {};
+  //
+  //         for (var categoryModel in categories) {
+  //           categoryModel.category.forEach((categoryName, itemList) {
+  //             if (itemsByPreferredCategory.containsKey(categoryName)) {
+  //               itemsByPreferredCategory[categoryName]!.add(categoryModel);
+  //             } else {
+  //               itemsByPreferredCategory[categoryName] = [categoryModel];
+  //             }
+  //           });
+  //         }
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.')),
+  //     );
+  //   }
+  // }
 
-      if (snapshot.docs.isEmpty) {
-        // 데이터가 없는 경우 기본 데이터 추가
-        await _addDefaultPreferredCategories();
-      } else {
-        final categories = snapshot.docs.map((doc) {
-          return PreferredFoodModel.fromFirestore(doc.data());
-        }).toList();
-
-        setState(() {
-          itemsByPreferredCategory = {};
-
-          for (var categoryModel in categories) {
-            categoryModel.category.forEach((categoryName, itemList) {
-              if (itemsByPreferredCategory.containsKey(categoryName)) {
-                itemsByPreferredCategory[categoryName]!.add(categoryModel);
-              } else {
-                itemsByPreferredCategory[categoryName] = [categoryModel];
-              }
-            });
-          }
-        });
-      }
-    } catch (e) {
-      print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.')),
-      );
-    }
-  }
-
-  Future<void> _addDefaultPreferredCategories() async {
-    await PreferredFoodsService.addDefaultPreferredCategories(
-      context,
-      _loadPreferredFoodsCategoriesFromFirestore,
-    );
-  }
+  // Future<void> _addDefaultPreferredCategories() async {
+  //   await PreferredFoodsService.addDefaultPreferredCategories(
+  //     context,
+  //     _loadPreferredFoodsCategoriesFromFirestore,
+  //   );
+  // }
 
   Future<void> _loadSearchSettingsFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
@@ -237,20 +237,20 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
                     }).toList() ??
                     [],
               ),
-              SizedBox(height: 16),
-              // 레시피 출처 선택
-              Text(
-                '제외 키워드 선택',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface),
-              ),
-
-              // for (var entry
-              // in itemsByPreferredCategory.entries) // Map의 각 entry를 순회하며 빌드
-              _buildPreferredCategory(),
-              SizedBox(height: 16),
+              // SizedBox(height: 16),
+              // // 레시피 출처 선택
+              // Text(
+              //   '제외 키워드 선택',
+              //   style: TextStyle(
+              //       fontSize: 18,
+              //       fontWeight: FontWeight.bold,
+              //       color: theme.colorScheme.onSurface),
+              // ),
+              //
+              // // for (var entry
+              // // in itemsByPreferredCategory.entries) // Map의 각 entry를 순회하며 빌드
+              // _buildPreferredCategory(),
+              // SizedBox(height: 16),
             ],
           ),
         ),

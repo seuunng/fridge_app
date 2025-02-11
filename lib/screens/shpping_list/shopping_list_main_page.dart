@@ -63,12 +63,11 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
     });
     _loadUserRole();
   }
-
   @override
   void didPopNext() {
     super.didPopNext();
     stopShoppingListDeleteMode();
-    // _loadSelectedFridge();
+    _loadItemsFromFirestore(userId);
   }
 
   @override
@@ -206,27 +205,21 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       final category = item['category'] ?? '기타'; // 카테고리가 없으면 "기타"
       final itemName = item['itemName'];
 
-      if (groupedItems.containsKey(category)) {
-        groupedItems[category]!.add(itemName);
-      } else {
-        groupedItems[category] = [itemName];
-      }
+      groupedItems.putIfAbsent(category, () => []).add(itemName);
     }
 
-    // 🔹 카테고리 순서를 미리 정의된 순서에 맞게 정렬
-    Map<String, List<String>> sortedGroupedItems = {};
-    for (var category in predefinedCategoryOrder) {
-      if (groupedItems.containsKey(category)) {
-        sortedGroupedItems[category] = groupedItems[category]!;
-      }
-    }
+    // 🔹 카테고리 순서를 미리 정의된 순서에 맞게 정렬a
+    Map<String, List<String>> sortedGroupedItems = {
+      for (var category in predefinedCategoryOrder)
+        if (groupedItems.containsKey(category)) category: groupedItems[category]!,
+    };
 
-    // 🔹 정의된 순서에 없는 나머지 카테고리 추가
-    for (var category in groupedItems.keys) {
+    // 🔹 정렬되지 않은 나머지 카테고리 추가
+    groupedItems.forEach((category, items) {
       if (!sortedGroupedItems.containsKey(category)) {
-        sortedGroupedItems[category] = groupedItems[category]!;
+        sortedGroupedItems[category] = items;
       }
-    }
+    });
 
     return sortedGroupedItems;
   }
@@ -470,7 +463,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   Future<void> _deleteSelectedItems() async {
     try {
       for (var category in checkedItems.keys.toList()) {
-        List<String> categoryItems = List<String>.from(itemLists[category]!);
+        List<String> categoryItems = List<String>.from(itemLists[category]!, growable: true);
 
         List<int> itemsToRemove = [];
 
@@ -490,14 +483,10 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
             if (snapshot.docs.isNotEmpty) {
               for (var doc in snapshot.docs) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('shopping_items')
-                      .doc(doc.id) // 문서 ID를 사용하여 삭제
-                      .delete();
-                } catch (e) {
-                  print('Firestore 문서 삭제 중 오류 발생 (ID: ${doc.id}): $e');
-                }
+                await FirebaseFirestore.instance
+                    .collection('shopping_items')
+                    .doc(doc.id)
+                    .delete();
               }
             }
             itemsToRemove.add(index);

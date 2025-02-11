@@ -67,7 +67,7 @@ void showShareOptions(
 void _shareToKakaoTalk(String recipeName, String recipeUrl) async {
   bool isKakaoTalkSharingAvailable =
       await ShareClient.instance.isKakaoTalkSharingAvailable();
-
+print('recipeUrl $recipeUrl');
   if (isKakaoTalkSharingAvailable) {
     try {
       Uri uri = await ShareClient.instance.shareScrap(url: recipeUrl);

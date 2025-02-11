@@ -596,40 +596,40 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
               Text('빨리 소진해야할 식품을 알려드려요',
                   style: TextStyle(color: theme.colorScheme.onSurface)),
               SizedBox(height: 20),
-              Row(
-                children: [
-                  Text(
-                    '제외 키워드 카테고리 수정',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface),
-                  ),
-                  Spacer(),
-                  BasicElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AddItem(
-                            pageTitle: '제외 키워드 카테고리에 추가',
-                            addButton: '카테고리에 추가',
-                            sourcePage: 'preferred_foods_category',
-                            onItemAdded: () {
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                    iconTitle: Icons.edit,
-                    buttonTitle: '수정',
-                  ),
-                ],
-              ),
-              Text('자주 검색하는 식품을 그룹으로 관리해요',
-                  style: TextStyle(color: theme.colorScheme.onSurface)),
-              SizedBox(height: 20),
+              // Row(
+              //   children: [
+              //     Text(
+              //       '제외 키워드 카테고리 수정',
+              //       style: TextStyle(
+              //           fontSize: 18,
+              //           fontWeight: FontWeight.bold,
+              //           color: theme.colorScheme.onSurface),
+              //     ),
+              //     Spacer(),
+              //     BasicElevatedButton(
+              //       onPressed: () {
+              //         Navigator.push(
+              //           context,
+              //           MaterialPageRoute(
+              //             builder: (context) => AddItem(
+              //               pageTitle: '제외 키워드 카테고리에 추가',
+              //               addButton: '카테고리에 추가',
+              //               sourcePage: 'preferred_foods_category',
+              //               onItemAdded: () {
+              //                 setState(() {});
+              //               },
+              //             ),
+              //           ),
+              //         );
+              //       },
+              //       iconTitle: Icons.edit,
+              //       buttonTitle: '수정',
+              //     ),
+              //   ],
+              // ),
+              // Text('자주 검색하는 식품을 그룹으로 관리해요',
+              //     style: TextStyle(color: theme.colorScheme.onSurface)),
+              // SizedBox(height: 20),
               Row(
                 children: [
                   Text(

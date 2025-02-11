@@ -100,10 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
             value: 'basic_foods_categories_setting',
             child: Text('기본 식품 카테고리 관리'),
           ),
-          PopupMenuItem<String>(
-            value: 'preferred_foods_categories_setting',
-            child: Text('제외 키워드 카테고리 관리'),
-          ),
+          // PopupMenuItem<String>(
+          //   value: 'preferred_foods_categories_setting',
+          //   child: Text('제외 키워드 카테고리 관리'),
+          // ),
           PopupMenuItem<String>(
             value: 'sort_dialog',
             child: Text('정렬'),
@@ -139,10 +139,10 @@ class _HomeScreenState extends State<HomeScreen> {
             value: 'basic_foods_categories_setting',
             child: Text('기본 식품 카테고리 관리'),
           ),
-          PopupMenuItem<String>(
-            value: 'preferred_foods_categories_setting',
-            child: Text('제외 키워드 카테고리 관리'),
-          ),
+          // PopupMenuItem<String>(
+          //   value: 'preferred_foods_categories_setting',
+          //   child: Text('제외 키워드 카테고리 관리'),
+          // ),
         ];
       case 2: // 레시피 페이지
         return [
@@ -185,22 +185,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
         break;
-      case 'preferred_foods_categories_setting':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddItem(
-              pageTitle: '제외 키워드 카테고리에 추가',
-              addButton: '',
-              sourcePage: 'preferred_foods_category',
-              onItemAdded: () {
-                setState(() {});
-              },
-            ),
-          ),
-        );
-
-        break;
+      // case 'preferred_foods_categories_setting':
+      //   Navigator.push(
+      //     context,
+      //     MaterialPageRoute(
+      //       builder: (context) => AddItem(
+      //         pageTitle: '제외 키워드 카테고리에 추가',
+      //         addButton: '',
+      //         sourcePage: 'preferred_foods_category',
+      //         onItemAdded: () {
+      //           setState(() {});
+      //         },
+      //       ),
+      //     ),
+      //   );
+      //
+      //   break;
       case 'sort_dialog':
         _showSortDialog(); // 정렬 다이얼로그 표시
         break;

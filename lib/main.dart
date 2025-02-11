@@ -118,6 +118,8 @@ class _MyAppState extends State<MyApp> {
         home: SplashScreen(), // 스플래시 화면 시작
         onGenerateRoute: (settings) {
           final Uri uri = Uri.parse(settings.name ?? '');
+          // final Uri uri = Uri.base;
+          print('Navigated URI: ${uri.toString()}');
 
           if (uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'recipe') {
             final recipeId =

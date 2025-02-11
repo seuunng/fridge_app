@@ -211,131 +211,69 @@ class _ReadRecipeState extends State<ReadRecipe> {
     }
   }
 
-  void _addToShoppingList() async {
-    // 아이템을 컬렉션에 저장
-    Future<void> _addToShoppingList(List<String> ingredients) async {
-      final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-      try {
-        for (int i = 0; i < ingredients.length; i++) {
-          if (selectedIngredients[i] &&
-              !shoppingList.contains(ingredients[i])) {
-            final existingItemSnapshot = await FirebaseFirestore.instance
-                .collection('shopping_items')
-                .where('items', isEqualTo: ingredients[i])
-                .where('userId', isEqualTo: userId) // 현재 유저의 아이템만 확인
-                .get();
+  void _loadIngredientsAndShowDialog() async {
+    try {
+      var recipeData = await fetchRecipeData(widget.recipeId);
+      List<String> ingredients = List<String>.from(recipeData['foods'] ?? []);
 
-            if (existingItemSnapshot.docs.isEmpty) {
-              await FirebaseFirestore.instance
-                  .collection('shopping_items')
-                  .add({
-                'items': ingredients[i],
-                'isChecked': false, // 체크되지 않은 상태로 저장
-                'userId': userId, // 사용자 ID
-              });
-            } else {
-              print('"${ingredients[i]}"이(가) 이미 장바구니에 있습니다.');
-            }
-          }
-        }
-      } catch (e) {
-        print('Error adding items to shopping list: $e');
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('장바구니에 추가하는 도중 오류가 발생했습니다.'),
-        ));
+      final snapshot =
+      await FirebaseFirestore.instance.collection('fridge_items')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      setState(() {
+        fridgeIngredients =
+            snapshot.docs.map((doc) => doc['items'] as String).toList();
+        selectedIngredients = List<bool>.filled(ingredients.length, true);
+      });
+
+      if (ingredients.isNotEmpty) {
+        _showAddToShoppingListDialog(ingredients); // 다이얼로그 표시
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('추가할 재료가 없습니다.')),
+        );
       }
-    }
-    //장바구니에 넣을 아이템 선택하는 다이어로그 UI
-    void _showAddToShoppingListDialog(List<String> ingredients) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          final theme = Theme.of(context);
-          return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return AlertDialog(
-                title: Text(
-                  '장바구니에 추가할 재료 선택',
-                  style: TextStyle(color: theme.colorScheme.onSurface),
-                ),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: ingredients.map((ingredient) {
-                      int index = ingredients.indexOf(ingredient);
-                      if (!fridgeIngredients.contains(ingredient)) {
-                        return CheckboxListTile(
-                          title: Text(ingredient),
-                          value: selectedIngredients[index],
-                          onChanged: (bool? value) {
-                            setState(() {
-                              selectedIngredients[index] = value ?? false;
-                            });
-                          },
-                        );
-                      }
-                      return SizedBox.shrink();
-                    }).toList(),
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    child: Text('취소'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  TextButton(
-                    child: Text('추가'),
-                    onPressed: () {
-                      _addToShoppingList(ingredients);
-                      Navigator.of(context).pop();
-                      if (selectedIngredients.any((selected) => selected)) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('선택한 재료를 장바구니에 추가했습니다.'),
-                        ));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('추가할 재료가 없습니다.'),
-                        ));
-                      }
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-        },
+    } catch (e) {
+      print('Error loading fridge items: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('데이터 로드 중 오류가 발생했습니다.')),
       );
     }
-
-    Future<void> _loadFridgeItemsFromFirestore() async {
-      try {
-        var recipeData = await fetchRecipeData(widget.recipeId);
-        List<String> ingredients = List<String>.from(recipeData['foods'] ?? []);
-
-        final snapshot =
-            await FirebaseFirestore.instance.collection('fridge_items').get();
-
-        setState(() {
-          fridgeIngredients =
-              snapshot.docs.map((doc) => doc['items'] as String).toList();
-          selectedIngredients = List<bool>.filled(ingredients.length, true);
-        });
-
-        if (ingredients.isNotEmpty) {
-          _showAddToShoppingListDialog(ingredients);
-        } else {
-          print('Ingredients 배열이 비어있습니다.');
-        }
-      } catch (e) {
-        print('Error loading fridge items: $e');
-      }
-    }
-
-    _loadFridgeItemsFromFirestore(); // 데이터를 모두 로드한 후에 다이얼로그를 표시
   }
+  void _saveSelectedIngredientsToShoppingList(List<String> ingredients) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    try {
+      for (int i = 0; i < ingredients.length; i++) {
+        if (selectedIngredients[i] && !shoppingList.contains(ingredients[i])) {
+          final existingItemSnapshot = await FirebaseFirestore.instance
+              .collection('shopping_items')
+              .where('items', isEqualTo: ingredients[i])
+              .where('userId', isEqualTo: userId)
+              .get();
 
+          if (existingItemSnapshot.docs.isEmpty) {
+            await FirebaseFirestore.instance.collection('shopping_items').add({
+              'items': ingredients[i],
+              'isChecked': false,
+              'userId': userId,
+            });
+          } else {
+            print('"${ingredients[i]}"이(가) 이미 장바구니에 있습니다.');
+          }
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('선택한 재료를 장바구니에 추가했습니다.')),
+      );
+    } catch (e) {
+      print('Error adding items to shopping list: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('장바구니에 추가하는 도중 오류가 발생했습니다.')),
+      );
+    }
+  }
   void _deleteRecipe() {
     final theme = Theme.of(context);
     showDialog(
@@ -540,11 +478,43 @@ class _ReadRecipeState extends State<ReadRecipe> {
   }
 
   void _toggleScraped(String recipeId, String? link) async {
-    bool newState = await ScrapedRecipeService.toggleScraped(
-      context,
-      recipeId,
-      link
-    );
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null || user.email == 'guest@foodforlater.com') {
+      // 🔹 방문자(게스트) 계정이면 스크랩 차단 및 안내 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 후 레시피를 스크랩 할 수 있습니다.')),
+      );
+      return; // 🚫 여기서 함수 종료 (스크랩 기능 실행 안 함)
+    }
+    final previousState = isScraped; // 이전 상태 저장
+
+    setState(() {
+      isScraped = !isScraped; // 버튼 클릭 시 즉각 상태 반전
+    });
+
+    try {
+      bool newState = await ScrapedRecipeService.toggleScraped(
+        context,
+        recipeId,
+        link,
+      );
+      if (newState != isScraped) {
+        setState(() {
+          isScraped = newState;
+        });
+      }
+    } catch (e) {
+      print('Error toggling scraped state: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('스크랩 상태 변경에 실패했습니다.')),
+      );
+
+      // 에러 발생 시 상태를 원래대로 롤백
+      setState(() {
+        isScraped = previousState;
+      });
+    }
   }
 
   Future<int> _getScrapedCount(String recipeId) async {
@@ -669,36 +639,36 @@ class _ReadRecipeState extends State<ReadRecipe> {
                 overflow: TextOverflow.ellipsis, // 넘칠 경우 말줄임표로 표시
               ),
             ),
-            Column(
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min, // 최소 공간만 차지하도록 설정
-                  children: [
-                    IconButton(
-                      visualDensity: const VisualDensity(horizontal: -4),
-                      icon: Icon(
-                        isLiked ? Icons.favorite : Icons.favorite_border, // 상태에 따라 아이콘 변경
-                        size: 26, // 아이콘 크기
-                      ),
-                      onPressed: _toggleLike,
-                    ), // 아이콘과 텍스트 사이 간격 조정
-                    Text(
-                      '$likedCount',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            IconButton(
-              visualDensity: const VisualDensity(horizontal: -4),
-              icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
-                  size: 26), // 스크랩 아이콘 크기 조정
-              onPressed: () => _toggleScraped(widget.recipeId, link),
-            ),
+            // Column(
+            //   children: [
+            //     Row(
+            //       mainAxisSize: MainAxisSize.min, // 최소 공간만 차지하도록 설정
+            //       children: [
+            //         IconButton(
+            //           visualDensity: const VisualDensity(horizontal: -4),
+            //           icon: Icon(
+            //             isLiked ? Icons.favorite : Icons.favorite_border, // 상태에 따라 아이콘 변경
+            //             size: 26, // 아이콘 크기
+            //           ),
+            //           onPressed: _toggleLike,
+            //         ), // 아이콘과 텍스트 사이 간격 조정
+            //         Text(
+            //           '$likedCount',
+            //           style: TextStyle(
+            //             fontSize: 12,
+            //             color: theme.colorScheme.onSurface,
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ],
+            // ),
+            // IconButton(
+            //   visualDensity: const VisualDensity(horizontal: -4),
+            //   icon: Icon(isScraped ? Icons.bookmark : Icons.bookmark_border,
+            //       size: 26), // 스크랩 아이콘 크기 조정
+            //   onPressed: () => _toggleScraped(widget.recipeId, link),
+            // ),
             IconButton(
               visualDensity: const VisualDensity(horizontal: -4),
               icon: Icon(Icons.calendar_today, size: 25), // 스크랩 아이콘 크기 조정
@@ -771,19 +741,14 @@ class _ReadRecipeState extends State<ReadRecipe> {
                         ), // 스크랩 아이콘 크기 조정
                         onPressed: () => _toggleScraped(widget.recipeId, link),
                       ),
-                      IconButton(
-                        visualDensity: const VisualDensity(horizontal: -4),
-                        icon: Icon(Icons.calendar_today, size: 18), // 스크랩 아이콘 크기 조정
-                        onPressed: () => _saveRecipeForTomorrow(),
-                      ),
-                      IconButton(
-                        visualDensity: const VisualDensity(horizontal: -4),
-                        icon: Icon(Icons.share, size: 18,
-                            color: theme.colorScheme.onSurface), // 스크랩 아이콘 크기 조정
-                        onPressed: () {
-                          showShareOptions(context, fromEmail, toEmail, nickname, recipeName, recipeUrl);
-                        },
-                      ),
+                      // IconButton(
+                      //   visualDensity: const VisualDensity(horizontal: -4),
+                      //   icon: Icon(Icons.share, size: 18,
+                      //       color: theme.colorScheme.onSurface), // 스크랩 아이콘 크기 조정
+                      //   onPressed: () {
+                      //     showShareOptions(context, fromEmail, toEmail, nickname, recipeName, recipeUrl);
+                      //   },
+                      // ),
                       IconButton(
                         visualDensity: const VisualDensity(horizontal: -4),
                         icon: Icon(Icons.feedback_outlined,
@@ -1092,7 +1057,9 @@ class _ReadRecipeState extends State<ReadRecipe> {
     return IconButton(
       icon: Icon(Icons.add_shopping_cart,
           color: theme.colorScheme.onSurface),
-      onPressed: _addToShoppingList, // 팝업 다이얼로그 호출
+      onPressed:  () {
+        _loadIngredientsAndShowDialog(); // 데이터 로드 후 다이얼로그 표시
+      }, // 팝업 다이얼로그 호출
     );
   }
 
@@ -1257,6 +1224,78 @@ class _ReadRecipeState extends State<ReadRecipe> {
           ),
         ],
       ),
+    );
+  }
+  // 장바구니에 추가할 다이얼로그 UI
+  void _showAddToShoppingListDialog(List<String> ingredients) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text(
+                '장바구니에 추가할 재료 선택',
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: ingredients.map((ingredient) {
+                    int index = ingredients.indexOf(ingredient);
+                    if (!fridgeIngredients.contains(ingredient)) {
+                      return Padding(
+                        padding: EdgeInsets.symmetric(vertical: 1.0), // 패딩 최소화
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: 30,
+                              child: Checkbox(
+                                value: selectedIngredients[index],
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    selectedIngredients[index] = value ?? false;
+                                  });
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 8.0), // 체크박스와 텍스트 사이 간격 조정
+                            Expanded(
+                              child: Text(
+                                ingredient,
+                                style: TextStyle(fontSize: 14,color: theme.colorScheme.onSurface), // 텍스트 크기 조정 가능
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return SizedBox.shrink(); // 냉장고에 있는 재료는 제외
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('취소'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('추가'),
+                  onPressed: () {
+                    _saveSelectedIngredientsToShoppingList(ingredients);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

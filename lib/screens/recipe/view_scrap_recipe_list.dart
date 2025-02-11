@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/custom_dropdown.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
+import 'package:food_for_later_new/main.dart';
 import 'package:food_for_later_new/models/recipe_model.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,7 +21,7 @@ class ViewScrapRecipeList extends StatefulWidget {
   _ViewScrapRecipeListState createState() => _ViewScrapRecipeListState();
 }
 
-class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
+class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAware {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   String? selectedRecipe;
   String selectedFilter = '기본함';
@@ -50,7 +51,29 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> {
     _initializePage();
     _loadUserRole();
   }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 명시적 타입 캐스팅
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
 
+  @override
+  void dispose() {
+    // RouteObserver 해제
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    print("다른 페이지에서 복귀했습니다.");
+    _initializePage(); // 데이터를 다시 불러오는 함수 호출
+  }
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
