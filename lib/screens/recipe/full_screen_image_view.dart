@@ -29,7 +29,9 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
     super.initState();
     _currentIndex = widget.initialIndex;
     _loadUserRole();
-    _pageController = PageController(initialPage: widget.initialIndex);
+    _pageController = PageController(
+        initialPage: widget.initialIndex
+    );
   }
   void _loadUserRole() async {
     try {
@@ -54,6 +56,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -72,9 +75,11 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
         itemCount: widget.images.length,
         controller: _pageController,
         onPageChanged: (index) {
+          print('📌 전달된 인덱스: $index');
           setState(() {
             _currentIndex = index;
           });
+          print('📌 변경된 인덱스: $_currentIndex');
         },
         itemBuilder: (context, index) {
           final imagePath = widget.images[index];

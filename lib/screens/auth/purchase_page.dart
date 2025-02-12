@@ -3,7 +3,6 @@ import 'package:food_for_later_new/services/in_app_purchase_service.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 class PurchasePage extends StatefulWidget {
-
   @override
   _PurchasePageState createState() => _PurchasePageState();
 }
@@ -51,17 +50,19 @@ class _PurchasePageState extends State<PurchasePage> {
             // 🔹 헤더 섹션
             Text(
               "프리미엄으로 업그레이드하면",
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: TextStyle(
+                fontSize: 16,
+                color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
-                color: theme.primaryColor,
               ),
               textAlign: TextAlign.center,
             ),
             Text(
               "더 많은 기능과 혜택을 사용할 수 있습니다!😄",
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: TextStyle(
+                fontSize: 16,
+                color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
-                color: theme.primaryColor,
               ),
               textAlign: TextAlign.center,
             ),
@@ -98,23 +99,23 @@ class _PurchasePageState extends State<PurchasePage> {
             _products.isEmpty
                 ? Center(child: CircularProgressIndicator()) // 로딩 인디케이터
                 : Flexible(
-              child: ListView.builder(
-                shrinkWrap: true, // 내부 콘텐츠에 맞게 크기 축소
-                physics: NeverScrollableScrollPhysics(),
-              itemCount: _products.length,
-              itemBuilder: (context, index) {
-                ProductDetails product = _products[index];
-                return ListTile(
-                  title: Text('프리미엄'),
-                  subtitle: Text(product.price),
-                  trailing: ElevatedButton(
-                    onPressed: () => _iapService.buyProduct(product),
-                    child: Text('구매하기'),
+                    child: ListView.builder(
+                      shrinkWrap: true, // 내부 콘텐츠에 맞게 크기 축소
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: _products.length,
+                      itemBuilder: (context, index) {
+                        ProductDetails product = _products[index];
+                        return ListTile(
+                          title: Text('프리미엄'),
+                          subtitle: Text(product.price),
+                          trailing: ElevatedButton(
+                            onPressed: () => _iapService.buyProduct(product),
+                            child: Text('구매하기'),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                );
-              },
-            ),
-            ),
             // ElevatedButton(
             //   onPressed: () => _iapService.buyProduct(product),
             //   style: ElevatedButton.styleFrom(
@@ -149,18 +150,18 @@ class _PurchasePageState extends State<PurchasePage> {
 
   // 🔹 프리미엄 혜택 리스트 아이템
   Widget _buildFeatureItem(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String description,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 32, color: Theme.of(context).primaryColor),
+          Icon(icon, size: 32, color: theme.colorScheme.onSurface),
           SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -169,16 +170,17 @@ class _PurchasePageState extends State<PurchasePage> {
                 Text(
                   title,
                   style: TextStyle(
-                      color: theme.colorScheme.onSurface,
+                    color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: theme.colorScheme.onSurface),
                 ),
               ],
             ),

@@ -197,11 +197,8 @@ class _AppInfoPageState extends State<AppInfoPage> {
                   SizedBox(width: 8), // 버튼과 구분자 사이 여백 추가
                   Text(
                     '|',
-                    style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black,
-                    ),
+                    style: TextStyle(fontSize: 16,
+                        color: theme.colorScheme.onSurface),
                   ),
                   SizedBox(width: 8),
                   TextButton(
@@ -232,7 +229,8 @@ class _AppInfoPageState extends State<AppInfoPage> {
                 // 친구 선택 페이지로 이동
                 shareToKakaoTalk( '이따 뭐먹지? 고민될 때', // 제목
                 '이 앱으로 당신의 냉장고를 계획하세요!', // 설명
-                'https://seuunng.github.io/food_for_later_policy/favicon.png', // 이미지 URL
+                // 'https://seuunng.github.io/food_for_later_policy/marketing_01.png',
+                  'https://seuunng.github.io/food_for_later_policy/marketing_02.png', // 이미지 URL
                 'https://play.google.com/store/apps/details?id=com.seuunng.foodforlater', // 웹 URL
                     );
               },

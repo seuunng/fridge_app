@@ -34,13 +34,12 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
     if (widget.reviewId != null) {
       _loadReviewData();
-      _loadUserRole();
     }
   }
   void _loadUserRole() async {
-
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -163,7 +162,7 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
 
     if (reviewContent.isEmpty || selectedRating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('리뷰를 입력해주세요')),
+        SnackBar(content: Text('별점과 내용을 입력해주세요')),
       );
       return;
     }
@@ -256,17 +255,31 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
                 SizedBox(height: 16),
                 TextButton(
                   onPressed: () async {
-                    String selectedImagePath =
-                        await _selectImage(); // 이미지 선택 후 경로 반환
-                    File imageFile = File(selectedImagePath);
-                    imageUrl = await _addImage(imageFile);
-                    if (selectedImagePath.isNotEmpty) {
-                      // Firebase에 이미지 업로드
-                      if (imageUrl.isNotEmpty) {
-                        setState(() {
-                          selectedImages.add(imageUrl); // 업로드된 이미지 URL을 리스트에 추가
-                        });
+                    final ImagePicker picker = ImagePicker();
+                    final List<XFile>? pickedFiles = await picker.pickMultiImage();
+
+                    if (pickedFiles != null && pickedFiles.isNotEmpty) {
+                      for (XFile file in pickedFiles) {
+                        if (selectedImages.length >= 4) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('최대 4개의 이미지만 선택할 수 있습니다.')),
+                          );
+                          break; // 제한을 초과하면 루프 종료
+                        }
+                        String selectedImagePath = file.path;
+                        File imageFile = File(selectedImagePath);
+
+                        String uploadedImageUrl = await _addImage(imageFile);
+                        if (uploadedImageUrl.isNotEmpty) {
+                          setState(() {
+                            selectedImages.add(uploadedImageUrl);
+                          });
+                        }
                       }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('이미지를 선택하지 않았습니다.')),
+                      );
                     }
                   },
                   style: TextButton.styleFrom(
@@ -291,7 +304,7 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
                 if (selectedImages.isNotEmpty) ...[
                   SizedBox(height: 16),
                   Wrap(
-                    spacing: 10,
+                    spacing: 1,
                     runSpacing: 10,
                     children: selectedImages.map((imagePath) {
                       return Stack(
@@ -300,8 +313,8 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
                             padding: const EdgeInsets.all(4.0),
                             child: Image.network(
                               imagePath, // Firebase에서 불러온 이미지 URL
-                              width: 80,
-                              height: 80,
+                              width: 60,
+                              height: 60,
                               fit: BoxFit.cover,
                             ),
                           ),

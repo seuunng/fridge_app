@@ -43,9 +43,10 @@ class _RecipeReviewState extends State<RecipeReview> {
 
   void _loadReviewsFromFirestore() async {
     List<Map<String, dynamic>> fetchedReviews = await fetchRecipeReviews();
-    setState(() {
-      recipeReviews = fetchedReviews;
-    });
+    if (mounted)
+      setState(() {
+        recipeReviews = fetchedReviews;
+      });
   }
 
   Future<List<Map<String, dynamic>>> fetchRecipeReviews() async {
@@ -372,6 +373,7 @@ class _RecipeReviewState extends State<RecipeReview> {
                                     ],
                                   ),
                                   // Spacer(),
+                                  SizedBox(width: 30,),
                                   Row(children: [
                                     Column(
                                       children: [
@@ -381,24 +383,27 @@ class _RecipeReviewState extends State<RecipeReview> {
                                           children: [
                                             GestureDetector(
                                               onTap: () => _toggleNiced(index),
-                                              child: Icon(
-                                                  isNiced
-                                                      ? Icons.thumb_up
-                                                      : Icons
-                                                          .thumb_up_alt_outlined,
-                                                  size: 12,
-                                                  color: theme
-                                                      .colorScheme.onSurface),
-                                            ),
-                                            SizedBox(width: 10),
-                                            Text(
-                                              '$likedCount',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color:
-                                                    theme.colorScheme.onSurface,
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(top: 4.0),
+                                                child: Icon(
+                                                    isNiced
+                                                        ? Icons.thumb_up
+                                                        : Icons
+                                                            .thumb_up_alt_outlined,
+                                                    size: 12,
+                                                    color: theme
+                                                        .colorScheme.onSurface),
                                               ),
                                             ),
+                                            // SizedBox(width: 10),
+                                            // Text(
+                                            //   '$likedCount',
+                                            //   style: TextStyle(
+                                            //     fontSize: 12,
+                                            //     color:
+                                            //         theme.colorScheme.onSurface,
+                                            //   ),
+                                            // ),
                                           ],
                                         ),
                                       ],
@@ -416,9 +421,12 @@ class _RecipeReviewState extends State<RecipeReview> {
                                                       postType: '리뷰',
                                                     )));
                                       },
-                                      child: Icon(Icons.feedback_outlined,
-                                          size: 12,
-                                          color: theme.colorScheme.onSurface),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(top: 4.0),
+                                        child: Icon(Icons.feedback_outlined,
+                                            size: 12,
+                                            color: theme.colorScheme.onSurface),
+                                      ),
                                     ),
                                     SizedBox(width: 10),
                                   ]),

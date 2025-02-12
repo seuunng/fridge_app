@@ -51,6 +51,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
     fetchPostTitle(); // 🔹 레시피명 또는 리뷰내용 가져오기
     _loadUserRole();
   }
+
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -67,6 +68,7 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
       print('Error loading user role: $e');
     }
   }
+
   // 🔹 postNo를 이용해 Firestore에서 데이터 가져오기
   Future<void> fetchPostTitle() async {
     if (widget.postNo == null || widget.postNo!.isEmpty) return;
@@ -77,11 +79,14 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
         doc = await _db.collection('recipe').doc(widget.postNo).get();
         setState(() {
           postTitle = doc.exists ? doc['recipeName'] : '알 수 없는 레시피';
+          _postTitleController.text =
+              postTitle!; // 🔹 여기서 postTitleController에도 값 설정
         });
       } else if (widget.postType == '리뷰') {
         doc = await _db.collection('recipe_reviews').doc(widget.postNo).get();
         setState(() {
           postTitle = doc.exists ? doc['content'] : '알 수 없는 리뷰';
+          _postTitleController.text = postTitle!; // 🔹 postTitleController 값 설정
         });
       }
     } catch (e) {
@@ -90,15 +95,18 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
       });
     }
   }
+
   // 의견 제출 함수
   void _submitFeedback() async {
     String content = _contentController.text;
     String selectedCategory = _selectedType == '제안/문의'
         ? _selectedCategoryProposal
         : _selectedCategoryReport;
-    postTitle=_postTitleController.text;
+    postTitle = _postTitleController.text;
 // 사용자가 입력한 `postTitle`이 비어 있으면 오류 메시지 표시
-    if ((postTitle == null || postTitle!.isEmpty) && _selectedType == '신고') {
+    print('postTitle ${postTitle}');
+    if ((postTitle == null || postTitle!.trim().isEmpty) &&
+        _selectedType == '신고') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('신고 대상을 입력해주세요!')),
       );
@@ -115,7 +123,8 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
           'category': selectedCategory,
           'timestamp': FieldValue.serverTimestamp(), // 서버 시간을 저장
           // 'postType': widget.postType ?? '의견보내기',
-          'postType': postTitle == null ? widget.postType ?? '의견보내기' : '신고하기(대상없음)',
+          'postType':
+              postTitle == null ? widget.postType ?? '의견보내기' : '신고하기(대상없음)',
           'postNo': widget.postNo ?? '',
           'postTitle': postTitle ?? '',
           'author': userId,
@@ -146,221 +155,230 @@ class _FeedbackSubmissionState extends State<FeedbackSubmission> {
     final theme = Theme.of(context);
     bool isEditing = false; // 수정 모드 상태 추가
     return Scaffold(
-      appBar: AppBar(
-        title: Text('의견보내기'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '구분',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface),
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          title: Text('의견보내기'),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '구분',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface),
+                    ),
                   ),
-                ),
-                Spacer(),
+                  Spacer(),
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: '제안/문의',
+                        groupValue: _selectedType,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedType = value!;
+                          });
+                        },
+                      ),
+                      SizedBox(width: 2), // 버튼과 텍스트 사이 간격
+                      Text(
+                        '제안/문의',
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: '신고',
+                        groupValue: _selectedType,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedType = value!;
+                          });
+                        },
+                      ),
+                      SizedBox(width: 2), // 버튼과 텍스트 사이 간격
+                      Text(
+                        '신고',
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // 🔹 "제안"을 선택했을 때만 "수정 제안, 기능 요청" 드롭다운 표시
+              if (_selectedType == '제안/문의') ...[
+                SizedBox(height: 8),
                 Row(
                   children: [
-                    Radio<String>(
-                      value: '제안/문의',
-                      groupValue: _selectedType,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedType = value!;
-                        });
-                      },
-                    ),
-                    SizedBox(width: 2), // 버튼과 텍스트 사이 간격
                     Text(
-                      '제안/문의',
-                      style: TextStyle(color: theme.colorScheme.onSurface),
+                      '제안/문의 종류',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface),
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Radio<String>(
-                      value: '신고',
-                      groupValue: _selectedType,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedType = value!;
-                        });
-                      },
-                    ),
-                    SizedBox(width: 2), // 버튼과 텍스트 사이 간격
-                    Text(
-                      '신고',
-                      style: TextStyle(color: theme.colorScheme.onSurface),
+                    Spacer(),
+                    DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _categoriesProposal
+                                .contains(_selectedCategoryProposal)
+                            ? _selectedCategoryProposal
+                            : (_categoriesProposal.isNotEmpty
+                                ? _categoriesProposal.first
+                                : null), // 드롭다운 너비 확장
+                        items: _categoriesProposal.map((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category,
+                                style: TextStyle(
+                                    color: theme.colorScheme.onSurface)),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedCategoryProposal = newValue!;
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
               ],
-            ),
 
-            // 🔹 "제안"을 선택했을 때만 "수정 제안, 기능 요청" 드롭다운 표시
-            if (_selectedType == '제안/문의') ...[
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    '제안/문의 종류',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface),
-                  ),
-                  Spacer(),
-                  DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _categoriesProposal
-                              .contains(_selectedCategoryProposal)
-                          ? _selectedCategoryProposal
-                          : (_categoriesProposal.isNotEmpty
-                              ? _categoriesProposal.first
-                              : null),// 드롭다운 너비 확장
-                      items: _categoriesProposal.map((String category) {
-                        return DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category,
-                              style: TextStyle(
-                                  color: theme.colorScheme.onSurface)),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedCategoryProposal = newValue!;
-                        });
-                      },
+              // 🔹 "신고"를 선택했을 때만 "불쾌, 오류, 불법, 스팸, 유해" 드롭다운 표시
+              if (_selectedType == '신고') ...[
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      '신고 유형',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface),
+                    ),
+                    Spacer(),
+                    Expanded(
+                      child: DropdownButton<String>(
+                        value:
+                            _categoriesReport.contains(_selectedCategoryReport)
+                                ? _selectedCategoryReport
+                                : (_categoriesProposal.isNotEmpty
+                                    ? _categoriesProposal.first
+                                    : null),
+                        isExpanded: true, // 드롭다운 너비 확장
+                        items: _categoriesReport.map((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category,
+                                style: TextStyle(
+                                    color: theme.colorScheme.onSurface)),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedCategoryReport = newValue!;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Text(
+                  '신고대상',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface),
+                ),
+                SizedBox(height: 10),
+                if (isEditing || postTitle == null || postTitle!.isEmpty)
+                  TextField(
+                    controller: _postTitleController,
+                    decoration: InputDecoration(
+                      hintText: '신고 대상을 입력하세요',
+                      border: OutlineInputBorder(),
+                    ),
+                    style: TextStyle(color: theme.chipTheme.labelStyle!.color),
+                  )
+                else
+                  GestureDetector(
+                    onDoubleTap: () {
+                      setState(() {
+                        isEditing = true; // 더블 클릭 시 수정 모드로 전환
+                      });
+                    },
+                    child: Text(
+                      '[${widget.postType ?? ''}] ${postTitle}',
+                      style: TextStyle(
+                          fontSize: 18, color: theme.colorScheme.onSurface),
                     ),
                   ),
-                ],
-              ),
-            ],
-
-            // 🔹 "신고"를 선택했을 때만 "불쾌, 오류, 불법, 스팸, 유해" 드롭다운 표시
-            if (_selectedType == '신고') ...[
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    '신고 유형',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface),
-                  ),
-                  Spacer(),
-                  Expanded(
-                    child: DropdownButton<String>(
-                      value: _categoriesReport.contains(_selectedCategoryReport)
-                          ? _selectedCategoryReport
-                          : (_categoriesProposal.isNotEmpty
-                              ? _categoriesProposal.first
-                              : null),
-                      isExpanded: true, // 드롭다운 너비 확장
-                      items: _categoriesReport.map((String category) {
-                        return DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category,
-                              style: TextStyle(
-                                  color: theme.colorScheme.onSurface
-                              )
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedCategoryReport = newValue!;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
+              ],
+              SizedBox(height: 16),
               Text(
-                '신고대상',
+                '의견',
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSurface),
               ),
-              SizedBox(height: 10),
-              if (isEditing || postTitle == null || postTitle!.isEmpty )
-                TextField(
-                  controller: _postTitleController,
-                  decoration: InputDecoration(
-                    hintText: '신고 대상을 입력하세요',
-                    border: OutlineInputBorder(),
+              TextField(
+                controller: _contentController,
+                style:
+                    TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
+                decoration: InputDecoration(
+                  hintText: '내용을 입력하세요',
+                  hintStyle: TextStyle(
+                    color: theme.colorScheme.onSurface
+                        .withOpacity(0.6), // 힌트 텍스트 스타일
                   ),
-                )
-              else
-                GestureDetector(
-                  onDoubleTap: () {
-                    setState(() {
-                      isEditing = true; // 더블 클릭 시 수정 모드로 전환
-                    });
-                  },
-                  child: Text(
-                    '[${widget.postType ?? ''}] ${postTitle}',
-                    style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurface),
+                ),
+                maxLines: 5, // 여러 줄 입력 가능
+              ),
+              SizedBox(height: 16),
+            ],
+          ),
+        ),
+        bottomNavigationBar: Padding(
+          padding: EdgeInsets.only(
+            bottom:
+                MediaQuery.of(context).viewInsets.bottom + 5, // 키보드 높이만큼 올리기
+            left: 8,
+            right: 8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // 최소 크기로 설정하여 불필요한 공간 제거
+            children: [
+              Container(
+                color: Colors.transparent,
+                // padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: NavbarButton(
+                    buttonTitle: '의견 보내기',
+                    onPressed: _submitFeedback,
                   ),
+                ),
+              ),
+              if (userRole != 'admin' && userRole != 'paid_user')
+                SafeArea(
+                  bottom: false, // 하단 여백 제거
+                  child: BannerAdWidget(),
                 ),
             ],
-            SizedBox(height: 16),
-            Text(
-              '의견',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface),
-            ),
-            TextField(
-              controller: _contentController,
-              style:
-                  TextStyle(color: theme.colorScheme.onSurface), // 입력 텍스트 스타일
-              decoration: InputDecoration(
-                hintText: '내용을 입력하세요',
-                hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface
-                      .withOpacity(0.6), // 힌트 텍스트 스타일
-                ),
-              ),
-              maxLines: 5, // 여러 줄 입력 가능
-            ),
-            SizedBox(height: 16),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
-        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
-        children: [
-          Container(
-            color: Colors.transparent,
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: SizedBox(
-              width: double.infinity,
-              child: NavbarButton(
-                buttonTitle: '의견 보내기',
-                onPressed: _submitFeedback,
-              ),
-            ),
           ),
-          if (userRole != 'admin' && userRole != 'paid_user')
-            SafeArea(
-              bottom: false, // 하단 여백 제거
-              child: BannerAdWidget(),
-            ),
-        ],
-      ),
-    );
+        ));
   }
 }
