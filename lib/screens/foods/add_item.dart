@@ -594,6 +594,7 @@ class _AddItemState extends State<AddItem> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+        resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(widget.pageTitle),
       ),
@@ -660,30 +661,38 @@ class _AddItemState extends State<AddItem> {
           (selectedItems.isNotEmpty &&
                   (widget.sourcePage == 'shoppingList' ||
                       widget.sourcePage == 'fridge')) ?
-              Column(
-                mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
-                mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
-                children: [
-                  Container(
-                      color: Colors.transparent,
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: NavbarButton(
-                          buttonTitle: widget.addButton,
-                          onPressed: () {
-                            if (widget.sourcePage == 'shoppingList') {
-                              _addItemsToShoppingList(); // 장바구니에 아이템 추가
-                            } else if (widget.sourcePage == 'fridge') {
-                              _addItemsToFridge(); // 냉장고에 아이템 추가
-                            }
-                          },
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom:
+                  MediaQuery.of(context).viewInsets.bottom + 5, // 키보드 높이만큼 올리기
+                  left: 8,
+                  right: 8,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+                  mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+                  children: [
+                    Container(
+                        color: Colors.transparent,
+                        // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: NavbarButton(
+                            buttonTitle: widget.addButton,
+                            onPressed: () {
+                              if (widget.sourcePage == 'shoppingList') {
+                                _addItemsToShoppingList(); // 장바구니에 아이템 추가
+                              } else if (widget.sourcePage == 'fridge') {
+                                _addItemsToFridge(); // 냉장고에 아이템 추가
+                              }
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  if (userRole != 'admin' && userRole != 'paid_user')
-                  BannerAdWidget(),
-                ],
+                    if (userRole != 'admin' && userRole != 'paid_user')
+                    BannerAdWidget(),
+                  ],
+                ),
               ):
           (userRole != 'admin' && userRole != 'paid_user')?
             BannerAdWidget():null

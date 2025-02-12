@@ -620,7 +620,6 @@ class _CreateRecordState extends State<CreateRecord> {
 
   //기록과이미지 섹션
   Widget _buildRecordsSection() {
-    print('_tempImageFiles $_tempImageFiles');
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,22 +769,30 @@ class _CreateRecordState extends State<CreateRecord> {
                           padding: const EdgeInsets.all(1.0),
                           child: kIsWeb
                               ? Image.network(
-                                  imagePath,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(Icons.error,
-                                        color: theme.colorScheme
-                                            .onSurface); // 로드 실패 시 아이콘 표시
-                                  },
-                                )
+                            imagePath, // 웹에서는 항상 URL을 사용
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.error, color: theme.colorScheme.onSurface);
+                            },
+                          )
+                              : imagePath.startsWith('http') || imagePath.startsWith('https')
+                              ? Image.network(
+                            imagePath, // 모바일에서도 URL이면 Image.network() 사용
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.error, color: theme.colorScheme.onSurface);
+                            },
+                          )
                               : Image.file(
-                                  File(imagePath), // 개별 이미지의 경로에 접근
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                ),
+                            File(imagePath), // 로컬 파일이면 Image.file() 사용
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         Positioned(
                           right: 0,
