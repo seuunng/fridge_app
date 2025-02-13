@@ -93,7 +93,9 @@ Future<void> signInWithKakao(BuildContext context) async {
   } catch (e) {
     print('카카오 로그인 오류: $e');
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('카카오 로그인에 실패했습니다.')),
+      SnackBar(content: Text('카카오 로그인에 실패했습니다.'),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 

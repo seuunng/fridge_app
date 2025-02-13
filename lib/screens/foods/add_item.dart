@@ -203,7 +203,8 @@ class _AddItemState extends State<AddItem> {
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.')),
+        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -285,7 +286,8 @@ class _AddItemState extends State<AddItem> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('로그인 후에 냉장고에 추가할 수 있습니다.')),
+        SnackBar(content: Text('로그인 후에 냉장고에 추가할 수 있습니다.'),
+          duration: Duration(seconds: 2),),
       );
       return; // 🚫 게스트 사용자는 추가 불가
     }
@@ -371,7 +373,8 @@ class _AddItemState extends State<AddItem> {
         } else {
           // 🔴 이미 존재하는 경우 메시지 표시
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$itemName 아이템이 이미 냉장고에 있습니다.')),
+            SnackBar(content: Text('$itemName 아이템이 이미 냉장고에 있습니다.'),
+              duration: Duration(seconds: 2),),
           );
         }
       }
@@ -389,7 +392,8 @@ class _AddItemState extends State<AddItem> {
     } catch (e) {
       print('아이템 추가 중 오류 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('아이템 추가 중 오류가 발생했습니다.')),
+        SnackBar(content: Text('아이템 추가 중 오류가 발생했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }

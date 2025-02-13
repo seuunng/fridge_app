@@ -79,7 +79,8 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
     } catch (e) {
       print('Error loading categories: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 데이터를 로드하는데 실패했습니다.')),
+        SnackBar(content: Text('카테고리 데이터를 로드하는데 실패했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -248,6 +249,7 @@ class _EditRecordCategoriesState extends State<EditRecordCategories> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('빈 분류는 추가할 수 없습니다.'),
+                                  duration: Duration(seconds: 2),
                                 ),
                               );
                             } else if (units.contains(newUnit)) {

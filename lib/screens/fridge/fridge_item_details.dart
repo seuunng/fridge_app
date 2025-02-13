@@ -479,7 +479,8 @@ print(widget.fridgeCategory);
                   if (userRole != 'admin' && userRole != 'paid_user') {
                     // 🔹 일반 사용자는 냉장고 추가 불가능
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('프리미엄 서비스를 이용하면 상세내용을 수정하여 나만의 식재료 관리를 할 수 있어요!')),
+                      SnackBar(content: Text('프리미엄 서비스를 이용하면 상세내용을 수정하여 나만의 식재료 관리를 할 수 있어요!'),
+                        duration: Duration(seconds: 2),),
                     );
                     return;
                   }
@@ -519,7 +520,8 @@ print(widget.fridgeCategory);
                             .update(updatedData);
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('데이터가 성공적으로 업데이트되었습니다.')),
+                          SnackBar(content: Text('데이터가 성공적으로 업데이트되었습니다.'),
+                            duration: Duration(seconds: 2),),
                         );
                       } else {
                         // ❌ 문서가 없으면 새로 추가
@@ -529,19 +531,22 @@ print(widget.fridgeCategory);
                             .set(updatedData);
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('문서가 존재하지 않아 새로 추가했습니다.')),
+                          SnackBar(content: Text('문서가 존재하지 않아 새로 추가했습니다.'),
+                            duration: Duration(seconds: 2),),
                         );
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('해당 데이터를 찾을 수 없습니다.')),
+                        SnackBar(content: Text('해당 데이터를 찾을 수 없습니다.'),
+                          duration: Duration(seconds: 2),),
                       );
                     }
                     Navigator.pop(context);
                   } catch (e) {
                     print('Error updating data: $e');
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('데이터 저장 중 오류가 발생했습니다.')),
+                      SnackBar(content: Text('데이터 저장 중 오류가 발생했습니다.'),
+                        duration: Duration(seconds: 2),),
                     );
                   }
                 },

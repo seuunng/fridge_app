@@ -73,7 +73,8 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.')),
+        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }

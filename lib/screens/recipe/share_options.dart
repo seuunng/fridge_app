@@ -43,7 +43,8 @@ void showShareOptions(
               onTap: () {
                 Clipboard.setData(ClipboardData(text: recipeUrl)).then((_) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('링크가 복사되었습니다!')),
+                    SnackBar(content: Text('링크가 복사되었습니다!'),
+                      duration: Duration(seconds: 2),),
                   );
                   Navigator.pop(context);
                 });

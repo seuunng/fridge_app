@@ -295,7 +295,8 @@ class _AddRecipeState extends State<AddRecipe> {
       }
       if (mainImages.isEmpty) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('메인 이미지를 최소 1장 선택해주세요')));
+            .showSnackBar(SnackBar(content: Text('메인 이미지를 최소 1장 선택해주세요'),
+          duration: Duration(seconds: 2),));
         return;
       }
       final hasEmptyUrls = mainImages.any((url) => url.isEmpty);
@@ -445,7 +446,7 @@ class _AddRecipeState extends State<AddRecipe> {
       print('이미지 선택이 취소되었습니다.');
     }
   }
-  void _pickMainImages() async {
+  void _pickMainImage () async {
     final ImagePicker picker = ImagePicker();
     final List<XFile>? pickedFiles = await picker.pickMultiImage();
     if (pickedFiles != null) {
@@ -528,7 +529,7 @@ class _AddRecipeState extends State<AddRecipe> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTextField('레시피 이름', recipeNameController, maxLength: 20),
+              // _buildTextField('레시피 이름', recipeNameController, maxLength: 20),
               _buildMainImagePicker(),
               Row(
                 children: [
@@ -624,55 +625,67 @@ class _AddRecipeState extends State<AddRecipe> {
 
   Widget _buildMainImagePicker() {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 10),
-        Row(
+    return Row(
           children: [
-            if (mainImages.length < 4) // 이미지가 4장 미만일 때만 선택 가능
-              IconButton(
-                icon: Icon(Icons.camera_alt_outlined,
-                    color: theme.colorScheme.onSurface),
-                onPressed: _pickMainImages, // 이미지 선택 메서드 호출
-              ),
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: mainImages.map((imagePath) {
-                    return Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: buildImage(imagePath), // 이미지 경로에 따라 동적 처리
+            if (mainImages.isNotEmpty)
+              GestureDetector(
+                onTap: () async {
+                  // 사진을 클릭했을 때 새로운 사진 선택
+                  final ImagePicker picker = ImagePicker();
+                  final XFile? pickedFile =
+                  await picker.pickImage(source: ImageSource.gallery);
+
+                  if (pickedFile != null) {
+                    // 새 이미지 업로드 및 URL 가져오기
+                    String imageUrl = await uploadMainImage(File(pickedFile.path));
+
+                    if (imageUrl.isNotEmpty) {
+                      setState(() {
+                        mainImages[0] = imageUrl; // 첫 번째 이미지를 새로운 이미지로 교체
+                      });
+                    }
+                  }
+                }, // 사진 선택 기능
+                child: Stack(
+                  children: [
+                    Image.network(
+                      mainImages.first, // 첫 번째 이미지만 표시
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.error, color: theme.colorScheme.onSurface);
+                      },
+                    ),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            mainImages.clear(); // 기존 이미지 삭제
+                          });
+                        },
+                        child: Container(
+                          color: theme.colorScheme.primary,
+                          child: Icon(Icons.close, size: 18, color: theme.colorScheme.onPrimary),
                         ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                mainImages.remove(imagePath); // 이미지 삭제
-                              });
-                            },
-                            child: Container(
-                              color: theme.colorScheme.primary,
-                              child: Icon(Icons.close,
-                                  size: 18, color: theme.colorScheme.onPrimary),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                      ),
+                    ),
+                  ],
                 ),
+              )
+            else // 이미지가 없을 때 카메라 아이콘 표시
+              IconButton(
+                icon: Icon(Icons.camera_alt_outlined, color: theme.colorScheme.onSurface),
+                onPressed: _pickMainImage,
               ),
+            SizedBox(width: 8),
+            Expanded(
+              child: _buildTextField('레시피 이름', recipeNameController, maxLength: 20),
             ),
           ],
-        ),
-      ],
-    );
+        );
   }
 
   Widget buildImage(String imagePath) {

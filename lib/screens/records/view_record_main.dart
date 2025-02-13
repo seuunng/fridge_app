@@ -208,7 +208,8 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
           if (user == null || user.email == 'guest@foodforlater.com') {
             // 🔹 방문자(게스트) 계정이면 접근 차단 및 안내 메시지 표시
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('로그인 후 기록을 작성할 수 있습니다.')),
+              SnackBar(content: Text('로그인 후 기록을 작성할 수 있습니다.'),
+                duration: Duration(seconds: 2),),
             );
             return; // 🚫 여기서 함수 종료 (페이지 이동 X)
           }

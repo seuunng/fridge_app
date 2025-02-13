@@ -825,7 +825,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
                                     ],
                                   ), // 간격 추가
                                   // 재료
-                                  SingleChildScrollView(
+                                  Expanded(
                                       child: _buildChips(recipe)),
                                 ],
                               ),

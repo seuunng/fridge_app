@@ -204,12 +204,14 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
         Navigator.pop(context, true);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('식품 추가/수정 중 오류 발생: $e')),
+          SnackBar(content: Text('식품 추가/수정 중 오류 발생: $e'),
+            duration: Duration(seconds: 2),),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('모든 필드를 입력해주세요.')),
+        SnackBar(content: Text('모든 필드를 입력해주세요.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }

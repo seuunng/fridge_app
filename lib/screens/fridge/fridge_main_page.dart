@@ -288,7 +288,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
     } catch (e) {
       print('Error loading fridge categories: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('냉장고 목록을 불러오는 데 실패했습니다.')),
+        SnackBar(content: Text('냉장고 목록을 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -385,7 +386,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
       await _loadCategoriesFromFirestore();  // UI 새로고침
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('새 섹션이 추가되었습니다.')),
+        SnackBar(content: Text('새 섹션이 추가되었습니다.'),
+          duration: Duration(seconds: 2),),
       );
     } catch (e) {
       print('섹션 저장 중 오류 발생: $e');
@@ -584,7 +586,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
             label: '복원',
             onPressed: _restoreDeletedItems, // 복원 함수 호출
           ),
-          duration: Duration(seconds: 5),
+          duration: Duration(seconds: 3),
         ),
       );
     } catch (e) {

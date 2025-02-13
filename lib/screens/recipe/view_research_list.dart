@@ -111,10 +111,17 @@ class _ViewResearchListState extends State<ViewResearchList> {
   }
 
   void _initializePageData() async {
+    setState(() {
+      isLoading = true; // 로딩 시작
+    });
     // ✅ 순서를 보장하기 위해 async/await 사용
     await _loadPreferredFoodsByCategory();
     await _initializeFridgeData(); // 냉장고 데이터도 완전히 불러온 후 실행
     await _initializeSearch(); // 모든 초기화 작업이 끝난 후 검색 실행
+
+    setState(() {
+      isLoading = false; // 로딩 완료 후 비활성화
+    });
   }
 
   Future<void> _loadFridgeId() async {
@@ -435,27 +442,31 @@ class _ViewResearchListState extends State<ViewResearchList> {
     List<String>? cookingMethods,
     bool filterExcluded = true,
   }) async {
-    // print('검색 키워드: $keywords');
+    print('fetchRecipes 실행');
     // print('상위 재료: $topIngredients');
+    setState(() {
+      isLoading = true; // 검색 시작 시 로딩 상태 활성화
+      _mangaeresults.clear(); // 🔹 만개의레시피 검색 결과 초기화
+      _results.clear(); // 🔹 웹 검색 결과 초기화
+    });
     try {
       keywords =
-          keywords?.where((keyword) => keyword.trim().isNotEmpty).toList() ??
-              [];
-      // if ((keywords.isEmpty) &&
-      //     (topIngredients == null || topIngredients.isEmpty) &&
-      //     (excludeKeywords == null || excludeKeywords!.isEmpty) &&
-      //     searchKeyword.isEmpty) {
-      //   final querySnapshot = await _db.collection('recipe')
-      //       .orderBy('date', descending: true)
-      //       .get();
-      //   setState(() {
-      //     matchingRecipes = querySnapshot.docs
-      //         .map((doc) =>
-      //             RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
-      //         .toList();
-      //   });
-      //   return;
-      // }
+          keywords?.where((keyword) => keyword.trim().isNotEmpty).toList()?? [];
+      if ((keywords.isEmpty) &&
+          (topIngredients == null || topIngredients.isEmpty) &&
+          // (excludeKeywords == null || excludeKeywords!.isEmpty) &&
+          searchKeyword.isEmpty) {
+        final querySnapshot = await _db.collection('recipe')
+            .orderBy('date', descending: true)
+            .get();
+        setState(() {
+          matchingRecipes = querySnapshot.docs
+              .map((doc) =>
+                  RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>))
+              .toList();
+        });
+        return;
+      }
       final ingredientToCategory =
           await _loadIngredientCategoriesFromFirestore();
 
@@ -609,6 +620,10 @@ class _ViewResearchListState extends State<ViewResearchList> {
       });
     } catch (e) {
       print('Error fetching recipes: $e');
+    } finally {
+      setState(() {
+        isLoading = false; // 로딩 상태 비활성화
+      });
     }
   }
 
@@ -748,7 +763,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       final url =
           'https://www.googleapis.com/customsearch/v1?q=$q&key=$apiKey&cx=$cx';
       final response = await http.get(Uri.parse(url));
-      print("HTTP 요청 상태 코드: ${response.statusCode}");
+      // print("HTTP 요청 상태 코드: ${response.statusCode}");
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -758,6 +773,9 @@ class _ViewResearchListState extends State<ViewResearchList> {
     });
 
     final results = await Future.wait(requests);
+    /// ✅ 중복 방지를 위한 `Set<String>` 사용
+    Set<String> uniqueLinks = {};
+
     setState(() {
       _results = results
           .expand((result) => (result?['items'] ?? []) as List<dynamic>)
@@ -768,13 +786,21 @@ class _ViewResearchListState extends State<ViewResearchList> {
             ? pagemap['cse_image'][0]['src']
             : 'https://seuunng.github.io/food_for_later_policy/favicon.png';
 
-        return {
-          'title': item['title'] ?? '',
-          'snippet': item['snippet'] ?? '',
-          'link': item['link'] ?? '',
-          'imageUrl': imageUrl, // 이미지 URL 추가
-        };
+        final link = item['link'] ?? '';
+
+        // ✅ 중복된 링크가 있는지 확인 후 추가
+        if (!uniqueLinks.contains(link)) {
+          uniqueLinks.add(link);
+          return {
+            'title': item['title'] ?? '',
+            'snippet': item['snippet'] ?? '',
+            'link': link,
+            'imageUrl': imageUrl,
+          };
+        }
+        return null; // 중복된 경우 null 반환
       })
+          .where((item) => item != null) // null 제거
           .toList();
     });
   }
@@ -954,7 +980,8 @@ class _ViewResearchListState extends State<ViewResearchList> {
     } catch (e) {
       print('레시피 저장 오류: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('레시피 저장에 실패했습니다. 다시 시도해주세요.')),
+        SnackBar(content: Text('레시피 저장에 실패했습니다. 다시 시도해주세요.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -1069,7 +1096,14 @@ class _ViewResearchListState extends State<ViewResearchList> {
                         });
                         await fetchSearchResultsFromWeb(query); // 웹 검색 함수 호출
                       } else {
-                        print("검색할 키워드가 없습니다.");
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("검색할 키워드를 입력해주세요."),
+                            duration: Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating, // 떠 있는 스타일
+                            margin: EdgeInsets.all(10), // 여백 설정
+                          ),
+                        );
                       }
                     },
                   ),
@@ -1126,12 +1160,25 @@ class _ViewResearchListState extends State<ViewResearchList> {
           setState(() {
             // 키워드 삭제
             keywords.remove(keyword); // 키워드 삭제
+            _mangaeresults.clear(); // 🔹 만개의레시피 검색 결과 초기화
+            _results.clear(); // 🔹 웹 검색 결과 초기화
           });
-          await fetchRecipes(
-            keywords: keywords,
-            // cookingMethods: selectedCookingMethods,
-            // topIngredients: topIngredients
-          );
+          if (keywords.isEmpty) {
+            // ✅ 키워드가 하나도 없으면 전체 레시피 불러오기
+            await fetchRecipes(
+              keywords: [], // 키워드 없이 전체 불러오기
+              topIngredients: [],
+              cookingMethods: [],
+              filterExcluded: false,
+            );
+          } else {
+            // ✅ 키워드가 남아있으면 기존 검색 유지
+            await fetchRecipes(
+              keywords: keywords,
+              topIngredients: topIngredients,
+              cookingMethods: selectedCookingMethods,
+            );
+          }
         },
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
@@ -1180,7 +1227,19 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
   Widget _buildCategoryGrid() {
     final theme = Theme.of(context);
+    if (isLoading) {
+      // ✅ 검색 중일 때는 로딩 인디케이터 표시
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: CircularProgressIndicator(), // 로딩 스피너 표시
+        ),
+      );
+    }
     if (matchingRecipes.isEmpty && _results.isEmpty && _mangaeresults.isEmpty) {
+      if (keywords.isEmpty) {
+        return SizedBox.shrink(); // ✅ 키워드가 없을 때는 아무 메시지도 안 보이게 처리
+      }
       return Center(
         child: Text(
           '조건에 맞는 레시피가 없습니다.',
@@ -1215,7 +1274,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
             String recipeName = recipe.recipeName;
             double recipeRating = recipe.rating ?? 0.0;
             bool hasMainImage = recipe.mainImages.isNotEmpty; // 이미지가 있는지 확인
-            print('hasMainImage $hasMainImage');
+            // print('hasMainImage $hasMainImage');
             List<String> keywordList = [
               ...recipe.foods, // 이 레시피의 food 키워드들
               ...recipe.methods, // 이 레시피의 method 키워드들

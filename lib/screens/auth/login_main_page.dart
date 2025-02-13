@@ -225,8 +225,8 @@ class _LoginPageState extends State<LoginPage> {
       print('회원가입 실패: ${e.code} - ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(errorMessage), // 발생한 오류를 스낵바로 표시
-          duration: Duration(seconds: 3),
+          content: Text(errorMessage),
+          duration: Duration(seconds: 2),
         ),
       );
     } catch (e) {

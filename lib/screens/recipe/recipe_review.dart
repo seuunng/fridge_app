@@ -122,7 +122,8 @@ class _RecipeReviewState extends State<RecipeReview> {
     if (user == null || user.email == 'guest@foodforlater.com') {
       // 🔹 방문자(게스트) 계정이면 스크랩 차단 및 안내 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('로그인 후 리뷰를 좋아요 할 수 있습니다.')),
+        SnackBar(content: Text('로그인 후 리뷰를 좋아요 할 수 있습니다.'),
+          duration: Duration(seconds: 2),),
       );
       return; // 🚫 여기서 함수 종료 (스크랩 기능 실행 안 함)
     }
@@ -168,6 +169,7 @@ class _RecipeReviewState extends State<RecipeReview> {
       print('Error nicing recipe: $e');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('리뷰 좋아요 처리 중 오류가 발생했습니다.'),
+        duration: Duration(seconds: 2),
       ));
     }
   }

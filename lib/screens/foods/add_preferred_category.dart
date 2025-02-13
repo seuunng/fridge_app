@@ -88,7 +88,8 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
 
     if (newCategoryName.isEmpty || items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 이름과 아이템을 추가해주세요.')),
+        SnackBar(content: Text('카테고리 이름과 아이템을 추가해주세요.'),
+          duration: Duration(seconds: 2),),
       );
       return;
     }
@@ -110,7 +111,8 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
         await docRef.update({'items': updatedItems});
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('기존 카테고리에 아이템이 추가되었습니다.')),
+          SnackBar(content: Text('기존 카테고리에 아이템이 추가되었습니다.'),
+            duration: Duration(seconds: 2),),
         );
       } else {
         await FirebaseFirestore.instance.collection('preferred_foods_categories').add({
@@ -124,7 +126,8 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
     } catch (e) {
       print('Error saving category: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 저장 중 오류 발생.')),
+        SnackBar(content: Text('카테고리 저장 중 오류 발생.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -134,7 +137,8 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
 
     if (categoryName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('삭제할 카테고리를 입력해주세요.')),
+        SnackBar(content: Text('삭제할 카테고리를 입력해주세요.'),
+          duration: Duration(seconds: 2),),
       );
       return;
     }
@@ -155,7 +159,8 @@ class _AddPreferredCategoryState extends State<AddPreferredCategory> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('카테고리가 삭제되었습니다.')),
+          SnackBar(content: Text('카테고리가 삭제되었습니다.'),
+            duration: Duration(seconds: 2),),
         );
 
         // 상태 업데이트 및 초기화

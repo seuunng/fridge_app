@@ -158,7 +158,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.')),
+        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -179,7 +180,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.')),
+        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -199,7 +201,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.')),
+        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -224,7 +227,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     } catch (e) {
       print('냉장고 재료를 불러오는 데 실패했습니다: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('냉장고 재료를 불러오는 데 실패했습니다.')),
+        SnackBar(content: Text('냉장고 재료를 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
@@ -296,7 +300,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('로그인 하고 레시피를 스크랩해서 관리하세요!'),
-                        duration: Duration(seconds: 3), // 3초간 표시
+                        duration: Duration(seconds: 2), // 3초간 표시
                       ),
                     );
                     return;

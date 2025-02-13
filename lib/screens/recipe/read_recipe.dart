@@ -263,7 +263,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
         _showAddToShoppingListDialog(ingredients); // 🔹 다이얼로그 실행
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('추가할 재료가 없습니다.')),
+          SnackBar(content: Text('추가할 재료가 없습니다.'),
+            duration: Duration(seconds: 2),),
         );
       }
     } catch (e) {

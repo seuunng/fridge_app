@@ -121,6 +121,7 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('이미 추가된 이미지입니다.'),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -162,7 +163,8 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
 
     if (reviewContent.isEmpty || selectedRating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('별점과 내용을 입력해주세요')),
+        SnackBar(content: Text('별점과 내용을 입력해주세요'),
+          duration: Duration(seconds: 2),),
       );
       return;
     }
@@ -192,15 +194,16 @@ class _AddRecipeReviewState extends State<AddRecipeReview> {
       await updateRecipeRating(widget.recipeId);
 
       // Success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('리뷰가 저장되었습니다')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('리뷰가 저장되었습니다')),
+      // );
 
       Navigator.pop(context);
     } catch (e) {
       print('Error saving review: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('리뷰 저장 중 오류가 발생했습니다')),
+        SnackBar(content: Text('리뷰 저장 중 오류가 발생했습니다'),
+          duration: Duration(seconds: 2),),
       );
     }
   }
