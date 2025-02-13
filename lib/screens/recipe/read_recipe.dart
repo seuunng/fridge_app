@@ -8,9 +8,7 @@ import 'package:food_for_later_new/screens/recipe/add_recipe_review.dart';
 import 'package:food_for_later_new/screens/recipe/full_screen_image_view.dart';
 import 'package:food_for_later_new/screens/recipe/recipe_review.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:food_for_later_new/screens/recipe/share_options.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:food_for_later_new/screens/records/records_calendar_view.dart';
 import 'package:food_for_later_new/screens/records/view_record_main.dart';
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
 import 'package:food_for_later_new/services/scraped_recipe_service.dart';
@@ -88,6 +86,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
     _loadUserRole();
     recipeUrl = 'https://food-for-later.web.app/recipe/${widget.recipeId}';
     _loadScrapedAndLikedCounts();
+    _loadFridgeIngredients();
   }
 
   @override
@@ -224,34 +223,51 @@ class _ReadRecipeState extends State<ReadRecipe> {
     }
   }
 
-  void _loadIngredientsAndShowDialog() async {
+  void _loadFridgeIngredients() async {
     try {
-      var recipeData = await fetchRecipeData(widget.recipeId);
-      List<String> ingredients = List<String>.from(recipeData['foods'] ?? []);
-
       final snapshot = await FirebaseFirestore.instance
           .collection('fridge_items')
           .where('userId', isEqualTo: userId)
           .get();
 
       setState(() {
-        fridgeIngredients =
-            snapshot.docs.map((doc) => doc['items'] as String).toList();
+        fridgeIngredients = snapshot.docs
+            .expand((doc) {
+          var items = doc['items'];
+          if (items is List) {
+            return List<String>.from(items); // ✅ List<String> 변환
+          } else if (items is String) {
+            return [items]; // ✅ 단일 문자열일 경우 리스트로 변환
+          } else {
+            return <String>[]; // ✅ 예외 처리 (비어있는 경우)
+          }
+        })
+            .toList();
+      });
+
+    } catch (e) {
+      print('❌ Error loading fridge items: $e');
+    }
+  }
+
+  void _showShoppingListDialog() async {
+    try {
+      var recipeData = await fetchRecipeData(widget.recipeId);
+      List<String> ingredients = List<String>.from(recipeData['foods'] ?? []);
+
+      setState(() {
         selectedIngredients = List<bool>.filled(ingredients.length, true);
       });
 
       if (ingredients.isNotEmpty) {
-        _showAddToShoppingListDialog(ingredients); // 다이얼로그 표시
+        _showAddToShoppingListDialog(ingredients); // 🔹 다이얼로그 실행
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('추가할 재료가 없습니다.')),
         );
       }
     } catch (e) {
-      print('Error loading fridge items: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('데이터 로드 중 오류가 발생했습니다.')),
-      );
+      print('❌ Error loading recipe ingredients: $e');
     }
   }
 
@@ -1031,6 +1047,9 @@ class _ReadRecipeState extends State<ReadRecipe> {
             children: ingredients.map((ingredient) {
               bool inFridge = fridgeIngredients.contains(ingredient);
               bool isKeyword = searchKeywords.contains(ingredient);
+
+              print('🔍 비교: ingredient="$ingredient", inFridge=$inFridge');
+
               return Container(
                 padding: EdgeInsets.symmetric(vertical: 3.0, horizontal: 5.0),
                 decoration: BoxDecoration(
@@ -1046,7 +1065,11 @@ class _ReadRecipeState extends State<ReadRecipe> {
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: Text(ingredient,
-                    style: TextStyle(color: theme.colorScheme.onSurface)),
+                    style: TextStyle(color:
+                    inFridge
+                        ? theme.colorScheme.surface
+                        : theme.colorScheme.onSurface
+                    )),
               );
             }).toList(),
           ),
@@ -1060,7 +1083,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
     return IconButton(
       icon: Icon(Icons.add_shopping_cart, color: theme.colorScheme.onSurface),
       onPressed: () {
-        _loadIngredientsAndShowDialog(); // 데이터 로드 후 다이얼로그 표시
+        _showShoppingListDialog(); // 데이터 로드 후 다이얼로그 표시
       }, // 팝업 다이얼로그 호출
     );
   }

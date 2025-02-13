@@ -50,6 +50,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
     selectedRecipes.clear();
     _initializePage();
     _loadUserRole();
+    _loadFridgeIngredients();
   }
   @override
   void didChangeDependencies() {
@@ -146,7 +147,32 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
       print('Error loading scraped groups: $e');
     }
   }
+  void _loadFridgeIngredients() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fridge_items')
+          .where('userId', isEqualTo: userId)
+          .get();
 
+      setState(() {
+        fridgeIngredients = snapshot.docs
+            .expand((doc) {
+          var items = doc['items'];
+          if (items is List) {
+            return List<String>.from(items); // ✅ List<String> 변환
+          } else if (items is String) {
+            return [items]; // ✅ 단일 문자열일 경우 리스트로 변환
+          } else {
+            return <String>[]; // ✅ 예외 처리 (비어있는 경우)
+          }
+        })
+            .toList();
+      });
+
+    } catch (e) {
+      print('❌ Error loading fridge items: $e');
+    }
+  }
   // 레시피 목록 필터링 함수
   List<Map<String, dynamic>> getFilteredRecipes(
       List<Map<String, dynamic>> fetchedRecipes) {
@@ -819,11 +845,10 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
   Widget _buildChips(RecipeModel recipe) {
     final List<String> uniqueIngredients = recipe.foods.toSet().toList();
     return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Wrap(
-        alignment: WrapAlignment.start,
-        spacing: 2.0, // 아이템 간의 간격
-        runSpacing: 2.0,
+      // scrollDirection: Axis.horizontal,
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
         children: [
           _buildTagSection("재료", uniqueIngredients),
           // _buildTagSection("조리 방법", recipe.methods),
@@ -834,6 +859,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
   }
 
   Widget _buildTagSection(String title, List<String> tags) {
+    final theme = Theme.of(context);
     return Wrap(
       alignment: WrapAlignment.start,
       spacing: 2.0, // 아이템 간의 간격
@@ -854,7 +880,9 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
             tag,
             style: TextStyle(
               fontSize: 12.0,
-              color: inFridge ? Colors.white : Colors.black,
+              color: inFridge
+                  ? theme.colorScheme.surface
+                  : theme.colorScheme.onSurface
             ),
           ),
         );
