@@ -663,8 +663,11 @@ class _CreateRecordState extends State<CreateRecord> {
                       Text(' | ',
                           style: TextStyle(color: theme.colorScheme.onSurface)),
                       SizedBox(width: 4),
-                      Text(recordsWithImages[index]['contents'] ?? '',
-                          style: TextStyle(color: theme.colorScheme.onSurface)),
+                      Expanded(
+                        child: Text(recordsWithImages[index]['contents'] ?? '',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: theme.colorScheme.onSurface)),
+                      ),
                     ],
                   ),
                   SizedBox(
