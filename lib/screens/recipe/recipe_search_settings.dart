@@ -218,10 +218,10 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
                               SizedBox(width: 6),
                               Text(
                                 keyword,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.bold, // 강조를 위해 굵게 설정
-                                ),
+                                // style: theme.textTheme.bodyMedium?.copyWith(
+                                //   color: theme.colorScheme.onSurface,
+                                //   fontWeight: FontWeight.bold, // 강조를 위해 굵게 설정
+                                // ),
                               ),
                             ],
                           ),
@@ -299,21 +299,21 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
             return ChoiceChip(
               label: Text(
                 method,
-                style: isSelected
-                    ? theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.chipTheme.secondaryLabelStyle?.color,
-                      )
-                    : theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.chipTheme.labelStyle?.color,
-                      ),
+                // style: isSelected
+                //     ? theme.textTheme.bodyMedium?.copyWith(
+                //         color: theme.chipTheme.secondaryLabelStyle?.color,
+                //       )
+                //     : theme.textTheme.bodyMedium?.copyWith(
+                //         color: theme.chipTheme.labelStyle?.color,
+                //       ),
               ),
               shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8.0),
-              side: BorderSide(
-                color: theme.chipTheme.labelStyle?.color ??
-                    Colors.white, // 테두리 색상 빨간색으로 변경
-                width: 1, // 테두리 두께 조절
-              ),
+              // side: BorderSide(
+              //   color: theme.chipTheme.labelStyle?.color ??
+              //       Colors.white, // 테두리 색상 빨간색으로 변경
+              //   width: 1, // 테두리 두께 조절
+              // ),
             ),
               selected: isSelected,
               onSelected: (selected) {
@@ -354,11 +354,11 @@ class _RecipeSearchSettingsState extends State<RecipeSearchSettings> {
         return ChoiceChip(
           label: Text(
             categoryName,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: isSelected
-                  ? theme.chipTheme.secondaryLabelStyle?.color
-                  : theme.chipTheme.labelStyle?.color,
-            ),
+            // style: theme.textTheme.bodyMedium?.copyWith(
+            //   color: isSelected
+            //       ? theme.chipTheme.secondaryLabelStyle?.color
+            //       : theme.chipTheme.labelStyle?.color,
+            // ),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),

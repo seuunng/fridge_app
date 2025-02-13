@@ -613,6 +613,10 @@ class _CreateRecordState extends State<CreateRecord> {
               }
             },
             hint: Text("선택 없음"),
+            underline: Container(
+              height: 1.5, // 밑줄 굵기 조정
+              color: theme.colorScheme.onSurface, // 밑줄 색상 설정
+            ),
           ),
         ],
       ),

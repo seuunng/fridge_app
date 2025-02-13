@@ -218,7 +218,10 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                   children: [
                     Expanded(
                       child: RadioListTile<String>(
-                        title: Text('남성'),
+                        title: Text('남성',
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurface
+                          ),),
                         value: '남성',
                         groupValue: _selectedGender,
                         onChanged: (value) {
@@ -230,7 +233,10 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                     ),
                     Expanded(
                       child: RadioListTile<String>(
-                        title: Text('여성'),
+                        title: Text('여성',
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurface
+                          ),),
                         value: '여성',
                         groupValue: _selectedGender,
                         onChanged: (value) {
@@ -242,7 +248,10 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                     ),
                     Expanded(
                       child: RadioListTile<String>(
-                        title: Text('선택하지 않음'),
+                        title: Text('선택하지 않음',
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurface
+                          ),),
                         value: '선택하지 않음',
                         groupValue: _selectedGender,
                         onChanged: (value) {

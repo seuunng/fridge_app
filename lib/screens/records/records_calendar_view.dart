@@ -197,10 +197,8 @@ class _RecordsCalendarViewState extends State<RecordsCalendarView> {
                         ),
                         Text(
                           DateFormat.yMMM().format(_focusedDate),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurface
                           ),
                         ),
                         IconButton(

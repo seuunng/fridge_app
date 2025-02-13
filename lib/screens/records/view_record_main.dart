@@ -147,44 +147,53 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // 좌측 '기록하기' 텍스트
-            Text(
-              '기록하기',
-              style: TextStyle(fontSize: 20),
-            ),
-
-            // 가운데 페이지 제목과 화살표 버튼
-            Row(
-              children: [
-                // 왼쪽 화살표 버튼
-                IconButton(
-                  onPressed: _goToPreviousTable,
-                  icon: Icon(Icons.arrow_left_outlined), // <- 이전 버튼
-                ),
-
-                // 가운데 페이지 제목
-                Text(
-                  _getPageTitle(), // 페이지 제목 함수 호출
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-                ),
-
-                // 오른쪽 화살표 버튼
-                IconButton(
-                  onPressed: _goToNextTable,
-                  icon: Icon(Icons.arrow_right_outlined), // -> 다음 버튼
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+      // appBar: AppBar(
+      //   title:
+      // ),
       body: Column(
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // 좌측 '기록하기' 텍스트
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Text(
+                  '기록하기',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontSize: 20, // 글자 크기 (기본보다 크게 조정)
+                    fontWeight: FontWeight.bold, // 글자 굵게 설정
+                  ),
+                ),
+              ),
+
+              // 가운데 페이지 제목과 화살표 버튼
+              Row(
+                children: [
+                  // 왼쪽 화살표 버튼
+                  IconButton(
+                    onPressed: _goToPreviousTable,
+                    icon: Icon(Icons.arrow_left_outlined), // <- 이전 버튼
+                  ),
+
+                  // 가운데 페이지 제목
+                  Text(
+                    _getPageTitle(), // 페이지 제목 함수 호출
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+                  ),
+
+                  // 오른쪽 화살표 버튼
+                  IconButton(
+                    onPressed: _goToNextTable,
+                    icon: Icon(Icons.arrow_right_outlined), // -> 다음 버튼
+                  ),
+                ],
+              ),
+            ],
+          ),
           Expanded(
             child: Center(
               child: PageView(

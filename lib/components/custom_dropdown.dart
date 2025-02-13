@@ -47,6 +47,10 @@ class _CustomDropdownState extends State<CustomDropdown> {
                   ),
                 ),
                 itemHeight: 48.0,
+                underline: Container(
+                  height: 2, // 밑줄 굵기 조정
+                  color: theme.colorScheme.onSurface, // 밑줄 색상 설정
+                ),
                 items: widget.items.map((String item) {
                   return DropdownMenuItem<String>(
                     value: item,
@@ -68,7 +72,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
                                 fit: FlexFit.loose, // 자식이 가용한 공간을 최대한 덜 차지하도록 설정
                                 child: Container(), // 여기에 원하는 위젯을 넣을 수 있습니다.
                               ),
-                              if (_isDropdownOpen && item != '전체') ...[
+                              if (_isDropdownOpen && item != '전체' && item != '내가 작성한 레시피') ...[
                                 IconButton(
                                   icon: Icon(
                                     Icons.close,
@@ -119,20 +123,23 @@ class _CustomDropdownState extends State<CustomDropdown> {
                     _isDropdownOpen = !_isDropdownOpen; // 드롭다운 열림/닫힘 토글
                   });
                 },
-                style: theme.textTheme.bodyMedium,
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 selectedItemBuilder: (BuildContext context) {
                   return widget.items.map<Widget>((String item) {
-                    return Text(
-                      widget.items.contains(widget.selectedItem)
-                          ? widget.selectedItem
-                          : widget.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: widget.items.contains(widget.selectedItem)
-                            ? theme.colorScheme.onSurface
-                            : Colors.grey, // 선택되지 않은 경우 회색
+                    return Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        widget.items.contains(widget.selectedItem)
+                            ? widget.selectedItem
+                            : widget.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: widget.items.contains(widget.selectedItem)
+                              ? theme.colorScheme.onSurface
+                              : Colors.grey, // 선택되지 않은 경우 회색
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     );
                   }).toList();
                 },

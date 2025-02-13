@@ -106,8 +106,14 @@ class _PurchasePageState extends State<PurchasePage> {
                       itemBuilder: (context, index) {
                         ProductDetails product = _products[index];
                         return ListTile(
-                          title: Text('프리미엄'),
-                          subtitle: Text(product.price),
+                          title: Text('프리미엄',
+                            style: TextStyle(
+                                color: theme.colorScheme.onSurface
+                            ),),
+                          subtitle: Text(product.price,
+                            style: TextStyle(
+                                color: theme.colorScheme.onSurface
+                            ),),
                           trailing: ElevatedButton(
                             onPressed: () => _iapService.buyProduct(product),
                             child: Text('구매하기'),

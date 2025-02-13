@@ -72,7 +72,6 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
   @override
   void didPopNext() {
     super.didPopNext();
-    print("다른 페이지에서 복귀했습니다.");
     _initializePage(); // 데이터를 다시 불러오는 함수 호출
   }
   void _loadUserRole() async {
@@ -96,20 +95,49 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
   Future<void> _initializePage() async {
     setState(() {
       isLoading = true; // 로딩 상태 시작
-      print('초기화 중: 현재 선택된 필터 -> $selectedFilter');
     });
 
     // 스크랩 그룹 로드
     await _loadScrapedGroups();
-
-    // 레시피 로드
-    List<Map<String, dynamic>> fetchedRecipes = await fetchRecipesByScrap();
-    setState(() {
-      recipeList = getFilteredRecipes(fetchedRecipes);
-      isLoading = false;
-    });
+    if (selectedFilter == '내가 작성한 레시피') {
+      // ✅ 내가 작성한 레시피만 불러오기
+      List<Map<String, dynamic>> myRecipes = await _fetchMyRecipes();
+      setState(() {
+        recipeList = myRecipes;
+        isLoading = false;
+      });
+    } else {
+      // 레시피 로드
+      List<Map<String, dynamic>> fetchedRecipes = await fetchRecipesByScrap();
+      setState(() {
+        recipeList = getFilteredRecipes(fetchedRecipes);
+        isLoading = false;
+      });
+    }
   }
+  Future<List<Map<String, dynamic>>> _fetchMyRecipes() async {
+    final List<Map<String, dynamic>> myRecipes = [];
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('recipe')
+          .where('userID', isEqualTo: userId)
+          .orderBy('date', descending: true)
+          .get();
 
+      for (var doc in querySnapshot.docs) {
+        RecipeModel recipe = RecipeModel.fromFirestore(
+            doc.data() as Map<String, dynamic>);
+        myRecipes.add({
+          'id': doc.id,
+          'recipe': recipe,
+        });
+      }
+      print("✅ 내가 작성한 레시피 개수: ${myRecipes.length}");
+    } catch (e) {
+      print('❌ 내가 작성한 레시피 가져오는 중 오류 발생: $e');
+    }
+    return myRecipes;
+  }
   // Future<void> _loadData() async {
   //   setState(() {
   //     isLoading = true; // 로딩 상태 시작
@@ -140,6 +168,8 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
         if (!_scraped_groups.contains('전체')) {
           _scraped_groups.insert(0, '전체'); // 가장 앞에 추가
         }
+        _scraped_groups.remove('내가 작성한 레시피'); // 기존 위치 제거
+        _scraped_groups.add('내가 작성한 레시피'); // 마지막에 추가
         // 기본값 설정
         selectedFilter = '전체';
       });
@@ -603,19 +633,26 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
                         onItemChanged: (value) async {
                           setState(() {
                             selectedFilter = value;
-                            print('선택된 필터가 변경되었습니다: $selectedFilter');
                             isLoading = true; // 🔹 로딩 상태 시작
                           });
-                          final fetchedData = await fetchRecipesByScrap();
-                          final filteredRecipes =
-                              getFilteredRecipes(fetchedData);
+                          List<Map<String, dynamic>> fetchedData;
+
+                          if (selectedFilter == '내가 작성한 레시피') {
+                            // ✅ 내가 작성한 레시피 불러오기
+                            fetchedData = await _fetchMyRecipes();
+                          } else {
+                            // ✅ 선택된 필터에 맞는 스크랩 레시피 불러오기
+                            fetchedData = await fetchRecipesByScrap();
+                            fetchedData = getFilteredRecipes(fetchedData);
+                          }
+
                           setState(() {
-                            recipeList = filteredRecipes; // 레시피 데이터 반영
+                            recipeList = fetchedData; // 레시피 데이터 반영
                             isLoading = false; // 🔹 로딩 상태 종료
                           });
                         },
                         onItemDeleted: (item) {
-                          if (item != '전체') {
+                          if (item != '전체' && item != '내가 작성한 레시피') {
                             _deleteCategory(item, _scraped_groups, '스크랩 그룹');
                           }
                         },
@@ -638,7 +675,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
         mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          if (selectedRecipes.isNotEmpty)
+          if (selectedRecipes.isNotEmpty && selectedFilter != '내가 작성한 레시피')
             Container(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: SizedBox(
@@ -711,22 +748,25 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
               // scrapedStatus[recipe.id] = isScraped;
               return Row(
                 children: [
-                  SizedBox(
-                    width: 20, // 원하는 너비로 조정
-                    height: 20, // 원하는 높이로 조정
-                    child: Checkbox(
-                      value: selectedRecipes.contains(docId),
-                      onChanged: (bool? value) {
-                        setState(() {
-                          if (value == true) {
-                            selectedRecipes.add(docId);
-                          } else {
-                            selectedRecipes.remove(docId);
-                          }
-                        });
-                      },
-                      materialTapTargetSize:
-                          MaterialTapTargetSize.shrinkWrap, // 여백 줄이기
+                  Visibility(
+                    visible: selectedFilter != '내가 작성한 레시피',
+                    child: SizedBox(
+                      width: 20, // 원하는 너비로 조정
+                      height: 20, // 원하는 높이로 조정
+                      child: Checkbox(
+                        value: selectedRecipes.contains(docId),
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              selectedRecipes.add(docId);
+                            } else {
+                              selectedRecipes.remove(docId);
+                            }
+                          });
+                        },
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap, // 여백 줄이기
+                      ),
                     ),
                   ),
                   Expanded(

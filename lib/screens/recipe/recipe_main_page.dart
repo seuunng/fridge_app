@@ -286,55 +286,66 @@ class _RecipeMainPageState extends State<RecipeMainPage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Text('레시피'),
-            Spacer(),
-            Transform.translate(
-              offset: Offset(0, 0),
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent, // 터치 영역을 확장
-                onTap: () {
-                  if (user == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('로그인 하고 레시피를 스크랩해서 관리하세요!'),
-                        duration: Duration(seconds: 2), // 3초간 표시
+      // appBar: AppBar(
+      //   title:
+      // ),
+      body:
+      Column(
+        children: [
+          Row(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Text('레시피',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                    fontSize: 20, // 글자 크기 (기본보다 크게 조정)
+                    fontWeight: FontWeight.bold, // 글자 굵게 설정
+
+                  ),),
+              ),
+              Spacer(),
+              Transform.translate(
+                offset: Offset(0, 0),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent, // 터치 영역을 확장
+                  onTap: () {
+                    if (user == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('로그인 하고 레시피를 스크랩해서 관리하세요!'),
+                          duration: Duration(seconds: 2), // 3초간 표시
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ViewScrapRecipeList(),
                       ),
-                    );
-                    return;
-                  }
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ViewScrapRecipeList(),
+                    ).then((_) {
+                      _searchController.clear(); // 텍스트 필드 초기화
+                    });
+                  },
+                  child: Container(
+                    height: 50, // 터치 가능한 높이를 넉넉히 설정
+                    width: 50, // 터치 가능한 너비를 넉넉히 설정
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.0), // 둥근 모서리 유지
                     ),
-                  ).then((_) {
-                    _searchController.clear(); // 텍스트 필드 초기화
-                  });
-                },
-                child: Container(
-                  height: 50, // 터치 가능한 높이를 넉넉히 설정
-                  width: 50, // 터치 가능한 너비를 넉넉히 설정
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0), // 둥근 모서리 유지
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.bookmark,
-                      size: 30,
-                      color: Theme.of(context).colorScheme.onSurface,
+                    child: Center(
+                      child: Icon(
+                        Icons.bookmark,
+                        size: 30,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Row(

@@ -30,7 +30,7 @@ class BasicElevatedButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(iconTitle,
-          color: theme.colorScheme.primaryContainer,),
+          color: theme.colorScheme.onSurface,),
           SizedBox(width: 8),
           Text(
             buttonTitle,

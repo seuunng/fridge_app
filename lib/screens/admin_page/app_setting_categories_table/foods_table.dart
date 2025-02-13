@@ -425,7 +425,9 @@ class _FoodsTableState extends State<FoodsTable> {
                             contentPadding:
                                 EdgeInsets.only(bottom: 13, left: 20),
                           ),
-                          style: theme.textTheme.bodyMedium,
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurface
+                          ),
                           alignment: Alignment.bottomCenter,
                         ),
                       ),
@@ -484,7 +486,9 @@ class _FoodsTableState extends State<FoodsTable> {
                             contentPadding:
                                 EdgeInsets.only(bottom: 13, left: 20),
                           ),
-                          style: theme.textTheme.bodyMedium,
+                          style:  TextStyle(
+                              color: theme.colorScheme.onSurface
+                          ),
                           alignment: Alignment.bottomCenter,
                         ),
                       ),
@@ -543,7 +547,9 @@ class _FoodsTableState extends State<FoodsTable> {
                             contentPadding:
                                 EdgeInsets.only(bottom: 13, left: 20),
                           ),
-                          style: theme.textTheme.bodyMedium,
+                          style:  TextStyle(
+                              color: theme.colorScheme.onSurface
+                          ),
                           alignment: Alignment.bottomCenter,
                         ),
                       ),

@@ -264,39 +264,24 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
               children: categoryOptions.entries.map((entry) {
                 final category = entry.key;
                 final isSelected = entry.value;
-                return Theme(
-                  data: Theme.of(context).copyWith(
-                    // 민트색으로 반짝하는 효과 없애기, 근데 효과는 없음
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    hoverColor: Colors.transparent,
+                return ChoiceChip(
+                  label: Text(
+                    category,
                   ),
-                  child: ChoiceChip(
-                    label: Text(
-                      category,
-                      style: isSelected
-                          ? theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.chipTheme.secondaryLabelStyle?.color,
-                            )
-                          : theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.chipTheme.labelStyle?.color,
-                            ),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      side: BorderSide(
-                        color: theme.chipTheme.labelStyle?.color ??
-                            Colors.white, // 테두리 색상 빨간색으로 변경
-                        width: 1, // 테두리 두께 조절
-                      ),
-                    ),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      _onCategoryChanged(category, selected);
-                    },
-                    pressElevation: 0, // 터치 시 입체감 없애기
-                    // splashColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    // side: BorderSide(
+                    //   color: theme.chipTheme.labelStyle?.color ??
+                    //       Colors.white, // 테두리 색상 빨간색으로 변경
+                    //   width: 1, // 테두리 두께 조절
+                    // ),
                   ),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    _onCategoryChanged(category, selected);
+                  },
+                  pressElevation: 0, // 터치 시 입체감 없애기
+                  // splashColor: Colors.transparent,
                 );
               }).toList(),
             ),
@@ -316,7 +301,10 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                   children: [
                     Expanded(
                       child: RadioListTile<String>(
-                        title: Text('사용자 지정'),
+                        title: Text('사용자 지정',
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurface
+                          ),),
                         value: '사용자 지정',
                         groupValue: selectedPeriod,
                         onChanged: (String? value) {
@@ -340,7 +328,10 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
                     return SizedBox(
                       width: 80.0,
                       child: RadioListTile<String>(
-                        title: Text(period),
+                        title: Text(period,
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurface
+                          ),),
                         value: period,
                         groupValue: selectedPeriod,
                         onChanged: (String? value) {

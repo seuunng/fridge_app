@@ -93,12 +93,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<PopupMenuEntry<String>> _getPopupMenuItems() {
+    final theme = Theme.of(context);
     switch (_selectedIndex) {
       case 0: // 냉장고 페이지
         return [
           PopupMenuItem<String>(
             value: 'basic_foods_categories_setting',
-            child: Text('기본 식품 카테고리 관리'),
+            child: Text('기본 식품 카테고리 관리',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
           ),
           // PopupMenuItem<String>(
           //   value: 'preferred_foods_categories_setting',
@@ -106,7 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
           // ),
           PopupMenuItem<String>(
             value: 'sort_dialog',
-            child: Text('정렬'),
+            child: Text('정렬',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
           ),
           PopupMenuItem<String>(
             child: InkWell(
@@ -127,7 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     },
                   ),
-                  Text('조미료 숨기기',),
+                  Text('조미료 숨기기',
+    style: TextStyle(
+    color: theme.colorScheme.onSurface
+    ),),
                 ],
               ),
             ),
@@ -137,7 +147,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return [
           PopupMenuItem<String>(
             value: 'basic_foods_categories_setting',
-            child: Text('기본 식품 카테고리 관리'),
+            child: Text('기본 식품 카테고리 관리',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
           ),
           // PopupMenuItem<String>(
           //   value: 'preferred_foods_categories_setting',
@@ -148,18 +161,27 @@ class _HomeScreenState extends State<HomeScreen> {
         return [
           PopupMenuItem<String>(
             value: 'recipe_search_detail_setting',
-            child: Text('검색 상세 설정'),
+            child: Text('검색 상세 설정',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
           ),
         ];
       case 3: // 기록 페이지
         return [
           PopupMenuItem<String>(
             value: 'record_search_detail_setting',
-            child: Text('검색 상세 설정'),
+            child: Text('검색 상세 설정',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
           ),
           PopupMenuItem<String>(
             value: 'record_categories_setting',
-            child: Text('기록 카테고리 관리'),
+            child: Text('기록 카테고리 관리',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
           ),
         ];
       default:
@@ -345,6 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
         title: Text('이따뭐먹지'),
         actions: [
           PopupMenuButton<String>(
@@ -372,7 +395,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Icons.person,
                     color: Theme.of(context).colorScheme.onSurface),
-                title: Text('계정 정보'),
+                title: Text('계정 정보',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   Navigator.pop(context); // 사이드바 닫기
                   Navigator.push(
@@ -386,7 +412,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Icons.system_security_update_good,
                     color: Theme.of(context).colorScheme.onSurface),
-                title: Text('어플 사용 설정'),
+                title: Text('어플 사용 설정',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   Navigator.pop(context); // 사이드바 닫기
                   Navigator.push(
@@ -400,7 +429,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Icons.send,
                     color: Theme.of(context).colorScheme.onSurface),
-                title: Text('문의하기'),
+                title: Text('문의하기',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   final user = FirebaseAuth.instance.currentUser;
 
@@ -424,7 +456,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Icons.campaign,
                     color: Theme.of(context).colorScheme.onSurface),
-                title: Text('공지사항'),
+                title: Text('공지사항',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   Navigator.pop(context); // 사이드바 닫기
                   Navigator.push(
@@ -437,7 +472,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Icons.workspace_premium_outlined,
                     color: Theme.of(context).colorScheme.onSurface),
-                title: Text('프리미엄 전환'),
+                title: Text('프리미엄 전환',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   Navigator.pop(context); // 사이드바 닫기
                   Navigator.push(
@@ -451,7 +489,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Icons.apartment,
                     color: Theme.of(context).colorScheme.onSurface),
-                title: Text('어플 소개'),
+                title: Text('어플 소개',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   Navigator.pop(context); // 사이드바 닫기
                   Navigator.push(
@@ -465,7 +506,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ListTile(
                   leading: Icon(Icons.verified_user,
                       color: Theme.of(context).colorScheme.onSurface),
-                  title: Text('관리자 페이지'),
+                  title: Text('관리자 페이지',
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurface
+                    ),),
                   onTap: () {
                     Navigator.pop(context); // 사이드바 닫기
                     Navigator.push(

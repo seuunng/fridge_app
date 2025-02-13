@@ -9,6 +9,7 @@ import 'package:food_for_later_new/screens/settings/notice_data/data_first.dart'
 class NoticePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     // 최신순으로 정렬된 리스트
     final sortedNotices = List<ModelNotice.Notice>.from(notices)
       ..sort((a, b) => b.date.compareTo(a.date)); // 날짜 기준 내림차순 정렬
@@ -21,10 +22,16 @@ class NoticePage extends StatelessWidget {
         itemBuilder: (context, index) {
           final notice = sortedNotices[index];
           return ListTile(
-            title: Text(notice.title),
+            title: Text(notice.title,
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),),
             subtitle: Text(
               "${notice.date.year}-${notice.date.month.toString().padLeft(
                   2, '0')}-${notice.date.day.toString().padLeft(2, '0')}",
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),
             ),
             onTap: () {
               // 공지사항 상세보기 페이지로 이동

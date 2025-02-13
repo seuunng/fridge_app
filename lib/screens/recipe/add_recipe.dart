@@ -182,10 +182,10 @@ class _AddRecipeState extends State<AddRecipe> {
           .toList();
 
       // ✅ 3. 테마 데이터 가져오기
-      final themesSnapshot =
-          await _db.collection('recipe_thema_categories')
-              .orderBy('priority', descending: false)
-              .get();
+      final themesSnapshot = await _db
+          .collection('recipe_thema_categories')
+          .orderBy('priority', descending: false)
+          .get();
       final List<String> themesData = themesSnapshot.docs
           .map((doc) => doc['categories'] as String)
           .toList();
@@ -235,6 +235,7 @@ class _AddRecipeState extends State<AddRecipe> {
       }
     });
   }
+
   void _confirmAddStep() {
     final theme = Theme.of(context);
     if (stepDescriptionController.text.trim().isNotEmpty ||
@@ -244,15 +245,14 @@ class _AddRecipeState extends State<AddRecipe> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('저장되지 않은 내용이 있습니다.',
-              style: TextStyle(
-                  color: theme.colorScheme.onSurface
-              ),
+            title: Text(
+              '저장되지 않은 내용이 있습니다.',
+              style: TextStyle(color: theme.colorScheme.onSurface),
             ),
-            content: Text('현재 입력된 내용만 저장할까요?',
-              style: TextStyle(
-                  color: theme.colorScheme.onSurface
-              ),),
+            content: Text(
+              '현재 입력된 내용만 저장할까요?',
+              style: TextStyle(color: theme.colorScheme.onSurface),
+            ),
             actions: [
               TextButton(
                 onPressed: () {
@@ -277,6 +277,7 @@ class _AddRecipeState extends State<AddRecipe> {
       _saveRecipe();
     }
   }
+
   // 저장 버튼 누르면 레시피 추가 또는 수정 처리
   void _saveRecipe() async {
     if (isSaving) {
@@ -294,9 +295,10 @@ class _AddRecipeState extends State<AddRecipe> {
         return; // 저장 동작 중단
       }
       if (mainImages.isEmpty) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('메인 이미지를 최소 1장 선택해주세요'),
-          duration: Duration(seconds: 2),));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('메인 이미지를 최소 1장 선택해주세요'),
+          duration: Duration(seconds: 2),
+        ));
         return;
       }
       final hasEmptyUrls = mainImages.any((url) => url.isEmpty);
@@ -347,7 +349,7 @@ class _AddRecipeState extends State<AddRecipe> {
           recipeName: recipeNameController.text,
           steps: stepsWithImages.isNotEmpty ? stepsWithImages : [],
           mainImages: mainImages.isNotEmpty ? mainImages : [],
-          rating : 0.0,
+          rating: 0.0,
         );
         await _db.collection('recipe').doc(newItem.id).set({
           ...newItem.toFirestore(), // 기존 데이터// 현재 시각 추가
@@ -403,6 +405,7 @@ class _AddRecipeState extends State<AddRecipe> {
       return '';
     }
   }
+
   Future<String> uploadStepsImage(File imageFile) async {
     try {
       File compressedFile = await _compressImage(imageFile);
@@ -436,7 +439,7 @@ class _AddRecipeState extends State<AddRecipe> {
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? pickedFile =
-    await picker.pickImage(source: ImageSource.gallery);
+        await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
@@ -446,7 +449,8 @@ class _AddRecipeState extends State<AddRecipe> {
       print('이미지 선택이 취소되었습니다.');
     }
   }
-  void _pickMainImage () async {
+
+  void _pickMainImage() async {
     final ImagePicker picker = ImagePicker();
     final List<XFile>? pickedFiles = await picker.pickMultiImage();
     if (pickedFiles != null) {
@@ -626,66 +630,69 @@ class _AddRecipeState extends State<AddRecipe> {
   Widget _buildMainImagePicker() {
     final theme = Theme.of(context);
     return Row(
-          children: [
-            if (mainImages.isNotEmpty)
-              GestureDetector(
-                onTap: () async {
-                  // 사진을 클릭했을 때 새로운 사진 선택
-                  final ImagePicker picker = ImagePicker();
-                  final XFile? pickedFile =
+      children: [
+        if (mainImages.isNotEmpty)
+          GestureDetector(
+            onTap: () async {
+              // 사진을 클릭했을 때 새로운 사진 선택
+              final ImagePicker picker = ImagePicker();
+              final XFile? pickedFile =
                   await picker.pickImage(source: ImageSource.gallery);
 
-                  if (pickedFile != null) {
-                    // 새 이미지 업로드 및 URL 가져오기
-                    String imageUrl = await uploadMainImage(File(pickedFile.path));
+              if (pickedFile != null) {
+                // 새 이미지 업로드 및 URL 가져오기
+                String imageUrl = await uploadMainImage(File(pickedFile.path));
 
-                    if (imageUrl.isNotEmpty) {
-                      setState(() {
-                        mainImages[0] = imageUrl; // 첫 번째 이미지를 새로운 이미지로 교체
-                      });
-                    }
-                  }
-                }, // 사진 선택 기능
-                child: Stack(
-                  children: [
-                    Image.network(
-                      mainImages.first, // 첫 번째 이미지만 표시
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(Icons.error, color: theme.colorScheme.onSurface);
-                      },
-                    ),
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            mainImages.clear(); // 기존 이미지 삭제
-                          });
-                        },
-                        child: Container(
-                          color: theme.colorScheme.primary,
-                          child: Icon(Icons.close, size: 18, color: theme.colorScheme.onPrimary),
-                        ),
-                      ),
-                    ),
-                  ],
+                if (imageUrl.isNotEmpty) {
+                  setState(() {
+                    mainImages[0] = imageUrl; // 첫 번째 이미지를 새로운 이미지로 교체
+                  });
+                }
+              }
+            }, // 사진 선택 기능
+            child: Stack(
+              children: [
+                Image.network(
+                  mainImages.first, // 첫 번째 이미지만 표시
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.error,
+                        color: theme.colorScheme.onSurface);
+                  },
                 ),
-              )
-            else // 이미지가 없을 때 카메라 아이콘 표시
-              IconButton(
-                icon: Icon(Icons.camera_alt_outlined, color: theme.colorScheme.onSurface),
-                onPressed: _pickMainImage,
-              ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _buildTextField('레시피 이름', recipeNameController, maxLength: 20),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        mainImages.clear(); // 기존 이미지 삭제
+                      });
+                    },
+                    child: Container(
+                      color: theme.colorScheme.primary,
+                      child: Icon(Icons.close,
+                          size: 18, color: theme.colorScheme.onPrimary),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        );
+          )
+        else // 이미지가 없을 때 카메라 아이콘 표시
+          IconButton(
+            icon: Icon(Icons.camera_alt_outlined,
+                color: theme.colorScheme.onSurface),
+            onPressed: _pickMainImage,
+          ),
+        SizedBox(width: 8),
+        Expanded(
+          child: _buildTextField('레시피 이름', recipeNameController, maxLength: 20),
+        ),
+      ],
+    );
   }
 
   Widget buildImage(String imagePath) {
@@ -780,18 +787,17 @@ class _AddRecipeState extends State<AddRecipe> {
                     child: Chip(
                       label: Text(
                         item, // 선택된 항목은 글씨 색을 흰색으로
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isSelected
-                              ? theme.chipTheme.secondaryLabelStyle!.color
-                              : theme.chipTheme.labelStyle!.color,
-                        ),
+                        // style: theme.textTheme.bodyMedium?.copyWith(
+                        //   color: isSelected
+                        //       ? theme.chipTheme.secondaryLabelStyle!.color
+                        //       : theme.chipTheme.labelStyle!.color,
+                        // ),
                       ),
                       backgroundColor: isSelected
                           ? theme.chipTheme.selectedColor
                           : theme.chipTheme.backgroundColor,
                       padding: EdgeInsets.symmetric(
-                          horizontal: 1.0,
-                          vertical: 0.0), // 글자와 테두리 사이의 여백 줄이기
+                          horizontal: 1.0, vertical: 0.0), // 글자와 테두리 사이의 여백 줄이기
                       labelPadding: EdgeInsets.symmetric(
                           horizontal: 1.0), // 글자와 칩 사이의 여백 줄이기
                     ),
@@ -873,14 +879,25 @@ class _AddRecipeState extends State<AddRecipe> {
       runSpacing: -8.0, // 칩 간의 세로 간격을 줄임
       children: selectedItems.map((item) {
         return Chip(
-          label: Text(item,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.chipTheme.labelStyle!.color)),
+          label: Text(
+            item,
+            // style: theme.textTheme.bodyMedium
+            //     ?.copyWith(color: theme.chipTheme.labelStyle!.color)
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            // side: BorderSide(
+            //   color: theme.chipTheme.labelStyle?.color ??
+            //       Colors.white, // 테두리 색상 빨간색으로 변경
+            //   width: 1, // 테두리 두께 조절
+            // ),
+          ),
           padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
           labelPadding: EdgeInsets.symmetric(horizontal: 0.0, vertical: 0.0),
           deleteIcon: Padding(
             padding: EdgeInsets.all(0.0), // 상하좌우 여백
-            child: Icon(Icons.close, size: 16, color: theme.colorScheme.onSurface),
+            child:
+                Icon(Icons.close, size: 16, color: theme.colorScheme.onSurface),
           ),
           onDeleted: () {
             setState(() {
@@ -941,46 +958,52 @@ class _AddRecipeState extends State<AddRecipe> {
           child: Row(
             children: filteredItems.map((item) {
               final bool isSelected = selectedItems.contains(item);
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    if (isSelected) {
-                      // 선택된 경우 해제
-                      selectedItems.remove(item);
-                    } else {
-                      // 선택되지 않았고 최대 개수에 도달하지 않았을 때 추가
-                      if (selectedItems.length < maxCount) {
-                        selectedItems.add(item);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content:
-                              Text('$title는 최대 $maxCount개까지만 선택 가능합니다.')),
-                        );
-                      }
-                    }
-                  });
-                },
-                child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 2.0), // 칩들 간의 간격
-                  child: Chip(
-                    label: Text(
-                      item,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isSelected
-                            ? theme.chipTheme.secondaryLabelStyle!.color
-                            : theme.chipTheme.labelStyle!
-                                .color, // 선택된 항목은 글씨 색을 흰색으로
-                      ),
+
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: 1.0), // 칩 간 간격 조정
+                child: ChoiceChip(
+                  label: Text(
+                    item,
+                    style: TextStyle(
+                      // color: isSelected
+                      //     ? Colors.white // 선택된 칩의 글씨 색
+                      //     : Colors.black, // 선택되지 않은 칩의 글씨 색
                     ),
-                    backgroundColor: isSelected
-                        ? theme.chipTheme.selectedColor
-                        : theme.chipTheme.backgroundColor,
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 4.0, vertical: 0.0), // 글자와 테두리 사이의 여백 줄이기
-                    labelPadding: EdgeInsets.symmetric(
-                        horizontal: 4.0), // 글자와 칩 사이의 여백 줄이기
                   ),
+                  selected: isSelected, // ✅ `selected` 속성 필수
+                  onSelected: (bool selected) {
+                    setState(() {
+                      if (selected) {
+                        if (selectedItems.length < maxCount) {
+                          selectedItems.add(item);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text('$title는 최대 $maxCount개까지만 선택 가능합니다.'),
+                            ),
+                          );
+                        }
+                      } else {
+                        selectedItems.remove(item);
+                      }
+                    });
+                  },
+                  // selectedColor: Colors.blue, // ✅ 선택된 칩의 배경색
+                  // backgroundColor: Colors.grey[200], // ✅ 기본 배경색
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0), // ✅ 칩의 둥근 모서리
+                  //   side: BorderSide(
+                  //     color: isSelected
+                  //         ? Colors.blue
+                  //         : Colors.grey, // ✅ 선택 여부에 따른 테두리 색
+                  //     width: 1.5, // ✅ 테두리 두께 조정
+                  //   ),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 0.0, vertical: 0.0), // ✅ 칩 내부 패딩 조정
+                  labelPadding:
+                      EdgeInsets.symmetric(horizontal: 8.0), // ✅ 글자와 칩 사이 여백 조정
                 ),
               );
             }).toList(),
@@ -1200,12 +1223,12 @@ class _AddRecipeState extends State<AddRecipe> {
       return;
     }
     bool isDuplicate = stepsWithImages.any((step) =>
-    step['description'] == stepDescriptionController.text.trim() &&
+        step['description'] == stepDescriptionController.text.trim() &&
         step['image'] == imageUrl);
     print(imageUrl);
     if (isDuplicate) {
       setState(() {
-        isUploading =  false; // 업로드 상태 시작
+        isUploading = false; // 업로드 상태 시작
       });
       return;
     }

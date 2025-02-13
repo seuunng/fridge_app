@@ -196,10 +196,11 @@ class ThemeProvider extends ChangeNotifier {
         surface: Colors.black, //카드와 같은 표면 색상, 하단 네브바
         onSurface: Colors.white, //드롭박스, 사이드바
         brightness: Brightness.dark),
+    useMaterial3: false, // Material 3 사용 비활성화 (elevationOverlayColor 비활성화)
   );
 
   final ThemeData blueTheme = ThemeData(
-    brightness: Brightness.light,
+    brightness: Brightness.dark,
     primaryColor: Color(0xFF3F668F),
     scaffoldBackgroundColor: Color(0xCF5E7891),
     appBarTheme: AppBarTheme(
@@ -208,13 +209,13 @@ class ThemeProvider extends ChangeNotifier {
       titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
     ),
     drawerTheme: DrawerThemeData(
-      backgroundColor: Color(0xFF05264E),
-      scrimColor: Color(0xCF5E7891), // Drawer 열릴 때 배경을 덮는 색상
+      backgroundColor: Color(0xCF4A5F77),
+      scrimColor: Color(0xCF5E7891),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      selectedItemColor: Color(0xFFC3D0D5), // 선택된 아이콘 색상
-      unselectedItemColor: Color(0xFF05264E), // 선택되지 않은 아이콘 색상
-      backgroundColor: Color(0xFF3F668F), // 네비게이션 바 배경색
+      selectedItemColor: Color(0xFFC3D0D5),
+      unselectedItemColor: Color(0xFF05264E),
+      backgroundColor: Color(0xFF3F668F),
     ),
     buttonTheme: ButtonThemeData(
       buttonColor: Color(0xFF3F668F),
@@ -252,29 +253,30 @@ class ThemeProvider extends ChangeNotifier {
         onSecondary: Color(0xFF05264E), // 캘렌더 컬러박스 글씨
         surface: Color(0xFF3F668F), //카드와 같은 표면 색상, 하단 네브바
         onSurface: Color(0xFFC3D0D5), //드롭박스, 사이드바
-        brightness: Brightness.light),
+        brightness: Brightness.dark),
+    useMaterial3: false, // Material 3 사용 비활성화 (elevationOverlayColor 비활성화)
   );
 
   final ThemeData greenTheme = ThemeData(
     brightness: Brightness.dark,
-    primaryColor: Color(0xFF19411C),
-    scaffoldBackgroundColor: Color(0xFF28432B),
+    primaryColor: Color(0xFF19411C), // ????
+    scaffoldBackgroundColor: Color(0xFF28432B), //배경색, 사이드바 배경
     appBarTheme: AppBarTheme(
-      color: Color(0xFF0D2514),
-      iconTheme: IconThemeData(color: Color(0xFFA7AFAB)),
-      titleTextStyle: TextStyle(color: Color(0xFFA7AFAB), fontSize: 20),
+      color: Color(0xFF19411C), //앱바
+      iconTheme: IconThemeData(color: Color(0xFFA7AFAB)), //앱바의 기본 아이콘만
+      titleTextStyle: TextStyle(color: Color(0xFFA7AFAB), fontSize: 20),//앱바의 텍스트만
     ),
     drawerTheme: DrawerThemeData(
-      backgroundColor: Color(0xFF0D2514),
+      backgroundColor: Color(0xFF19411C), //사이드바의 제목 배경
       scrimColor: Color(0x6F19411C), // Drawer 열릴 때 배경을 덮는 색상
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      selectedItemColor: Color(0xFFA7AFAB), // 선택된 아이콘 색상
-      unselectedItemColor: Color(0xFF0D2514), // 선택되지 않은 아이콘 색상
-      backgroundColor: Color(0xFF19411C), // 네비게이션 바 배경색
+      selectedItemColor: Color(0xFFC4CCC6), // 네브바의 선택된 아이콘 색상
+      unselectedItemColor: Color(0xFF858886), // 네브바의 선택되지 않은 아이콘 색상
+      backgroundColor: Color(0xFF19411C), // 네브바 배경색
     ),
     buttonTheme: ButtonThemeData(
-      buttonColor: Color(0xFF19411C),
+      buttonColor: Color(0xFF19411C), // ????
       textTheme: ButtonTextTheme.primary,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -284,16 +286,17 @@ class ThemeProvider extends ChangeNotifier {
       ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      //플로팅버튼 스타일
-      backgroundColor: Color(0xFF19411C), // 기본 색상 설정
-      foregroundColor: Color(0xFFA7AFAB), // 아이콘 색상
+      backgroundColor: Color(0xFF19411C), // 플로팅 버튼의 배경색
+      foregroundColor: Color(0xFFA7AFAB), // 플로팅 버튼의 아이콘 색??
+      //플로팅 버튼의 텍스트 색?
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: Color(0xFF19411C), // 기본 배경색
-      labelStyle: TextStyle(color: Color(0xFFA7AFAB)), // 기본 텍스트
-      selectedColor: Color(0xFF0D2514), // 선택된 칩의 배경색
-      secondaryLabelStyle: TextStyle(color: Color(0xFFA7AFAB)), // 선택된 칩 텍스트 색상
-      disabledColor: Colors.grey[500],
+      backgroundColor: Color(0xFF19411C), // 그리드 배경(냉장고 메인 제외), 칩 배경
+      labelStyle: TextStyle(color: Color(0xFFA7AFAB)), // 그리드 텍스트(냉장고 메인 제외), 칩 텍스트 및 테두리
+      selectedColor: Color(0xFFA7AFAB), // 선택된 칩의 배경색
+      secondaryLabelStyle: TextStyle(color: Color(0xFF19411C)), // 선택된 칩 텍스트 색상
+      disabledColor: Colors.grey[500], //비활성화된 그리드 배경
+      // 비활성화된 그리드의 텍스트색???
     ),
     // cardColor: Colors.blue[100],
     textTheme: TextTheme(
@@ -301,15 +304,21 @@ class ThemeProvider extends ChangeNotifier {
       titleLarge: TextStyle(color: Color(0xFFA7AFAB)),
     ),
     colorScheme: ColorScheme.dark().copyWith(
-        primary: Color(0xFFA7AFAB), // 주요 배경색
-        onPrimary: Color(0xFF0D2514), // 주요 배경위 텍스트나 아이콘색
-        primaryContainer: Color(0xFFA7AFAB), //primary와 유사한 색상이지만, 더 연한 버전
+      // 로딩아이콘 색, 텍스트버튼 색, 달력강조색(오늘날짜, 선택한날 배경), 선택된 텍스트필드 힌트 텍스트 및 밑줄
+        primary: Color(0xFFA7AFAB),
+        // 달력강조 반전색(선택한날 날짜)
+        onPrimary: Color(0xFF19411C),
+        primaryContainer: Color(0xFFA7AFAB),
         onPrimaryContainer: Color(0xFFA7AFAB),
-        secondary: Color(0xFFA7AFAB), // 캘린더 오늘,
-        onSecondary: Color(0xFF0D2514), // 캘렌더 컬러박스 글씨
+        // 기록 캘렌더형 컬러박스 배경, 레시피 메인 탭버튼 선택밑줄
+        secondary: Color(0xFFA7AFAB),
+        // 기록 캘렌더형 컬러박스 텍스트, 기록 텍스트, 주간 날짜, 월간 오늘 날짜
+        onSecondary: Color(0xFF0D2514),
         surface: Color(0xFF19411C), //카드와 같은 표면 색상, 하단 네브바, 드롭다운 배경
+        // 모든 글씨
         onSurface: Color(0xFFA7AFAB), //드롭박스, 사이드바
         brightness: Brightness.dark),
+    useMaterial3: false, // Material 3 사용 비활성화 (elevationOverlayColor 비활성화)
   );
 
   final ThemeData brownTheme = ThemeData(
@@ -365,6 +374,7 @@ class ThemeProvider extends ChangeNotifier {
         surface: Color(0xFFE5D8C9), //카드와 같은 표면 색상, 하단 네브바
         onSurface: Color(0xFF2C1803), //드롭박스, 사이드바
         brightness: Brightness.light),
+    useMaterial3: false, // Material 3 사용 비활성화 (elevationOverlayColor 비활성화)
   );
 
   final ThemeData pinkTheme = ThemeData(
@@ -424,6 +434,7 @@ class ThemeProvider extends ChangeNotifier {
         surface: Color(0xFFE2A69E), //카드와 같은 표면 색상
         onSurface: Color(0xFF5E4F4C), //드롭박스, 사이드바
         brightness: Brightness.light),
+    useMaterial3: false, // Material 3 사용 비활성화 (elevationOverlayColor 비활성화)
   );
 
   // 현재 선택된 테마를 반환하는 메서드

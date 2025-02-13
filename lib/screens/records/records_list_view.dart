@@ -302,11 +302,14 @@ class _RecordsListViewState extends State<RecordsListView> {
                                                   color: theme.colorScheme.onSurface),
                                             ),
                                             SizedBox( width: 4),
-                                            Text(
-                                              rec.contents ?? 'Unknown contents',
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: theme.colorScheme.onSurface),
+                                            Expanded(
+                                              child: Text(
+                                                rec.contents ?? 'Unknown contents',
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: theme.colorScheme.onSurface),
+                                                overflow: TextOverflow.ellipsis, // 👉 텍스트가 길면 "..."으로 표시
+                                              ),
                                             ),
                                           ],
                                         ),
