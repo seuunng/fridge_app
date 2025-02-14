@@ -203,7 +203,9 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                       hintText: '닉네임을 입력하세요',
                       border: OutlineInputBorder(),
                     ),
-                    style: TextStyle(color: theme.chipTheme.labelStyle!.color),
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurface
+                    ),
                   ),
                 ),
                   ],
@@ -215,9 +217,14 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface)),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Expanded(
+                    Flexible(
+                      flex: 1,
                       child: RadioListTile<String>(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true, // 타일 크기 최소화
+                        visualDensity: VisualDensity(horizontal: -4, vertical: -4),
                         title: Text('남성',
                           style: TextStyle(
                               color: theme.colorScheme.onSurface
@@ -231,8 +238,12 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                         },
                       ),
                     ),
-                    Expanded(
+                    Flexible(
+                      flex: 1,
                       child: RadioListTile<String>(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true, // 타일 크기 최소화
+                        visualDensity: VisualDensity(horizontal: -4, vertical: -4),
                         title: Text('여성',
                           style: TextStyle(
                               color: theme.colorScheme.onSurface
@@ -246,8 +257,12 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                         },
                       ),
                     ),
-                    Expanded(
+                    Flexible(
+                      flex: 2,
                       child: RadioListTile<String>(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true, // 타일 크기 최소화
+                        visualDensity: VisualDensity(horizontal: -4, vertical: -4),
                         title: Text('선택하지 않음',
                           style: TextStyle(
                               color: theme.colorScheme.onSurface
@@ -288,8 +303,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                         Text(
                           _birthYear == null ? '선택하지 않음' : '$_birthYear',
                           style: TextStyle(
-                            fontSize: 18,
-                            color: theme.chipTheme.labelStyle!.color,
+                              color: theme.colorScheme.onSurface
                           ),
                         ),
                         Icon(Icons.arrow_drop_down),

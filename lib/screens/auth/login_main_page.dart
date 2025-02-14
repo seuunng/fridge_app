@@ -527,9 +527,9 @@ class _LoginPageState extends State<LoginPage> {
                     TextField(
                       controller: _emailController,
                       focusNode: _emailFocusNode, // 이메일 입력 필드와 포커스 노드 연결
-                      maxLength: 64, // 이메일 최대 길이 제한
+                      maxLength: 64,
                       style: TextStyle(
-                          color: theme.chipTheme.labelStyle!.color
+                          color: theme.colorScheme.onSurface
                       ),
                       decoration: InputDecoration(
                           labelText: '이메일',
@@ -540,7 +540,7 @@ class _LoginPageState extends State<LoginPage> {
                       focusNode: _passwordFocusNode,
                       maxLength: 32, // 이메일 최대 길이 제한
                       style: TextStyle(
-                          color: theme.chipTheme.labelStyle!.color
+                          color: theme.colorScheme.onSurface
                       ),
                       decoration: InputDecoration(labelText: '비밀번호',counterText: '',),
                       obscureText: true,

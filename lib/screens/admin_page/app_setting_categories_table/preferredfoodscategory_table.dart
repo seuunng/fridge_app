@@ -712,7 +712,9 @@ class _PreferredfoodscategoryTableState
           content: TextField(
             controller: categoryController,
             decoration: InputDecoration(hintText: '카테고리 이름 입력'),
-            style: TextStyle(color: theme.chipTheme.labelStyle!.color),
+            style: TextStyle(
+                color: theme.colorScheme.onSurface
+            ),
           ),
           actions: [
             TextButton(

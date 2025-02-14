@@ -149,8 +149,9 @@ class _AdminFeedbackManagementState extends State<AdminFeedbackManagement> {
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              style:
-              TextStyle(color: theme.chipTheme.labelStyle!.color),
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),
               onChanged: (query) {
                 setState(() {
                   searchQuery = query;

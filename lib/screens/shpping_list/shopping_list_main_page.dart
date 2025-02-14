@@ -53,6 +53,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   void initState() {
     super.initState();
     _loadItemsFromFirestore(userId);
+    print('initState() 에서 _loadItemsFromFirestore 실행');
     _loadCategoriesFromFirestore();
     _loadFridgeCategoriesFromFirestore(userId).then((_) {
       // _loadSelectedFridge(); // 🔹 냉장고 목록을 불러온 후 기본값 설정
@@ -67,21 +68,34 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   void didPopNext() {
     super.didPopNext();
     stopShoppingListDeleteMode();
-    _loadItemsFromFirestore(userId);
   }
 
   @override
   void dispose() {
     routeObserver.unsubscribe(this); // routeObserver 구독 해제
-    // _loadSelectedFridge();
     super.dispose();
   }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    print('🔄 didChangeDependencies() 실행됨, 쇼핑 리스트 데이터 다시 불러오기');
+    _loadItemsFromFirestore(userId).then((_) {
+      if (mounted) {
+        setState(() {}); // ✅ 올바르게 닫음
+      }
+    });
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
+  void refreshShoppingList() {
+    print("🛒 장보기 목록 새로고침 실행");
+    _loadItemsFromFirestore(userId);
+    if (mounted) {
+      setState(() {}); // UI 강제 갱신
+    }
+  }
+
+
+
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -117,7 +131,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
       print('냉장고 ID 로드 중 오류 발생: $e');
     }
   }
-  void _loadItemsFromFirestore(String userId) async {
+  Future<void> _loadItemsFromFirestore(String userId) async {
     try {
       // 🔹 Firestore에서 쇼핑 목록 가져오기 (현재 유저의 데이터만 필터링)
       final snapshot = await FirebaseFirestore.instance
@@ -167,6 +181,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
       // 🔹 쇼핑 카테고리 기준으로 그룹화
       setState(() {
+        itemLists.clear(); // ✅ 기존 데이터 초기화
         itemLists = _groupItemsByShoppingCategory(allItems);
 
         allItems.forEach((item) {
@@ -359,6 +374,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   }
 
   Future<void> _addItemsToFridge() async {
+    Set<String> duplicateItems = {}; // 중복된 아이템 목록 저장
     // final fridgeId = selected_fridgeId;
 
     // if (fridgeId == null) {
@@ -399,6 +415,18 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
             }
 
             final fridgeCategoryId = foodData?['defaultFridgeCategory'] ?? '냉장';
+// 🔍 3. `fridge_items`에서 동일한 아이템이 있는지 확인
+            final existingItemSnapshot = await FirebaseFirestore.instance
+                .collection('fridge_items')
+                .where('items', isEqualTo: itemName)
+                .where('FridgeId', isEqualTo: selected_fridgeId) // 같은 냉장고 내에서 중복 확인
+                .get();
+
+            if (existingItemSnapshot.docs.isNotEmpty) {
+              // print('⚠️ 중복 아이템: $itemName -> 이미 냉장고에 있음');
+              duplicateItems.add(itemName); // 중복된 아이템 추가
+              continue; // ❌ 이미 있으면 추가하지 않음
+            }
 
             // 🔹 3. 냉장고에 추가
             await FirebaseFirestore.instance.collection('fridge_items').add({
@@ -413,6 +441,25 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
             await _deleteShoppingItem(itemName);
           }
         }
+      }
+      for (var duplicate in duplicateItems) {
+        await _deleteShoppingItem(duplicate);
+      }
+      await _loadItemsFromFirestore(userId).then((_) {
+        if (mounted) {
+          setState(() {}); // UI 갱신
+        }
+      });
+      if (duplicateItems.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${duplicateItems.join(', ')}은(는) 이미 냉장고에 있는 아이템입니다.',
+              style: TextStyle(fontSize: 14),
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
       print('아이템 추가 중 오류 발생: $e');
@@ -705,16 +752,20 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
                           Expanded(
                             child: NavbarButton(
                               buttonTitle: '냉장고로 이동',
-                              onPressed: () {
+                              onPressed: () async {
                                 _addItemsToFridge();
-                                Navigator.push(
+                                await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) => HomeScreen()
                                   ),
-                                ).then((_) {
-                                // 🔹 Navigator.pop 후 다시 돌아왔을 때 데이터 로드
-                                _loadItemsFromFirestore(userId);
+                                );
+
+                                Future.delayed(Duration(milliseconds: 100), () async {
+                                  await _loadItemsFromFirestore(userId);
+                                  if (mounted) {
+                                    setState(() {}); // ✅ UI 강제 갱신
+                                  }
                                 });
                               },
                             ),

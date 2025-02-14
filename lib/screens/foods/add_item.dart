@@ -620,7 +620,7 @@ class _AddItemState extends State<AddItem> {
                             vertical: 8.0, horizontal: 10.0),
                       ),
                       style:
-                          TextStyle(color: theme.chipTheme.labelStyle!.color),
+                          TextStyle(color: theme.colorScheme.onSurface),
                       onChanged: (value) {
                         _searchItems(value); // 검색어 입력 시 아이템 필터링
                       },

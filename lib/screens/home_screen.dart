@@ -89,6 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _shoppingListMainPageKey.currentState?.stopShoppingListDeleteMode();
         _selectedIndex = index;
       });
+      if (index == 1) { // 🛒 장보기 목록 페이지 선택 시 강제 새로고침
+        _shoppingListMainPageKey.currentState?.refreshShoppingList();
+      }
     }
   }
 
@@ -535,10 +538,17 @@ class _HomeScreenState extends State<HomeScreen> {
             label: '냉장고',
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart), label: '장보기'),
-          BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: '레시피'),
+              icon: Icon(Icons.shopping_cart),
+              label: '장보기'
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.drive_file_rename_outline_rounded), label: '기록'),
+              icon: Icon(Icons.restaurant),
+              label: '레시피'
+          ),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.drive_file_rename_outline_rounded),
+              label: '기록'
+          ),
         ],
         currentIndex: _selectedIndex, // 현재 선택된 탭
         onTap: _onItemTapped, // 탭 선택시 호출될 함수

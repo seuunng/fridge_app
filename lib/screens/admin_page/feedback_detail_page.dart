@@ -302,8 +302,8 @@ class _FeedbackDetailPageState extends State<FeedbackDetailPage> {
               TextField(
                 controller: _confirmationController,
                 style: TextStyle(
-                    color: theme.chipTheme.labelStyle!
-                        .color), // Controller를 사용하여 초기 값 설정
+                    color: theme.colorScheme.onSurface
+                ), // Controller를 사용하여 초기 값 설정
                 onChanged: (value) {
                   setState(() {
                     confirmationNote = value; // 확인사항 업데이트

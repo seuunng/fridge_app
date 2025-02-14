@@ -1354,7 +1354,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
                   border: OutlineInputBorder(), // 입력 필드에 테두리 추가
                 ),
                 style:
-                TextStyle(color: theme.chipTheme.labelStyle!.color),
+                TextStyle(color: theme.colorScheme.onSurface),
               ),
               actions: [
                 TextButton(
