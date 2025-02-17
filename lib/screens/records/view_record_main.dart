@@ -182,7 +182,8 @@ class _ViewRecordMainState extends State<ViewRecordMain> with RouteAware {
                   // 가운데 페이지 제목
                   Text(
                     _getPageTitle(), // 페이지 제목 함수 호출
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400,
+                      color: theme.colorScheme.onSurface,),
                   ),
 
                   // 오른쪽 화살표 버튼

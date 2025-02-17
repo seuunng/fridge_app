@@ -17,7 +17,7 @@ class _AdminAppSettingsManagementState
     Tab(text: '식품 목록'),
     Tab(text: '테마별 카테고리'),
     Tab(text: '조리방법별 카테고리'),
-    Tab(text: '제외 키워드 카테고리'),
+    // Tab(text: '제외 키워드 카테고리'),
   ];
 
   @override
@@ -39,7 +39,7 @@ class _AdminAppSettingsManagementState
                 SingleChildScrollView(child: FoodsTable()),
                 SingleChildScrollView(child: ThemeTable()),
                 SingleChildScrollView(child: HowtocookTable()),
-                SingleChildScrollView(child: PreferredfoodscategoryTable()),
+                // SingleChildScrollView(child: PreferredfoodscategoryTable()),
               ],
             );
           }

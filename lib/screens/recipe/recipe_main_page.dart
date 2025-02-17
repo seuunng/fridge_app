@@ -80,6 +80,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
 
   Future<Map<String, List<String>>> _fetchFoods() async {
     Map<String, List<String>> categoryMap = {};
+    Set<String> userFoodIds = {}; // 사용자가 수정한 default_foods의 ID 목록
     Set<String> userFoodNames = {}; // 사용자가 수정한 식품명을 저장
 
     try {
@@ -93,9 +94,13 @@ class _RecipeMainPageState extends State<RecipeMainPage>
         final data = doc.data();
         final category = data['defaultCategory'] as String?;
         final foodName = data['foodsName'] as String?;
+        final defaultFoodsDocId = data['defaultFoodsDocId'] as String?;
 
         if (category != null && foodName != null) {
           userFoodNames.add(foodName); // 사용자 식품 저장
+          if (defaultFoodsDocId != null) {
+            userFoodIds.add(defaultFoodsDocId); // 수정된 기본 식품 ID 저장
+          }
 
           if (categoryMap.containsKey(category)) {
             categoryMap[category]!.add(foodName);
@@ -113,10 +118,11 @@ class _RecipeMainPageState extends State<RecipeMainPage>
         final data = doc.data();
         final category = data['defaultCategory'] as String?;
         final foodName = data['foodsName'] as String?;
+        final foodId = doc.id; // default_foods의 문서 ID
 
         if (category != null && foodName != null) {
           // ✅ 사용자가 수정한 데이터에 없는 경우만 추가
-          if (!userFoodNames.contains(foodName)) {
+          if (!userFoodIds.contains(foodId) && !userFoodNames.contains(foodName)) {
             if (categoryMap.containsKey(category)) {
               categoryMap[category]!.add(foodName);
             } else {

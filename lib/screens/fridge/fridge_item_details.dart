@@ -10,6 +10,7 @@ import 'package:food_for_later_new/models/shopping_category_model.dart';
 import 'package:intl/intl.dart';
 
 class FridgeItemDetails extends StatefulWidget {
+  final String foodsId;
   final String foodsName;
   final String foodsCategory;
   final String fridgeCategory;
@@ -18,6 +19,7 @@ class FridgeItemDetails extends StatefulWidget {
   final String registrationDate;
 
   FridgeItemDetails({
+    required this.foodsId,
     required this.foodsName,
     required this.foodsCategory,
     required this.fridgeCategory,
@@ -58,6 +60,7 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
   void initState() {
     super.initState();
     dateController.text = DateFormat('yyyy-MM-dd').format(currentDate);
+    foodNameController.text = widget.foodsName; // ✅ 추가: 초기값 설정
     _loadFoodsCategoriesFromFirestore();
     _loadFridgeCategoriesFromFirestore();
     _loadShoppingListCategoriesFromFirestore();
@@ -177,8 +180,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
       setState(() {
         fridgeCategories = [...defaultCategories, ...userCategories]; // 합쳐서 저장
       });
-print('widget.fridgeCategory');
-print(widget.fridgeCategory);
+// print('widget.fridgeCategory');
+// print(widget.fridgeCategory);
       selectedFridgeCategory = fridgeCategories.firstWhere(
         (category) => category.categoryName == widget.fridgeCategory,
         orElse: () => FridgeCategory(
@@ -205,12 +208,13 @@ print(widget.fridgeCategory);
       shoppingListCategories = categories;
 
       selectedShoppingListCategory = shoppingListCategories.firstWhere(
-        (category) => category.categoryName == widget.shoppingListCategory,
-        orElse: () => ShoppingCategory(
-          // 기본 ShoppingCategory 반환
-          id: 'unknown',
-          categoryName: '',
-        ),
+        (category) => category.categoryName.trim() == widget.shoppingListCategory.trim(),
+        orElse:  () {
+          return ShoppingCategory(
+            id: 'unknown',
+            categoryName: '', // 🔹 확인용 메시지 변경
+          );
+        },
       );
     });
   }
@@ -231,6 +235,112 @@ print(widget.fridgeCategory);
       });
     }
   }
+  void savedDetails() async {
+      if (userRole != 'admin' && userRole != 'paid_user') {
+        // 🔹 일반 사용자는 냉장고 추가 불가능
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('프리미엄 서비스를 이용하면 상세내용을 수정하여 나만의 식재료 관리를 할 수 있어요!'),
+            duration: Duration(seconds: 2),),
+        );
+        return;
+      }
+
+      try {
+        String? defaultFoodsDocId;
+        Map<String, dynamic>? foodData;
+
+        // 🔹 1️⃣ 먼저 default_foods에서 widget.foodsId로 검색
+        final defaultFoodsSnapshot = await FirebaseFirestore.instance
+            .collection('default_foods')
+            .doc(widget.foodsId)
+            .get();
+
+        if (defaultFoodsSnapshot.exists) {
+          // ✅ 존재하면 해당 ID 그대로 사용
+          defaultFoodsDocId = defaultFoodsSnapshot.id;
+          foodData = defaultFoodsSnapshot.data();
+          print("✅ default_foods에서 찾음: $defaultFoodsDocId");
+        } else {
+          // 🔹 2️⃣ 존재하지 않으면 foods에서 검색
+          final foodsSnapshot = await FirebaseFirestore.instance
+              .collection('foods')
+              .doc(widget.foodsId)
+              .get();
+
+          if (foodsSnapshot.exists) {
+            // ✅ foods 문서에 defaultFoodsDocId가 있으면 사용
+            foodData = foodsSnapshot.data();
+            defaultFoodsDocId = foodData?['defaultFoodsDocId'];
+
+            if (defaultFoodsDocId != null) {
+              print("✅ foods에서 찾음: defaultFoodsDocId = $defaultFoodsDocId");
+            } else {
+              print("❌ foods에서 찾았지만 defaultFoodsDocId 없음");
+            }
+          } else {
+            print("❌ foods 및 default_foods에서 찾을 수 없음: ${widget.foodsId}");
+          }
+        }
+
+        print("🧐 최종 defaultFoodsDocId: $defaultFoodsDocId");
+
+        // ✅ 2️⃣ foods 컬렉션에서 defaultFoodsDocId 기준으로 검색
+        QuerySnapshot foodsQuerySnapshot = await FirebaseFirestore.instance
+            .collection('foods')
+            .where('defaultFoodsDocId', isEqualTo: defaultFoodsDocId)
+            .where('userId', isEqualTo: userId)
+            .get();
+
+        // 식품 데이터 수집
+        final updatedData = {
+          'foodsName': foodNameController.text.trim(),
+          'defaultCategory': selectedFoodsCategory?.defaultCategory ?? '',
+          'defaultFridgeCategory': selectedFridgeCategory?.categoryName ?? '',
+          'shoppingListCategory': selectedShoppingListCategory?.categoryName ?? '',
+          'shelfLife': consumptionDays,
+          'userId': userId,
+          'defaultFoodsDocId': defaultFoodsDocId,
+        };
+
+        if (foodsQuerySnapshot.docs.isNotEmpty) {
+          // ✅ foods 문서가 존재하면 업데이트
+          final doc = foodsQuerySnapshot.docs.first;
+          await FirebaseFirestore.instance
+              .collection('foods')
+              .doc(doc.id)
+              .update(updatedData);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('데이터를 수정했습니다.'), duration: Duration(seconds: 2)),
+          );
+          print("✅ 기존 foods 문서 업데이트 완료: ${doc.id}");
+        } else {
+          // ❌ 문서가 없으면 새로 추가
+          DocumentReference newDocRef = await FirebaseFirestore.instance
+              .collection('foods')
+              .add(updatedData);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('데이터를 추가했습니다.'), duration: Duration(seconds: 2)),
+          );
+          print("✅ 새로운 foods 문서 추가됨: ${newDocRef.id}");
+        }
+
+        // ✅ UI 갱신
+        setState(() {
+          foodNameController.text = foodNameController.text.trim();
+        });
+
+        Navigator.pop(context);
+      } catch (e) {
+        print('Error updating data: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터 저장 중 오류가 발생했습니다.'),
+            duration: Duration(seconds: 2),),
+        );
+      }
+    }
+
 
   @override
   Widget build(BuildContext context) {
@@ -288,8 +398,8 @@ print(widget.fridgeCategory);
                     width: 200,
                     // 원하는 크기로 설정
                     child: TextField(
-                      controller: foodNameController
-                        ..text = widget.foodsName ?? '',
+                      controller: foodNameController,
+                        // ..text = widget.foodsName ?? '',
                       readOnly: !_isPremiumUser,
                       textAlign: TextAlign.center, // 텍스트를 가운데 정렬
                       // textAlign: TextAlign.,
@@ -475,81 +585,7 @@ print(widget.fridgeCategory);
               width: double.infinity,
               child: NavbarButton(
                 buttonTitle: '저장하기',
-                onPressed: () async {
-                  if (userRole != 'admin' && userRole != 'paid_user') {
-                    // 🔹 일반 사용자는 냉장고 추가 불가능
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('프리미엄 서비스를 이용하면 상세내용을 수정하여 나만의 식재료 관리를 할 수 있어요!'),
-                        duration: Duration(seconds: 2),),
-                    );
-                    return;
-                  }
-                  // 식품 데이터 수집
-                  final updatedData = {
-                    'foodsName': foodNameController.text, // 사용자가 입력한 식품명
-                    'defaultCategory': selectedFoodsCategory?.defaultCategory ?? '',
-                    'defaultFridgeCategory':
-                        selectedFridgeCategory?.categoryName ?? '',
-                    'shoppingListCategory':
-                        selectedShoppingListCategory?.categoryName ?? '',
-                    // 'expirationDate': expirationDays,
-                    'shelfLife': consumptionDays,
-                    'userId': userId,
-                  };
-
-                  try {
-                    final snapshot = await FirebaseFirestore.instance
-                        .collection('default_foods')
-                        .where('foodsName', isEqualTo: widget.foodsName)
-                        .get();
-
-                    if (snapshot.docs.isNotEmpty) {
-                      final docId = snapshot.docs.first.id; // 첫 번째 문서의 ID 가져오기
-
-                      // 🔍 foods에서 문서를 찾고, 없으면 새로 추가
-                      final foodsDoc = await FirebaseFirestore.instance
-                          .collection('foods')
-                          .doc(docId)
-                          .get();
-
-                      if (foodsDoc.exists) {
-                        // ✅ 문서가 존재하면 업데이트
-                        await FirebaseFirestore.instance
-                            .collection('foods')
-                            .doc(docId)
-                            .update(updatedData);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('데이터가 성공적으로 업데이트되었습니다.'),
-                            duration: Duration(seconds: 2),),
-                        );
-                      } else {
-                        // ❌ 문서가 없으면 새로 추가
-                        await FirebaseFirestore.instance
-                            .collection('foods')
-                            .doc(docId)
-                            .set(updatedData);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('문서가 존재하지 않아 새로 추가했습니다.'),
-                            duration: Duration(seconds: 2),),
-                        );
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('해당 데이터를 찾을 수 없습니다.'),
-                          duration: Duration(seconds: 2),),
-                      );
-                    }
-                    Navigator.pop(context);
-                  } catch (e) {
-                    print('Error updating data: $e');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('데이터 저장 중 오류가 발생했습니다.'),
-                        duration: Duration(seconds: 2),),
-                    );
-                  }
-                },
+                onPressed: savedDetails,
               ),
             ),
           ),

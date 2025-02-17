@@ -844,7 +844,7 @@ class _AppUsageSettingsState extends State<AppUsageSettings> {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
                         children: [
-                          Icon(FontAwesomeIcons.user, color: Colors.blueAccent, size: 20),
+                          Icon(FontAwesomeIcons.user, color: theme.chipTheme.labelStyle!.color, size: 20),
                           SizedBox(width: 10),
                           Expanded(
                             child: GestureDetector(

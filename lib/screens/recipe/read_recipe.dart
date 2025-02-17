@@ -276,7 +276,15 @@ class _ReadRecipeState extends State<ReadRecipe> {
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     try {
       for (int i = 0; i < ingredients.length; i++) {
-        if (selectedIngredients[i] && !shoppingList.contains(ingredients[i])) {
+        String ingredient = ingredients[i];
+
+        // ✅ 냉장고에 있는 재료는 제외
+        if (fridgeIngredients.contains(ingredient)) {
+          // print('❌ "$ingredient"은(는) 이미 냉장고에 있어서 제외됩니다.');
+          continue;
+        }
+
+        if (selectedIngredients[i] && !shoppingList.contains(ingredients)) {
           final existingItemSnapshot = await FirebaseFirestore.instance
               .collection('shopping_items')
               .where('items', isEqualTo: ingredients[i])

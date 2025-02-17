@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb; // ✅ 플랫폼 확인
+import 'package:universal_html/html.dart' as html; // ✅ 웹 전용 다운로드 처리
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
 import 'package:food_for_later_new/screens/admin_page/app_setting_categories_table/CSV_uploader.dart';
+import 'package:path_provider/path_provider.dart';
 
 enum SortState { none, ascending, descending }
 
@@ -31,7 +37,7 @@ class _FoodsTableState extends State<FoodsTable> {
   List<int> selectedRows = [];
 
   final List<String> categoryOptions = [];
-  final List<String> fridgeCategoryOptions = ['냉장', '냉동', '실온'];
+  final List<String> fridgeCategoryOptions = ['냉장', '냉동', '상온'];
   final List<String> shoppingCategoryOptions = [];
   List<Map<String, dynamic>> _tableData = [];
 
@@ -115,7 +121,7 @@ class _FoodsTableState extends State<FoodsTable> {
   }
 
   void _addFood(String categoryName, Map<String, dynamic> newItem) async {
-    final snapshot = FirebaseFirestore.instance.collection('foods');
+    final snapshot = FirebaseFirestore.instance.collection('default_foods');
 
     try {
       await snapshot.add({
@@ -159,7 +165,7 @@ class _FoodsTableState extends State<FoodsTable> {
     try {
       if (selectedFood.containsKey('documentId')) {
         final docRef = FirebaseFirestore.instance
-            .collection('foods')
+            .collection('defalut_foods')
             .doc(selectedFood['documentId']); // 각 음식의 문서 ID
 
         await docRef.update({
@@ -287,6 +293,53 @@ class _FoodsTableState extends State<FoodsTable> {
     });
   }
 
+  Future<void> exportFirestoreToCSV() async {
+    try {
+      // 🔹 Firestore 데이터 가져오기
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('default_foods').get();
+
+      List<List<String>> csvData = [
+        [
+          "defaultCategory",
+          "foodsName",
+          "defaultFridgeCategory",
+          "shoppingListCategory",
+          "shelfLife"
+        ] // 헤더 추가
+      ];
+
+      for (var doc in snapshot.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        csvData.add([
+          data["defaultCategory"] ?? "",
+          data["foodsName"] ?? "",
+          data["defaultFridgeCategory"] ?? "",
+          data["shoppingListCategory"] ?? "",
+          data["shelfLife"].toString(),
+        ]);
+      }
+
+      // 🔹 CSV 변환
+      String csvString = const ListToCsvConverter().convert(csvData);
+
+      if (kIsWeb) {
+        final bytes = utf8.encode(csvString);
+        final blob = html.Blob([bytes], 'text/csv'); // 🔹 CSV Blob 생성
+        final url = html.Url.createObjectUrlFromBlob(blob);
+
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute("download", "foods_data.csv")
+          ..click();
+
+        html.Url.revokeObjectUrl(url); // 🔹 메모리 정리
+      }
+      print("✅ CSV 다운로드 완료");
+    } catch (e) {
+      print("⚠️ Firebase 데이터를 CSV로 내보내는 중 오류 발생: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -301,7 +354,8 @@ class _FoodsTableState extends State<FoodsTable> {
               // 제목이 있는 행
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
+                  horizontalInside:
+                      BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40), // 체크박스 열 크기
@@ -322,7 +376,9 @@ class _FoodsTableState extends State<FoodsTable> {
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                  width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
+                                  width: 1,
+                                  color: theme
+                                      .colorScheme.onSurface), // 셀 아래 테두리 추가
                             ),
                           ),
                           child: column['name'] == '선택' ||
@@ -345,15 +401,15 @@ class _FoodsTableState extends State<FoodsTable> {
                                                 color: theme
                                                     .colorScheme.onSurface)),
                                         Icon(
-                                          column['state'] == SortState.ascending
-                                              ? Icons.arrow_upward
-                                              : column['state'] ==
-                                                      SortState.descending
-                                                  ? Icons.arrow_downward
-                                                  : Icons.sort,
-                                          size: 12,
-                                            color: theme.colorScheme.onSurface
-                                        ),
+                                            column['state'] ==
+                                                    SortState.ascending
+                                                ? Icons.arrow_upward
+                                                : column['state'] ==
+                                                        SortState.descending
+                                                    ? Icons.arrow_downward
+                                                    : Icons.sort,
+                                            size: 12,
+                                            color: theme.colorScheme.onSurface),
                                       ],
                                     ),
                                   ),
@@ -368,7 +424,8 @@ class _FoodsTableState extends State<FoodsTable> {
               // 입력 필드들이 들어간 행
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
+                  horizontalInside:
+                      BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -385,7 +442,8 @@ class _FoodsTableState extends State<FoodsTable> {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                            width: 1, color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
+                            width: 1,
+                            color: theme.colorScheme.onSurface), // 셀 아래 테두리 추가
                       ),
                     ),
                     children: [
@@ -395,10 +453,7 @@ class _FoodsTableState extends State<FoodsTable> {
                           child: Center(
                               child: Text('no',
                                   style: TextStyle(
-                                      color: theme.colorScheme.onSurface)
-                              )
-                          )
-                      ),
+                                      color: theme.colorScheme.onSurface)))),
                       TableCell(
                         child: DropdownButtonFormField<String>(
                           value: _selectedCategory,
@@ -410,10 +465,11 @@ class _FoodsTableState extends State<FoodsTable> {
                           items: categoryOptions.map((String category) {
                             return DropdownMenuItem<String>(
                               value: category,
-                              child: Text(category,
+                              child: Text(
+                                category,
                                 style: TextStyle(
-                                    color: theme.colorScheme.onSurface
-                                ),),
+                                    color: theme.colorScheme.onSurface),
+                              ),
                             );
                           }).toList(),
                           decoration: InputDecoration(
@@ -425,9 +481,7 @@ class _FoodsTableState extends State<FoodsTable> {
                             contentPadding:
                                 EdgeInsets.only(bottom: 13, left: 20),
                           ),
-                          style: TextStyle(
-                              color: theme.colorScheme.onSurface
-                          ),
+                          style: TextStyle(color: theme.colorScheme.onSurface),
                           alignment: Alignment.bottomCenter,
                         ),
                       ),
@@ -486,9 +540,37 @@ class _FoodsTableState extends State<FoodsTable> {
                             contentPadding:
                                 EdgeInsets.only(bottom: 13, left: 20),
                           ),
-                          style:  TextStyle(
-                              color: theme.colorScheme.onSurface
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                          alignment: Alignment.bottomCenter,
+                        ),
+                      ),
+                      TableCell(
+                        verticalAlignment: TableCellVerticalAlignment.middle,
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedShoppingListCategory,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedShoppingListCategory = value;
+                            });
+                          },
+                          items: shoppingCategoryOptions.map((String category) {
+                            return DropdownMenuItem<String>(
+                              value: category,
+                              child: Text(category,
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurface)),
+                            );
+                          }).toList(),
+                          decoration: InputDecoration(
+                            hintText: '장보기 선택',
+                            hintStyle: TextStyle(
+                              fontSize: 14, // 글씨 크기 줄이기
+                              color: Colors.grey, // 글씨 색상 회색으로
+                            ),
+                            contentPadding:
+                                EdgeInsets.only(bottom: 13, left: 20),
                           ),
+                          style: TextStyle(color: theme.colorScheme.onSurface),
                           alignment: Alignment.bottomCenter,
                         ),
                       ),
@@ -519,38 +601,6 @@ class _FoodsTableState extends State<FoodsTable> {
                           onChanged: (value) {
                             setState(() {}); // 입력 내용이 바뀔 때 상태 업데이트
                           },
-                        ),
-                      ),
-                      TableCell(
-                        verticalAlignment: TableCellVerticalAlignment.middle,
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedShoppingListCategory,
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedShoppingListCategory = value;
-                            });
-                          },
-                          items: shoppingCategoryOptions.map((String category) {
-                            return DropdownMenuItem<String>(
-                              value: category,
-                              child: Text(category,
-                                  style: TextStyle(
-                                      color: theme.colorScheme.onSurface)),
-                            );
-                          }).toList(),
-                          decoration: InputDecoration(
-                            hintText: '장보기 선택',
-                            hintStyle: TextStyle(
-                              fontSize: 14, // 글씨 크기 줄이기
-                              color: Colors.grey, // 글씨 색상 회색으로
-                            ),
-                            contentPadding:
-                                EdgeInsets.only(bottom: 13, left: 20),
-                          ),
-                          style:  TextStyle(
-                              color: theme.colorScheme.onSurface
-                          ),
-                          alignment: Alignment.bottomCenter,
                         ),
                       ),
                       TableCell(
@@ -602,7 +652,8 @@ class _FoodsTableState extends State<FoodsTable> {
               // 데이터가 추가되는 테이블
               Table(
                 border: TableBorder(
-                  horizontalInside: BorderSide(width: 1, color: theme.colorScheme.onSurface),
+                  horizontalInside:
+                      BorderSide(width: 1, color: theme.colorScheme.onSurface),
                 ),
                 columnWidths: const {
                   0: FixedColumnWidth(40),
@@ -713,6 +764,17 @@ class _FoodsTableState extends State<FoodsTable> {
                     width: 10,
                   ),
                   CSVUploader(),
+                  if (kIsWeb)
+                    BasicElevatedButton(
+                      onPressed: () async {
+                        await exportFirestoreToCSV();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("CSV 파일 저장 완료!")),
+                        );
+                      },
+                      iconTitle: Icons.download,
+                      buttonTitle: 'CSV 다운로드',
+                    ),
                 ],
               ),
               SizedBox(

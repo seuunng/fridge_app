@@ -78,7 +78,6 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    print('🔄 didChangeDependencies() 실행됨, 쇼핑 리스트 데이터 다시 불러오기');
     _loadItemsFromFirestore(userId).then((_) {
       if (mounted) {
         setState(() {}); // ✅ 올바르게 닫음
@@ -509,6 +508,8 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
   Future<void> _deleteSelectedItems() async {
     try {
+      // ✅ 새로운 삭제 항목만 저장하도록 리스트 초기화
+      recentlyDeletedItems.clear();
       for (var category in checkedItems.keys.toList()) {
         List<String> categoryItems = List<String>.from(itemLists[category]!, growable: true);
 
@@ -634,59 +635,61 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           // appBar: AppBar(
           //   title:
           // ),
-          body: Column(
-            children: [
-              Row(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: Text('장보기 목록',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface,
-                        fontSize: 20, // 글자 크기 (기본보다 크게 조정)
-                        fontWeight: FontWeight.bold, // 글자 굵게 설정
-
-                      ),),
-                  ),
-                  // SizedBox(width: 20),
-                  // Expanded(
-                  //   child: DropdownButtonFormField<String>(
-                  //     value: fridgeName.contains(selectedFridge)
-                  //         ? selectedFridge
-                  //         : null,
-                  //     items: fridgeName.map((section) {
-                  //       return DropdownMenuItem(
-                  //         value: section,
-                  //         child: Text(section,
-                  //             style:
-                  //                 TextStyle(color: theme.colorScheme.onSurface)),
-                  //       );
-                  //     }).toList(), // 반복문을 통해 DropdownMenuItem 생성
-                  //     onChanged: (value) async {
-                  //       String? fridgeId =
-                  //           await fetchFridgeId(value!); // 🔹 새 ID 가져오기
-                  //       setState(() {
-                  //         selectedFridge = value;
-                  //         selected_fridgeId = fridgeId; // 🔹 변경된 냉장고 ID 저장
-                  //       });
-                  //       print('Selected fridge: $selectedFridge, Fridge ID: $selected_fridgeId');
-                  //       SharedPreferences prefs =
-                  //           await SharedPreferences.getInstance();
-                  //       await prefs.setString(
-                  //           'selectedFridge', value); // 🔹 새 냉장고 저장
-                  //     },
-                  //     decoration: InputDecoration(
-                  //       labelText: '냉장고 선택',
-                  //     ),
-                  //   ),
-                  // ),
-                ],
-              ),
-            SingleChildScrollView(
-            child: _buildSections(), // 섹션 동적으로 생성
-          ),
-
-            ],
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Text('장보기 목록',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: 20, // 글자 크기 (기본보다 크게 조정)
+                          fontWeight: FontWeight.bold, // 글자 굵게 설정
+            
+                        ),),
+                    ),
+                    // SizedBox(width: 20),
+                    // Expanded(
+                    //   child: DropdownButtonFormField<String>(
+                    //     value: fridgeName.contains(selectedFridge)
+                    //         ? selectedFridge
+                    //         : null,
+                    //     items: fridgeName.map((section) {
+                    //       return DropdownMenuItem(
+                    //         value: section,
+                    //         child: Text(section,
+                    //             style:
+                    //                 TextStyle(color: theme.colorScheme.onSurface)),
+                    //       );
+                    //     }).toList(), // 반복문을 통해 DropdownMenuItem 생성
+                    //     onChanged: (value) async {
+                    //       String? fridgeId =
+                    //           await fetchFridgeId(value!); // 🔹 새 ID 가져오기
+                    //       setState(() {
+                    //         selectedFridge = value;
+                    //         selected_fridgeId = fridgeId; // 🔹 변경된 냉장고 ID 저장
+                    //       });
+                    //       print('Selected fridge: $selectedFridge, Fridge ID: $selected_fridgeId');
+                    //       SharedPreferences prefs =
+                    //           await SharedPreferences.getInstance();
+                    //       await prefs.setString(
+                    //           'selectedFridge', value); // 🔹 새 냉장고 저장
+                    //     },
+                    //     decoration: InputDecoration(
+                    //       labelText: '냉장고 선택',
+                    //     ),
+                    //   ),
+                    // ),
+                  ],
+                ),
+              SingleChildScrollView(
+              child: _buildSections(), // 섹션 동적으로 생성
+            ),
+            
+              ],
+            ),
           ),
           // 물건 추가 버튼
           floatingActionButton:

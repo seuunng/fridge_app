@@ -118,7 +118,7 @@ class _AddItemState extends State<AddItem> {
   Future<List<FoodsModel>> _fetchFoods() async {
     List<FoodsModel> userFoods = [];
     List<FoodsModel> defaultFoods = [];
-    Set<String> userFoodNames = {};
+    Set<String> modifiedFoodIds = {}; // 사용자가 수정한 defaultFoodsDocId 저장
 
     try {
       final userSnapshot = await FirebaseFirestore.instance
@@ -126,23 +126,35 @@ class _AddItemState extends State<AddItem> {
           .where('userId', isEqualTo: userId)
           .get();
 
+      print("🔹 사용자 정의 foods 데이터 (${userSnapshot.docs.length}개) 가져옴!");
+
       // 🔹 사용자가 수정한 식품 불러오기
       for (var doc in userSnapshot.docs) {
         final food = FoodsModel.fromFirestore(doc);
         userFoods.add(food);
-        userFoodNames.add(food.foodsName); // 사용자 식품 이름 저장
+        if (food.defaultFoodsDocId != null && food.defaultFoodsDocId!.isNotEmpty) {
+          modifiedFoodIds.add(food.defaultFoodsDocId!); // 사용자가 수정한 기본 식품 ID 저장
+          print("✅ 사용자가 수정한 기본 식품: ${food.defaultFoodsDocId}");
+        }
       }
+      // 🔹 사용자 데이터가 올바르게 들어오는지 확인
+      print("사용자 정의 foods 리스트: ${userFoods.map((e) => e.foodsName).toList()}");
+      print("🚫 필터링할 default_foods ID 목록: $modifiedFoodIds");
 
-      final defaultSnapshot =
-          await FirebaseFirestore.instance.collection('default_foods').get();
+      final defaultSnapshot = await FirebaseFirestore.instance.collection('default_foods').get();
+
+      print("🔹 기본 default_foods 데이터 (${defaultSnapshot.docs.length}개) 가져옴!");
 
       // 🔹 기본 식품 목록 불러오기 (사용자가 수정하지 않은 것만 추가)
       for (var doc in defaultSnapshot.docs) {
         final food = FoodsModel.fromFirestore(doc);
-        if (!userFoodNames.contains(food.foodsName)) {
+        if (!modifiedFoodIds.contains(food.id)) { // 기본 데이터 중 사용자가 수정한 것은 제외
           defaultFoods.add(food);
         }
       }
+
+      print("🍏 최종 userFoods 리스트: ${userFoods.map((e) => e.foodsName).toList()}");
+      print("🍎 최종 defaultFoods 리스트: ${defaultFoods.map((e) => e.foodsName).toList()}");
 
       return [...userFoods, ...defaultFoods]; // 사용자 데이터 + 기본 데이터 결합
     } catch (e) {
@@ -308,7 +320,10 @@ class _AddItemState extends State<AddItem> {
         Map<String, dynamic>? foodData;
 
         if (foodsSnapshot.docs.isNotEmpty) {
-          foodData = foodsSnapshot.docs.first.data();
+          final doc  = foodsSnapshot.docs.first;
+          foodData = doc.data();
+          foodData['id'] = doc.id; // ✅ 문서 ID를 데이터에 추가
+          print("🔥 foods 컬렉션에서 찾은 foodData: $foodData");
         } else {
           // 🔍 사용자 데이터가 없으면 default_foods에서 찾기
           final defaultFoodsSnapshot = await FirebaseFirestore.instance
@@ -317,7 +332,10 @@ class _AddItemState extends State<AddItem> {
               .get();
 
           if (defaultFoodsSnapshot.docs.isNotEmpty) {
-            foodData = defaultFoodsSnapshot.docs.first.data();
+            final doc = defaultFoodsSnapshot.docs.first;
+            foodData = doc.data();
+            foodData['id'] = doc.id; // ✅ 문서 ID를 추가
+            print("🔥 default_foods 컬렉션에서 찾은 foodData: $foodData");
           }
         }
 
@@ -1010,7 +1028,10 @@ class _AddItemState extends State<AddItem> {
                   Map<String, dynamic>? foodData;
 
                   if (foodsSnapshot.docs.isNotEmpty) {
-                    foodData = foodsSnapshot.docs.first.data();
+                    final doc = foodsSnapshot.docs.first; // 🔹 첫 번째 문서 가져오기
+                    foodData = doc.data(); // 🔹 Firestore에서 가져온 데이터
+                    foodData['id'] = doc.id; // ✅ 문서 ID를 직접 추가
+                    print("🔥 foods 컬렉션에서 찾은 foodData: $foodData");
                   } else {
                     final defaultFoodsSnapshot = await FirebaseFirestore
                         .instance
@@ -1019,7 +1040,10 @@ class _AddItemState extends State<AddItem> {
                         .get();
 
                     if (defaultFoodsSnapshot.docs.isNotEmpty) {
-                      foodData = defaultFoodsSnapshot.docs.first.data();
+                      final doc = defaultFoodsSnapshot.docs.first;
+                      foodData = doc.data();
+                      foodData['id'] = doc.id; // ✅ 문서 ID를 추가
+                      print("🔥 default_foods 컬렉션에서 찾은 foodData: $foodData");
                     }
                   }
 
@@ -1031,11 +1055,13 @@ class _AddItemState extends State<AddItem> {
                     String shoppingListCategory =
                         foodData['shoppingListCategory'] ?? '기타';
                     int shelfLife = foodData['shelfLife'] ?? 0;
+                    String foodsId = foodData['id'] ?? '기타';
 
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => FridgeItemDetails(
+                          foodsId: foodsId,
                           foodsName: itemName,
                           foodsCategory: defaultCategory,
                           fridgeCategory: defaultFridgeCategory,

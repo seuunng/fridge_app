@@ -296,7 +296,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       try {
         await _loadFridgeItemsFromFirestore();
         topIngredients = await _applyCategoryPriority(fridgeIngredients);
-        // print('_initializeFridgeData() $topIngredients');
+        print('_initializeFridgeData() $topIngredients');
       } catch (error) {
         print('Error initializing fridge ingredients: $error');
       }
@@ -805,24 +805,27 @@ class _ViewResearchListState extends State<ViewResearchList> {
     });
   }
 
-  Future<List<Map<String, dynamic>>> fetchRecipesFromMangnaeya(
-      String query) async {
+  Future<List<Map<String, dynamic>>> fetchRecipesFromMangnaeya(String query) async {
     setState(() {
       isLoading = true; // 검색 시작 시 로딩 상태 활성화
     });
     try {
       final String url = 'https://www.10000recipe.com/recipe/list.html?q=$query';
       final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final document = parse(response.body);
-        final recipeLinks = document.querySelectorAll('.common_sp_link');
-        final recipeTitles =
-            document.querySelectorAll('.common_sp_caption_tit');
-        if (recipeLinks.isEmpty || recipeTitles.isEmpty) {
-          return [];
-        }
+      if (response.statusCode != 200) {
+        print('HTTP 요청 실패: ${response.statusCode}');
+        return [];
+      }
 
-        List<Map<String, dynamic>> recipes = [];
+      String body = await decodeResponse(response); // ✅ 인코딩 자동 감지 후 변환
+      final document = parse(body);
+      final recipeLinks = document.querySelectorAll('.common_sp_link');
+
+      if (recipeLinks.isEmpty) {
+        return [];
+      }
+
+      List<Map<String, dynamic>> recipes = [];
         final recipeRequests = recipeLinks.map((linkElement) async {
           final link =
               'https://www.10000recipe.com${linkElement.attributes['href']}';
@@ -839,17 +842,35 @@ class _ViewResearchListState extends State<ViewResearchList> {
         // print('recipeRequests 갯수 (비동기 작업 시작 전): ${recipeRequests.length}');
 
         // 🔹 모든 비동기 요청이 끝날 때까지 기다리기
-        print(recipeRequests.length);
+        // print('모든 비동기 요청 레시피 갯수 ${recipeRequests.length}');
         // List<Map<String, dynamic>> recipes = [];
-        final fetchedRecipes = await Future.wait(recipeRequests);
-        recipes = fetchedRecipes
-            .where((recipe) => recipe != null)
-            .cast<Map<String, dynamic>>()
-            .toList();
+        final fetchedRecipes = await Future.wait(
+            recipeRequests.map((request) async {
+              try {
+                return await request;  // 개별 요청 실행
+              } catch (e, stacktrace) {
+                print('❌ 개별 요청 실패: $e');
+                print(stacktrace);
+                return null;  // 실패한 요청은 null로 처리
+              }
+            }),
+        );
+      recipes = fetchedRecipes
+          .where((recipe) {
+        if (recipe == null || recipe['ingredients'] == null) return false;
 
+        List<String> ingredients =
+        List<String>.from(recipe['ingredients']); // ⬅️ `List<String>`으로 변환
+
+        return ingredients.isNotEmpty &&
+            !excludeKeywords!.any(
+                    (exclude) => ingredients.any((ingredient) => ingredient.contains(exclude)));
+      })
+          .cast<Map<String, dynamic>>()
+          .toList();
         // print('레시피 갯수 (비동기 작업 완료 후): ${recipes.length}');
         return recipes;
-      }
+
     } catch (e) {
       print('Error fetching recipes from Mangnaeya: $e');
     } finally {
@@ -859,34 +880,69 @@ class _ViewResearchListState extends State<ViewResearchList> {
     }
     return [];
   }
+  Future<String> decodeResponse(http.Response response) async {
+    final contentType = response.headers['content-type'] ?? '';
+
+    if (contentType.contains('euc-kr') || contentType.contains('ks_c_5601-1987')) {
+      print("EUC-KR 인코딩 감지됨, 변환 실행");
+      return eucKrToUtf8(response.bodyBytes);
+    }
+
+    return utf8.decode(response.bodyBytes, allowMalformed: true);
+  }
+
+  String eucKrToUtf8(List<int> bytes) {
+    try {
+      return utf8.decode(latin1.decode(bytes).codeUnits, allowMalformed: true);
+    } catch (e) {
+      print("EUC-KR to UTF-8 변환 오류: $e");
+      return utf8.decode(bytes, allowMalformed: true);
+    }
+  }
 
   Future<Map<String, dynamic>> _parseRecipeData(
       String link, String body) async {
     final document = parse(body);
-
+print('link $link');
     // 🔹 레시피 제목 가져오기
-    final title =
-        document.querySelector('.view2_summary h3')?.text.trim() ?? 'Unknown';
+    final titleElement = document.querySelector('.view2_summary h3');
+    final title = titleElement?.text.trim() ?? '';
     // print("레시피 제목: $title");
     // 🔹 재료 목록 가져오기
-    final ingredientsElements =
-        document.querySelectorAll('.ready_ingre3 ul li');
-    final ingredients = ingredientsElements
-        .map((e) => e.text.trim().split(RegExp(r'\s+'))[0]) // 공백 전 단어만 추출
-        .where((ingredient) => !ingredient.endsWith("구매")) // '구매'가 포함된 항목 제거
+    // final ingredientElements = document.querySelectorAll('.ready_ingre3 ul li');
+    final ingredientElements = document.querySelectorAll('.ready_ingre3 li');
+    final ingredients = ingredientElements
+        .map((e) => e.text.trim().split(RegExp(r'\s+'))[0])
+        .where((ingredient) => !ingredient.endsWith("구매"))
         .toList();
+
     // print("재료 목록: $ingredients");
+    // if (ingredientElements.isEmpty) {
+    //   print("⚠ 재료 목록이 비어 있음!");
+    // } else {
+    //   for (var element in ingredientElements) {
+    //     final nameElement = element.querySelector('.ingre_list_name a');
+    //     final amountElement = element.querySelector('.ingre_list_ea');
+    //
+    //     final name = nameElement?.text.trim() ?? '알 수 없음';
+    //
+    //     print("✅ 재료: $name");
+    //   }
+    // }
+
+
     // 🔹 메인 이미지 URL 가져오기
     final imageElement = document.querySelector('.centeredcrop img');
     final imageUrl = imageElement?.attributes['src'] ?? '';
+    // print("재료 목록: $ingredients");
     // if (ingredients.isEmpty) {
     //   print("재료가 비어 있습니다. 기본값으로 설정합니다.");
     //   ingredients.add('알 수 없는 재료');
     // }
-    if (title == null || title.isEmpty || ingredients.isEmpty) {
-      print("파싱 오류 발생: 제목 또는 재료가 비어 있습니다.");
-      // return;
-    }
+    // if (title == null || title.isEmpty) {
+    //   print("파싱 오류 발생: 제목 또는 재료가 비어 있습니다.");
+    //   return {}; // 빈 데이터 반환 (건너뛰기)
+    // }
     // 반환할 데이터 맵 구성
     return {
       'title': title,
@@ -895,14 +951,7 @@ class _ViewResearchListState extends State<ViewResearchList> {
       'link': link,
     };
   }
-  // Future<void> loadMoreRecipes() async {
-  //   currentPage++; // 다음 페이지로 이동
-  //   final newRecipes = await fetchRecipesFromMangnaeya(mangaeQuery);
-  //
-  //   setState(() {
-  //     _mangaeresults.addAll(newRecipes);
-  //   });
-  // }
+
   void _openRecipeLink(
       String link, String title, RecipeModel recipe, bool initialScraped) {
     Navigator.push(

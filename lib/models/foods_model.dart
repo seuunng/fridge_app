@@ -7,6 +7,7 @@ class FoodsModel {
   final String defaultFridgeCategory;
   final String shoppingListCategory;
   final int shelfLife;
+  final String? defaultFoodsDocId;
 
   FoodsModel({
     required this.id,
@@ -15,6 +16,7 @@ class FoodsModel {
     required this.defaultFridgeCategory,
     required this.shoppingListCategory,
     required this.shelfLife,
+    this.defaultFoodsDocId,
   });
 
   // Firestore에서 데이터를 가져오는 생성자
@@ -28,6 +30,7 @@ class FoodsModel {
       defaultFridgeCategory: data['defaultFridgeCategory'] ?? '',
       shoppingListCategory: data['shoppingListCategory'] ?? '',
       shelfLife: data['shelfLife'] != null ? int.tryParse(data['shelfLife'].toString()) ?? 0 : 0, // 숫자 변환
+      defaultFoodsDocId: data['defaultFoodsDocId'],
     );
   }
 

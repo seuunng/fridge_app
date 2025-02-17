@@ -33,6 +33,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('관리자 메인 페이지'),
@@ -57,7 +58,10 @@ class _AdminMainPageState extends State<AdminMainPage> {
             ),
             ListTile(
               leading: Icon(Icons.home),
-              title: Text('어플로 돌아가기'),
+              title: Text('어플로 돌아가기',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),),
               onTap: () {
                 Navigator.pop(context); // 사이드바 닫기
                 Navigator.pushAndRemoveUntil(
@@ -70,42 +74,60 @@ class _AdminMainPageState extends State<AdminMainPage> {
             ),
             ListTile(
               leading: Icon(Icons.person),
-              title: Text('사용자 현황'),
+              title: Text('사용자 현황',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),),
               onTap: () {
                 _onItemTapped(0);
               },
             ),
             ListTile(
               leading: Icon(Icons.insert_chart_outlined),
-              title: Text('실적'),
+              title: Text('실적',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),),
               onTap: () {
                 _onItemTapped(1);
               },
             ),
             ListTile(
               leading: Icon(Icons.tag),
-              title: Text('트렌드'),
+              title: Text('트렌드',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),),
               onTap: () {
                 _onItemTapped(2);
               },
             ),
             ListTile(
               leading: Icon(Icons.settings),
-              title: Text('어플 설정'),
+              title: Text('어플 설정',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),),
               onTap: () {
                 _onItemTapped(3);
               },
             ),
             ListTile(
               leading: Icon(Icons.email),
-              title: Text('의견 및 신고'),
+              title: Text('의견 및 신고',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),),
               onTap: () {
                 _onItemTapped(4);
               },
             ),
             ListTile(
               leading: Icon(Icons.key),
-              title: Text('관리자 비밀번호 수정'),
+              title: Text('관리자 비밀번호 수정',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                ),),
               onTap: () {
                 _onItemTapped(5);
               },

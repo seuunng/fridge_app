@@ -270,17 +270,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSortDialog() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('정렬 기준 선택'),
+          title: Text('정렬 기준 선택',
+            style: TextStyle(
+                color: theme.colorScheme.onSurface
+            ),),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 leading: Icon(Icons.access_time),
-                title: Text('소비기한 임박순'),
+                title: Text('소비기한 임박순',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   Navigator.pop(context);
                   _handleFridgeSort('expiration');
@@ -288,7 +295,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               ListTile(
                 leading: Icon(Icons.category),
-                title: Text('카테고리순'),
+                title: Text('카테고리순',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   Navigator.pop(context);
                   _handleFridgeSort('category');
@@ -296,7 +306,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               ListTile(
                 leading: Icon(Icons.date_range),
-                title: Text('입고일 순'),
+                title: Text('입고일 순',
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface
+                  ),),
                 onTap: () {
                   Navigator.pop(context);
                   _handleFridgeSort('registration');
