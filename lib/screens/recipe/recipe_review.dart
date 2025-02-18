@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/main.dart';
 import 'package:food_for_later_new/screens/recipe/add_recipe_review.dart';
 import 'package:food_for_later_new/screens/recipe/full_screen_image_view.dart';
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
@@ -17,7 +18,7 @@ class RecipeReview extends StatefulWidget {
   _RecipeReviewState createState() => _RecipeReviewState();
 }
 
-class _RecipeReviewState extends State<RecipeReview> {
+class _RecipeReviewState extends State<RecipeReview> with RouteAware {
   List<Map<String, dynamic>> recipeReviews = [];
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
@@ -31,6 +32,22 @@ class _RecipeReviewState extends State<RecipeReview> {
     _loadReviewsFromFirestore();
     _checkAdminRole();
     _loadScrapedAndLikedCounts();
+  }
+  @override
+  void didPopNext() {
+    _loadReviewsFromFirestore(); // ✅ 다른 페이지 갔다가 다시 돌아오면 실행
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
   }
 
   void _loadScrapedAndLikedCounts() async {

@@ -6,14 +6,12 @@ import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/ad/interstitial_ad_service.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/constants.dart';
+import 'package:food_for_later_new/main.dart';
 import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/preferred_food_model.dart';
 import 'package:food_for_later_new/screens/foods/add_item_to_category.dart';
-import 'package:food_for_later_new/screens/foods/add_preferred_category.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_item_details.dart';
-import 'package:food_for_later_new/services/preferred_foods_service.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AddItem extends StatefulWidget {
   final String pageTitle;
@@ -36,7 +34,7 @@ class AddItem extends StatefulWidget {
   _AddItemState createState() => _AddItemState();
 }
 
-class _AddItemState extends State<AddItem> {
+class _AddItemState extends State<AddItem> with RouteAware {
   DateTime currentDate = DateTime.now();
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
@@ -83,6 +81,23 @@ class _AddItemState extends State<AddItem> {
     // }
     _loadDeletedItems();
     _loadUserRole();
+  }
+
+  @override
+  void didPopNext() {
+    _loadCategoriesFromFirestore(); // ✅ 다른 페이지 갔다가 다시 돌아오면 실행
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
   }
 
   void _loadSelectedFridge() async {
@@ -1045,7 +1060,7 @@ class _AddItemState extends State<AddItem> {
                     int shelfLife = foodData['shelfLife'] ?? 0;
                     String foodsId = foodData['id'] ?? '기타';
 
-                    Navigator.push(
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => FridgeItemDetails(
@@ -1060,6 +1075,9 @@ class _AddItemState extends State<AddItem> {
                         ),
                       ),
                     );
+                    if (result == true) {
+                      _loadCategoriesFromFirestore(); // ✅ 수정 후 즉시 목록 갱신
+                    }
                   } else {
                     print("Item not found in foods collection: $itemName");
                   }
