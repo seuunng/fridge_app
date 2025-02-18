@@ -197,13 +197,22 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
   //사용자정의식품+기본식품 불러오기
   Future<Map<String, String>> _fetchIngredients() async {
-    Set<String> userIngredients = {}; // 사용자가 추가한 재료
-    Map<String, String> ingredientToCategory = {};
-
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
     try {
-      // ✅ 1. 사용자 정의 foods 데이터 가져오기
+      final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+      Map<String, String> ingredientToId = {};
+
+      // ✅ 1. 기본 식품(`default_foods`)에서 가져오기
+      final defaultSnapshot =
+      await FirebaseFirestore.instance.collection('default_foods').get();
+
+      for (var doc in defaultSnapshot.docs) {
+        final foodName = doc['foodsName'] as String?;
+        if (foodName != null) {
+          ingredientToId[foodName] = doc.id; // 기본 식품의 ID 저장
+        }
+      }
+
+      // ✅ 2. 수정된 식품(`foods`)에서 가져오기
       final userSnapshot = await FirebaseFirestore.instance
           .collection('foods')
           .where('userId', isEqualTo: userId)
@@ -211,30 +220,17 @@ class _ViewResearchListState extends State<ViewResearchList> {
 
       for (var doc in userSnapshot.docs) {
         final foodName = doc['foodsName'] as String?;
-        final category = doc['defaultCategory'] as String?;
+        final defaultFoodId = doc['defaultFoodsDocId'] as String?; // 기본 식품의 ID
+
         if (foodName != null) {
-          userIngredients.add(foodName);
-          if (category != null) {
-            ingredientToCategory[foodName] = category;
-          }
+          ingredientToId[foodName] = defaultFoodId ??
+              doc.id; // 수정된 식품의 ID 저장 (기본 식품 ID가 있으면 사용)
         }
       }
 
-      // ✅ 2. 기본 식재료(default_foods) 가져오기
-      final defaultSnapshot =
-          await FirebaseFirestore.instance.collection('default_foods').get();
-
-      for (var doc in defaultSnapshot.docs) {
-        final foodName = doc['foodsName'] as String?;
-        final category = doc['defaultCategory'] as String?;
-        if (foodName != null && !userIngredients.contains(foodName)) {
-          ingredientToCategory[foodName] = category ?? "기타";
-        }
-      }
-
-      return ingredientToCategory;
+      return ingredientToId;
     } catch (e) {
-      print("Error fetching ingredients: $e");
+      print("Error fetching ingredient IDs: $e");
       return {};
     }
   }

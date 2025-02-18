@@ -126,24 +126,15 @@ class _AddItemState extends State<AddItem> {
           .where('userId', isEqualTo: userId)
           .get();
 
-      print("🔹 사용자 정의 foods 데이터 (${userSnapshot.docs.length}개) 가져옴!");
-
       // 🔹 사용자가 수정한 식품 불러오기
       for (var doc in userSnapshot.docs) {
         final food = FoodsModel.fromFirestore(doc);
         userFoods.add(food);
         if (food.defaultFoodsDocId != null && food.defaultFoodsDocId!.isNotEmpty) {
           modifiedFoodIds.add(food.defaultFoodsDocId!); // 사용자가 수정한 기본 식품 ID 저장
-          print("✅ 사용자가 수정한 기본 식품: ${food.defaultFoodsDocId}");
         }
       }
-      // 🔹 사용자 데이터가 올바르게 들어오는지 확인
-      print("사용자 정의 foods 리스트: ${userFoods.map((e) => e.foodsName).toList()}");
-      print("🚫 필터링할 default_foods ID 목록: $modifiedFoodIds");
-
       final defaultSnapshot = await FirebaseFirestore.instance.collection('default_foods').get();
-
-      print("🔹 기본 default_foods 데이터 (${defaultSnapshot.docs.length}개) 가져옴!");
 
       // 🔹 기본 식품 목록 불러오기 (사용자가 수정하지 않은 것만 추가)
       for (var doc in defaultSnapshot.docs) {
@@ -152,9 +143,6 @@ class _AddItemState extends State<AddItem> {
           defaultFoods.add(food);
         }
       }
-
-      print("🍏 최종 userFoods 리스트: ${userFoods.map((e) => e.foodsName).toList()}");
-      print("🍎 최종 defaultFoods 리스트: ${defaultFoods.map((e) => e.foodsName).toList()}");
 
       return [...userFoods, ...defaultFoods]; // 사용자 데이터 + 기본 데이터 결합
     } catch (e) {

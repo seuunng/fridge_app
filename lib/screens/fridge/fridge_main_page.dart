@@ -78,7 +78,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
     });
 
     _loadCondimentsHiddenStatus();
-
   }
 
   @override
@@ -129,6 +128,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
       });
     }
   }
+
   void _loadUserRole() async {
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
@@ -153,6 +153,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     await _loadFridgeItemsFromFirestore(selected_fridgeId);
     // setState(() {});
   }
+
   Future<void> _loadFridgeId() async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -172,12 +173,13 @@ class FridgeMainPageState extends State<FridgeMainPage>
       print('냉장고 ID 로드 중 오류 발생: $e');
     }
   }
+
   Future<String?> fetchFridgeId() async {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('fridges')
           .where('userId', isEqualTo: userId)
-      // .where('FridgeName', isEqualTo: fridgeName)
+          // .where('FridgeName', isEqualTo: fridgeName)
           .get();
 
       if (snapshot.docs.isNotEmpty) {
@@ -204,7 +206,9 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
       // ✅ 변경된 데이터를 저장할 임시 리스트 생성
       List<List<Map<String, dynamic>>> updatedItemLists =
-      List.generate(storageSections.length, (_) => []);
+          List.generate(storageSections.length, (_) => []);
+
+      Set<String> processedItemIds = {};
 
       List<Map<String, dynamic>> items = snapshot.docs.map((doc) {
         final itemData = doc.data();
@@ -224,20 +228,22 @@ class FridgeMainPageState extends State<FridgeMainPage>
         String fridgeCategoryId = itemData['fridgeCategoryId'] ?? '기타';
         String itemName = itemData['items'] ?? 'Unknown Item';
         DateTime registrationDate =
-        (itemData['registrationDate'] as Timestamp).toDate();
+            (itemData['registrationDate'] as Timestamp).toDate();
         String defaultCategory = itemData['defaultCategory'] ?? '';
         String documentId = itemData['documentId'] ?? '';
 
         try {
+          Map<String, dynamic>? foodsData;
+          String? foodDocId;
+
           final foodsSnapshot = await FirebaseFirestore.instance
               .collection('foods')
               .where('foodsName', isEqualTo: itemName)
               .get();
 
-          Map<String, dynamic>? foodsData;
-
           if (foodsSnapshot.docs.isNotEmpty) {
             foodsData = foodsSnapshot.docs.first.data();
+            foodDocId = foodsSnapshot.docs.first.id;
           } else {
             // ✅ 2. `foods`에 없으면 `default_foods`에서 찾기
             final defaultFoodsSnapshot = await FirebaseFirestore.instance
@@ -247,46 +253,49 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
             if (defaultFoodsSnapshot.docs.isNotEmpty) {
               foodsData = defaultFoodsSnapshot.docs.first.data();
+              foodDocId = defaultFoodsSnapshot.docs.first.id;
             }
           }
-
-          if (!mounted) return;
+          if (foodDocId != null && processedItemIds.contains(foodDocId)) {
+            // 이미 처리된 아이템이면 건너뛰기
+            continue;
+          }
+          processedItemIds.add(foodDocId ?? itemName); // 중복 방지
 
           int shelfLife = foodsData?['shelfLife'] ?? 365;
           if (foodsData != null) {
             defaultCategory = foodsData['defaultCategory'] ?? '기타';
           }
+
           int index = storageSections.indexWhere(
-                  (section) => section.categoryName == fridgeCategoryId);
+              (section) => section.categoryName == fridgeCategoryId);
           if (index >= 0) {
-            setState(() {
-              updatedItemLists[index].add({
-                'itemName': itemName,
-                'shelfLife': shelfLife,
-                'registrationDate': registrationDate,
-                'defaultCategory': defaultCategory,
-                'documentId': documentId
-              });
+            updatedItemLists[index].add({
+              'itemName': itemName,
+              'shelfLife': shelfLife,
+              'registrationDate': registrationDate,
+              'defaultCategory': defaultCategory,
+              'documentId': documentId
             });
           }
           // } else {
           //   int defaultIndex = storageSections.indexWhere((section) =>
           //   section.categoryName == '냉장');
           //
-            // 만약 '냉장' 섹션이 존재하지 않으면 추가
-            // if (defaultIndex == -1) {
-            //   FridgeCategory defaultSection = FridgeCategory(
-            //     id: 'default_refrigerator',
-            //     categoryName: '냉장',
-            //     userId: userId,
-            //   );
-            //
-            //   setState(() {
-            //     storageSections.add(defaultSection);
-            //     itemLists.add([]);
-            //     defaultIndex = storageSections.length - 1; // 새로 추가된 섹션의 인덱스 설정
-            //   });
-            // }
+          // 만약 '냉장' 섹션이 존재하지 않으면 추가
+          // if (defaultIndex == -1) {
+          //   FridgeCategory defaultSection = FridgeCategory(
+          //     id: 'default_refrigerator',
+          //     categoryName: '냉장',
+          //     userId: userId,
+          //   );
+          //
+          //   setState(() {
+          //     storageSections.add(defaultSection);
+          //     itemLists.add([]);
+          //     defaultIndex = storageSections.length - 1; // 새로 추가된 섹션의 인덱스 설정
+          //   });
+          // }
         } catch (e) {
           print('Error fetching or processing food data for $itemName: $e');
         }
@@ -295,15 +304,17 @@ class FridgeMainPageState extends State<FridgeMainPage>
       setState(() {
         itemLists = updatedItemLists;
       });
-
     } catch (e) {
       print('Error loading fridge categories: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('냉장고 목록을 불러오는 데 실패했습니다.'),
-          duration: Duration(seconds: 2),),
+        SnackBar(
+          content: Text('냉장고 목록을 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),
+        ),
       );
     }
   }
+
   List<Map<String, dynamic>> _filterItems(List<Map<String, dynamic>> items) {
     if (isCondimentsHidden) {
       return items.where((item) {
@@ -313,6 +324,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
     }
     return items;
   }
+
   Future<void> _loadSelectedFridge() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (!mounted) return; // 위젯이 여전히 트리에 있는지 확인
@@ -354,10 +366,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
       // 🔹 기본 + 커스텀 카테고리를 합쳐서 사용
       setState(() {
         hasCustomSection = customCategories.isNotEmpty;
-        storageSections = [
-          ...defaultCategories,
-          ...customCategories
-        ];
+        storageSections = [...defaultCategories, ...customCategories];
       });
     } catch (e) {
       print('카테고리 불러오기 오류: $e');
@@ -372,7 +381,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
 
     List<String> fridgeList = snapshot.docs.map((doc) {
       return (doc['FridgeName'] ?? 'Unknown Fridge')
-      as String; // 명시적으로 String 타입으로 변환
+          as String; // 명시적으로 String 타입으로 변환
     }).toList();
 
     if (!mounted) return;
@@ -384,7 +393,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
   void _startAutoScroll(double dragPosition) {
     const double scrollThreshold = 100.0; // 상하단에서 100px 이내에 있을 때 스크롤 시작
     const double scrollSpeed = 10.0; // 스크롤 속도 조절
-print('!_scrollController.hasClients ${!_scrollController.hasClients}');
+    print('!_scrollController.hasClients ${!_scrollController.hasClients}');
     if (!_scrollController.hasClients) return; // ✅ 스크롤 컨트롤러가 없으면 실행 안 함
 
     if (_scrollController.hasClients) {
@@ -395,7 +404,8 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
           duration: Duration(milliseconds: 50),
           curve: Curves.linear,
         );
-      } else if (dragPosition > _scrollController.position.maxScrollExtent - scrollThreshold) {
+      } else if (dragPosition >
+          _scrollController.position.maxScrollExtent - scrollThreshold) {
         // 🔻 하단에서 드래그 시 아래로 스크롤
         _scrollController.animateTo(
           _scrollController.offset + scrollSpeed,
@@ -405,6 +415,7 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
       }
     }
   }
+
   void _stopAutoScroll() {
     // 스크롤을 멈출 필요 없음, `animateTo`는 한 번 실행되므로 반복적으로 호출하지 않음
   }
@@ -412,7 +423,7 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
     try {
       final docRef = FirebaseFirestore.instance
           .collection('fridge_categories')
-          .doc();  // 새로운 문서 생성
+          .doc(); // 새로운 문서 생성
 
       await docRef.set({
         'id': docRef.id,
@@ -420,16 +431,19 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
         'userId': userId,
       });
 
-      await _loadCategoriesFromFirestore();  // UI 새로고침
+      await _loadCategoriesFromFirestore(); // UI 새로고침
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('새 섹션이 추가되었습니다.'),
-          duration: Duration(seconds: 2),),
+        SnackBar(
+          content: Text('새 섹션이 추가되었습니다.'),
+          duration: Duration(seconds: 2),
+        ),
       );
     } catch (e) {
       print('섹션 저장 중 오류 발생: $e');
     }
   }
+
   // 카테고리순 정렬
   void sortItemsByCategory() {
     setState(() {
@@ -464,6 +478,7 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
       }).toList();
     });
   }
+
   // 소비기한 마감 임박순 정렬
   void sortItemsByExpiration() {
     setState(() {
@@ -474,8 +489,10 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
           DateTime regDateA = a['registrationDate'] ?? DateTime.now();
           DateTime regDateB = b['registrationDate'] ?? DateTime.now();
 
-          int daysLeftA = shelfLifeA - DateTime.now().difference(regDateA).inDays;
-          int daysLeftB = shelfLifeB - DateTime.now().difference(regDateB).inDays;
+          int daysLeftA =
+              shelfLifeA - DateTime.now().difference(regDateA).inDays;
+          int daysLeftB =
+              shelfLifeB - DateTime.now().difference(regDateB).inDays;
 
           return daysLeftA.compareTo(daysLeftB); // 🔹 남은 일수 기준 오름차순 정렬
         });
@@ -643,24 +660,28 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
       print('Error deleting items from Firestore: $e');
     }
   }
+
   void _restoreDeletedItems() async {
     try {
       for (var itemData in recentlyDeletedItems) {
-        await FirebaseFirestore.instance.collection('fridge_items').add(itemData);
+        await FirebaseFirestore.instance
+            .collection('fridge_items')
+            .add(itemData);
       }
 
       setState(() {
         for (var itemData in recentlyDeletedItems) {
           String itemName = itemData['items'];
           String fridgeCategory = itemData['fridgeCategoryId'] ?? '기타';
-          DateTime registrationDate = (itemData['registrationDate'] as Timestamp).toDate();
+          DateTime registrationDate =
+              (itemData['registrationDate'] as Timestamp).toDate();
 
-          int index = storageSections.indexWhere(
-                  (section) => section.categoryName == fridgeCategory);
+          int index = storageSections
+              .indexWhere((section) => section.categoryName == fridgeCategory);
 
           if (index >= 0) {
             itemLists[index].add({
-              'itemName': itemName,  // 명시적으로 itemName 저장
+              'itemName': itemName, // 명시적으로 itemName 저장
               'registrationDate': registrationDate,
               ...itemData,
             });
@@ -676,6 +697,7 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
       print('Error restoring items: $e');
     }
   }
+
   // 삭제 모드에서 애니메이션을 시작
   void _startDeleteMode() {
     setState(() {
@@ -693,6 +715,7 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
       _controller.stop(); // 애니메이션 중지
     });
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -711,14 +734,16 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
               Row(
                 children: [
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: Text('냉장고 관리',
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Text(
+                      '냉장고 관리',
                       style: TextStyle(
                         color: theme.colorScheme.onSurface,
                         fontSize: 20, // 글자 크기 (기본보다 크게 조정)
                         fontWeight: FontWeight.bold, // 글자 굵게 설정
-
-                      ),),
+                      ),
+                    ),
                   ),
                   // SizedBox(width: 20),
                   // Expanded(
@@ -755,7 +780,7 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollController,
-                  child: _buildSections(),  // 섹션 렌더링
+                  child: _buildSections(), // 섹션 렌더링
                 ),
               ),
               // _buildDragTargetForFridgeTransfer(),  // 냉장고 전송 드롭 영역
@@ -763,53 +788,55 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
           ),
 
           floatingActionButton: (!isDeletedMode && !isDragActive)
-              ?(itemLists.every((items) => _filterItems(items).isEmpty)
-              ? FloatingButtonWithArrow(
-            heroTag: 'fridge_arrow_button',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AddItem(
-                    pageTitle: '냉장고에 추가',
-                    addButton: '냉장고에 추가',
-                    sourcePage: 'fridge',
-                    onItemAdded: () {
-                      _loadFridgeItemsFromFirestore(selected_fridgeId);
-                    },
-                    selectedFridge: selectedFridge,      // ✅ 전달하는 냉장고 이름
-                    selectedFridgeId: selected_fridgeId,
-                  ),
-                ),
-              );
-              setState(() {
-                _loadFridgeItemsFromFirestore(selected_fridgeId);
-              });
-            },
-          )
-              : FloatingAddButton(
-            heroTag: 'fridge_add_button',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AddItem(
-                    pageTitle: '냉장고에 추가',
-                    addButton: '냉장고에 추가',
-                    sourcePage: 'fridge',
-                    onItemAdded: () {
-                      _loadFridgeItemsFromFirestore(selected_fridgeId);
-                    },
-                    selectedFridge: selectedFridge,      // ✅ 전달하는 냉장고 이름
-                    selectedFridgeId: selected_fridgeId,
-                  ),
-                ),
-              );
-              setState(() {
-                _loadFridgeItemsFromFirestore(selected_fridgeId);
-              });
-            },
-          ))
+              ? (itemLists.every((items) => _filterItems(items).isEmpty)
+                  ? FloatingButtonWithArrow(
+                      heroTag: 'fridge_arrow_button',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddItem(
+                              pageTitle: '냉장고에 추가',
+                              addButton: '냉장고에 추가',
+                              sourcePage: 'fridge',
+                              onItemAdded: () {
+                                _loadFridgeItemsFromFirestore(
+                                    selected_fridgeId);
+                              },
+                              selectedFridge: selectedFridge, // ✅ 전달하는 냉장고 이름
+                              selectedFridgeId: selected_fridgeId,
+                            ),
+                          ),
+                        );
+                        setState(() {
+                          _loadFridgeItemsFromFirestore(selected_fridgeId);
+                        });
+                      },
+                    )
+                  : FloatingAddButton(
+                      heroTag: 'fridge_add_button',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddItem(
+                              pageTitle: '냉장고에 추가',
+                              addButton: '냉장고에 추가',
+                              sourcePage: 'fridge',
+                              onItemAdded: () {
+                                _loadFridgeItemsFromFirestore(
+                                    selected_fridgeId);
+                              },
+                              selectedFridge: selectedFridge, // ✅ 전달하는 냉장고 이름
+                              selectedFridgeId: selected_fridgeId,
+                            ),
+                          ),
+                        );
+                        setState(() {
+                          _loadFridgeItemsFromFirestore(selected_fridgeId);
+                        });
+                      },
+                    ))
               : null,
 
           bottomNavigationBar: Column(
@@ -847,7 +874,8 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
   }
 
   Widget _buildSections() {
-    bool allSectionsEmpty = itemLists.every((items) => _filterItems(items).isEmpty);
+    bool allSectionsEmpty =
+        itemLists.every((items) => _filterItems(items).isEmpty);
 
     if (allSectionsEmpty) {
       return _buildAnimatedEmptyFridge(); // 모든 섹션이 비어 있으면 애니메이션 표시
@@ -911,8 +939,6 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
           ),
           itemCount: filteredItems.isNotEmpty ? filteredItems.length : 1,
           itemBuilder: (context, index) {
-
-
             if (filteredItems.isEmpty) {
               return Container(
                 height: 80, // 최소 높이
@@ -930,13 +956,15 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
               // int expirationDays = items[index].values.first;
               int shelfLife = filteredItems[index]['shelfLife'] ?? 0;
               // 🔹 registrationDate를 안전하게 변환
-              DateTime registrationDate = (filteredItems[index]['registrationDate'] is Timestamp)
-                  ? (filteredItems[index]['registrationDate'] as Timestamp).toDate()
-                  : filteredItems[index]['registrationDate'] as DateTime;
+              DateTime registrationDate =
+                  (filteredItems[index]['registrationDate'] is Timestamp)
+                      ? (filteredItems[index]['registrationDate'] as Timestamp)
+                          .toDate()
+                      : filteredItems[index]['registrationDate'] as DateTime;
 
               bool isSelected = selectedItems.contains(currentItem);
               String formattedDate =
-              DateFormat('yyyy-MM-dd').format(registrationDate);
+                  DateFormat('yyyy-MM-dd').format(registrationDate);
 
               return AnimatedBuilder(
                 animation: _animation,
@@ -948,7 +976,6 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
                     child: child,
                   );
                 },
-
                 child: Draggable<Map<String, dynamic>>(
                   data: {
                     'itemName': currentItem,
@@ -1036,78 +1063,67 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
                     },
                     onDoubleTap: () async {
                       try {
-                        String documentId = filteredItems[index]['documentId'] ?? '';
-
-                        // 🔍 fridge_items 컬렉션에서 해당 아이템의 문서를 조회하여 fridgeCategoryId 가져오기
-                        DocumentSnapshot itemDoc = await FirebaseFirestore.instance
-                            .collection('fridge_items')
-                            .doc(documentId)
+                        // 🔹 Firestore에서 `foods` 컬렉션에서 먼저 검색
+                        final foodsSnapshot = await FirebaseFirestore.instance
+                            .collection('foods')
+                            .where('foodsName', isEqualTo: currentItem)
                             .get();
 
-                        if (itemDoc.exists) {
-                          String currentCategory = itemDoc['fridgeCategoryId'] ?? '기타';
+                        Map<String, dynamic>? foodData;
 
-                          // Firestore에서 현재 선택된 아이템의 정보를 불러옵니다.
-                          final foodsSnapshot = await FirebaseFirestore.instance
-                              .collection('foods')
-                              .where('foodsName',
-                              isEqualTo: currentItem) // 현재 아이템과 일치하는지 확인
+                        if (foodsSnapshot.docs.isNotEmpty) {
+                          final doc =
+                              foodsSnapshot.docs.first; // 🔹 첫 번째 문서 가져오기
+                          foodData = doc.data(); // 🔹 Firestore에서 가져온 데이터
+                          foodData['id'] = doc.id; // ✅ 문서 ID를 직접 추가
+                          print("🔥 foods 컬렉션에서 찾은 foodData: $foodData");
+                        } else {
+                          final defaultFoodsSnapshot = await FirebaseFirestore
+                              .instance
+                              .collection('default_foods')
+                              .where('foodsName', isEqualTo: currentItem)
                               .get();
 
-                          Map<String, dynamic>? foodData;
-
-                          if (foodsSnapshot.docs.isNotEmpty) {
-                            // 🔹 사용자가 수정한 foods 데이터 우선 사용
-                            foodData = foodsSnapshot.docs.first.data();
-                          } else {
-                            // 🔹 foods에 데이터가 없으면 default_foods에서 검색
-                            final defaultFoodsSnapshot = await FirebaseFirestore
-                                .instance
-                                .collection('default_foods')
-                                .where('foodsName', isEqualTo: currentItem)
-                                .get();
-
-                            if (defaultFoodsSnapshot.docs.isNotEmpty) {
-                              foodData = defaultFoodsSnapshot.docs.first.data();
-                            }
-                          }
-
-                          if (foodData != null) {
-                            String defaultCategory =
-                                foodData['defaultCategory'] ?? '기타';
-                            String shoppingListCategory =
-                                foodData['shoppingListCategory'] ?? '기타';
-                            int shelfLife = foodData['shelfLife'] ?? 0;
-                            DateTime registrationDate = items[index]
-                            ['registrationDate'] ??
-                                DateTime.now();
-                            String foodsId = foodData['id'] ?? '기타';
-
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FridgeItemDetails(
-                                  foodsId: foodsId,
-                                  foodsName: currentItem,
-                                  foodsCategory: defaultCategory,
-                                  fridgeCategory: currentCategory,
-                                  shoppingListCategory: shoppingListCategory,
-                                  consumptionDays: shelfLife,
-                                  registrationDate: formattedDate,
-                                ),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('아이템의 상세내용이 없습니다.')),
-                            );
+                          if (defaultFoodsSnapshot.docs.isNotEmpty) {
+                            final doc = defaultFoodsSnapshot.docs.first;
+                            foodData = doc.data();
+                            foodData['id'] = doc.id; // ✅ 문서 ID를 추가
                             print(
-                                "Item not found in foods collection: $currentItem");
+                                "🔥 default_foods 컬렉션에서 찾은 foodData: $foodData");
                           }
+                        }
+
+                        if (foodData != null) {
+                          String defaultCategory =
+                              foodData['defaultCategory'] ?? '기타';
+                          String defaultFridgeCategory =
+                              foodData['defaultFridgeCategory'] ?? '기타';
+                          String shoppingListCategory =
+                              foodData['shoppingListCategory'] ?? '기타';
+                          int shelfLife = foodData['shelfLife'] ?? 0;
+                          String foodsId = foodData['id'] ?? '기타';
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FridgeItemDetails(
+                                foodsId: foodsId,
+                                foodsName: currentItem,
+                                foodsCategory: defaultCategory,
+                                fridgeCategory: defaultFridgeCategory,
+                                shoppingListCategory: shoppingListCategory,
+                                consumptionDays: shelfLife,
+                                registrationDate: DateFormat('yyyy-MM-dd')
+                                    .format(DateTime.now()),
+                              ),
+                            ),
+                          );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('해당 아이템 정보를 찾을 수 없습니다.')),
+                            SnackBar(content: Text('아이템의 상세내용이 없습니다.')),
                           );
+                          print(
+                              "Item not found in foods collection: $currentItem");
                         }
                       } catch (e) {
                         print('Error fetching food details: $e');
@@ -1147,7 +1163,8 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
       return Container(); // 인덱스가 유효하지 않으면 빈 컨테이너 반환
     }
 
-    List<Map<String, dynamic>> filteredItems = _filterItems(itemLists[sectionIndex]);
+    List<Map<String, dynamic>> filteredItems =
+        _filterItems(itemLists[sectionIndex]);
 
     return DragTarget<Map<String, dynamic>>(
       onWillAcceptWithDetails: (draggedItem) {
@@ -1159,11 +1176,13 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
       onLeave: (data) {
         _stopAutoScroll(); // ✅ 드래그가 벗어나면 자동 스크롤 멈춤
       },
-      onAcceptWithDetails: (DragTargetDetails<Map<String, dynamic>> details) async {
+      onAcceptWithDetails:
+          (DragTargetDetails<Map<String, dynamic>> details) async {
         final draggedItem = details.data;
         final String draggedItemName = draggedItem['itemName'] ?? '';
         final String draggedItemDocumentId = draggedItem['documentId'] ?? '';
-        final String newFridgeCategoryId = storageSections[sectionIndex].categoryName;
+        final String newFridgeCategoryId =
+            storageSections[sectionIndex].categoryName;
 
         try {
           // Firestore에서 정확한 문서 ID를 찾아서 업데이트
@@ -1171,7 +1190,6 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
               .collection('fridge_items')
               .doc(draggedItemDocumentId)
               .update({'fridgeCategoryId': newFridgeCategoryId});
-
         } catch (e) {
           print('Error updating fridgeCategoryId: $e');
         }
@@ -1260,6 +1278,7 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
       ),
     );
   }
+
   // Widget _buildDragTargetForFridgeTransfer() {
   //   return DragTarget<Map<String, dynamic>>(
   //     onWillAcceptWithDetails: (DragTargetDetails<Map<String, dynamic>> details) {
@@ -1367,8 +1386,8 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
   // }
   Widget _buildDragTargetForAddSection() {
     return DragTarget<Map<String, dynamic>>(
-      onWillAcceptWithDetails: (DragTargetDetails<Map<String, dynamic>> details) {
-
+      onWillAcceptWithDetails:
+          (DragTargetDetails<Map<String, dynamic>> details) {
         setState(() {
           isDragActive = true; // 드래그가 활성화되면 상태 업데이트
         });
@@ -1385,7 +1404,8 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
           isDragOver = false; // 드래그가 버튼을 벗어났을 때 상태 리셋
         });
       },
-      onAcceptWithDetails: (DragTargetDetails<Map<String, dynamic>> details) async {
+      onAcceptWithDetails:
+          (DragTargetDetails<Map<String, dynamic>> details) async {
         final draggedItem = details.data;
         final documentId = draggedItem['documentId']; // ✅ 전달받은 문서 ID
         setState(() {
@@ -1398,10 +1418,10 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
             final theme = Theme.of(context);
             String newSectionName = ''; // 입력된 섹션 이름 저장
             return AlertDialog(
-              title: Text("섹션을 추가할까요?",
-                style: TextStyle(
-                    color: theme.colorScheme.onSurface
-                ),),
+              title: Text(
+                "섹션을 추가할까요?",
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              ),
               content: TextField(
                 onChanged: (value) {
                   newSectionName = value; // 사용자가 입력하는 값 업데이트
@@ -1410,8 +1430,7 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
                   hintText: '섹션 이름 입력',
                   border: OutlineInputBorder(), // 입력 필드에 테두리 추가
                 ),
-                style:
-                TextStyle(color: theme.colorScheme.onSurface),
+                style: TextStyle(color: theme.colorScheme.onSurface),
               ),
               actions: [
                 TextButton(
@@ -1423,7 +1442,8 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
                 TextButton(
                   onPressed: () async {
                     if (newSectionName.isNotEmpty) {
-                      await _saveNewSectionToFirestore(newSectionName); // 섹션 저장 함수 호출
+                      await _saveNewSectionToFirestore(
+                          newSectionName); // 섹션 저장 함수 호출
                       Navigator.pop(context); // 다이얼로그 닫기
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1436,7 +1456,6 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
               ],
             );
           },
-
         );
 
         // if (targetFridgeDocumentId != null) {
@@ -1452,7 +1471,6 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
         setState(() {
           isDragActive = false; // 드래그 종료 시 상태 리셋
         });
-
       },
       builder: (context, candidateData, rejectedData) {
         return Expanded(
@@ -1460,9 +1478,13 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
             margin: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
             padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isDragOver ? Colors.blue.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+              color: isDragOver
+                  ? Colors.blue.withOpacity(0.3)
+                  : Colors.grey.withOpacity(0.2),
               border: Border.all(
-                color: isDragOver ? Colors.blue : Colors.grey, // 드래그 상태에 따라 테두리 색 변경
+                color: isDragOver
+                    ? Colors.blue
+                    : Colors.grey, // 드래그 상태에 따라 테두리 색 변경
                 width: isDragOver ? 3.0 : 1.0, // 두께도 변경 가능
               ),
               borderRadius: BorderRadius.circular(8),
@@ -1472,7 +1494,9 @@ print('!_scrollController.hasClients ${!_scrollController.hasClients}');
                 '섹션 추가',
                 style: TextStyle(
                   color: isDragOver ? Colors.blue : Colors.grey, // 글자색 변경
-                  fontWeight: isDragOver ? FontWeight.bold : FontWeight.normal, // 폰트 굵기 변경
+                  fontWeight: isDragOver
+                      ? FontWeight.bold
+                      : FontWeight.normal, // 폰트 굵기 변경
                 ),
               ),
             ),

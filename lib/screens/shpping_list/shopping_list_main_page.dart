@@ -139,6 +139,7 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
           .get();
 
       List<Map<String, dynamic>> allItems = [];
+      Set<String> processedItemIds = {}; // 중복 방지를 위한 Set
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
@@ -146,8 +147,9 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
         final isChecked = data['isChecked'] ?? false;
 
         Map<String, dynamic>? foodData;
+        String? foodDocId;
 
-        // 🔍 1. `foods` 컬렉션에서 검색
+        // 🔍 1. `foods` 컬렉션에서 검색 (사용자 정의 아이템)
         final foodsSnapshot = await FirebaseFirestore.instance
             .collection('foods')
             .where('foodsName', isEqualTo: itemName)
@@ -156,8 +158,9 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
         if (foodsSnapshot.docs.isNotEmpty) {
           // ✅ 사용자 데이터가 있는 경우
           foodData = foodsSnapshot.docs.first.data();
+          foodDocId = foodsSnapshot.docs.first.id;
         } else {
-          // 🔍 2. `default_foods`에서 검색
+          // 🔍 2. `default_foods`에서 검색 (기본 아이템)
           final defaultFoodsSnapshot = await FirebaseFirestore.instance
               .collection('default_foods')
               .where('foodsName', isEqualTo: itemName)
@@ -165,8 +168,16 @@ class ShoppingListMainPageState extends State<ShoppingListMainPage>
 
           if (defaultFoodsSnapshot.docs.isNotEmpty) {
             foodData = defaultFoodsSnapshot.docs.first.data();
+            foodDocId = defaultFoodsSnapshot.docs.first.id;
           }
         }
+        if (foodDocId != null && processedItemIds.contains(foodDocId)) {
+          // 이미 추가된 아이템이면 건너뛰기
+          continue;
+        }
+
+        processedItemIds.add(foodDocId ?? itemName); // 중복 방지
+
 
         // 데이터가 없는 경우 "기타"로 처리
         final category = foodData?['shoppingListCategory'] ?? '기타';

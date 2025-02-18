@@ -191,13 +191,20 @@ class _AddItemToCategoryState extends State<AddItemToCategory> {
             'userId': userId,
           });
         } else {
-          await FirebaseFirestore.instance.collection('foods').add({
+          DocumentReference newDocRef = FirebaseFirestore.instance.collection('foods').doc();
+
+          await newDocRef.set({
             'foodsName': foodNameController.text,
             'defaultCategory': selectedFoodsCategory!.defaultCategory,
             'defaultFridgeCategory': selectedFridgeCategory!.categoryName,
             'shoppingListCategory': selectedShoppingListCategory!.categoryName,
             'shelfLife': consumptionDays,
             'userId': userId,
+          });
+          // 🔹 생성된 문서의 ID를 다시 업데이트하여 `defaultFoodsDocId` 설정
+          // 🔹 `defaultFoodsDocId` 값을 업데이트하여 문서 ID 저장
+          await FirebaseFirestore.instance.collection('foods').doc(newDocRef.id).update({
+            'defaultFoodsDocId': newDocRef.id, // ✅ 새로 추가한 아이템의 ID를 `defaultFoodsDocId`로 저장
           });
         }
 

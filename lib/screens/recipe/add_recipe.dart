@@ -130,9 +130,7 @@ class _AddRecipeState extends State<AddRecipe> {
   }
 
   Future<List<String>> _fetchIngredients() async {
-    Set<String> userIngredients = {}; // 사용자가 추가한 재료
-    List<String> allIngredients = [];
-
+    Set<String> ingredientsSet = {}; // 중복 제거를 위한 Set
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     try {
@@ -142,32 +140,38 @@ class _AddRecipeState extends State<AddRecipe> {
           .where('userId', isEqualTo: userId)
           .get();
 
+      Map<String, String> foodToDefaultIdMap = {};
+
       for (var doc in userSnapshot.docs) {
         final foodName = doc['foodsName'] as String?;
+        final defaultFoodsDocId = doc['defaultFoodsDocId'] as String?;
         if (foodName != null) {
-          userIngredients.add(foodName);
+          ingredientsSet.add(foodName);
+          if (defaultFoodsDocId != null) {
+            foodToDefaultIdMap[defaultFoodsDocId] = foodName;
+          }
         }
       }
 
       // ✅ 2. 기본 식재료(default_foods) 가져오기
       final defaultSnapshot =
-          await FirebaseFirestore.instance.collection('default_foods').get();
+      await FirebaseFirestore.instance.collection('default_foods').get();
 
       for (var doc in defaultSnapshot.docs) {
         final foodName = doc['foodsName'] as String?;
-        if (foodName != null && !userIngredients.contains(foodName)) {
-          allIngredients.add(foodName);
+        final defaultId = doc.id;
+        if (foodName != null && !foodToDefaultIdMap.containsKey(defaultId)) {
+          ingredientsSet.add(foodName);
         }
       }
 
-      // ✅ 3. 사용자 재료 + 기본 재료 합쳐서 반환
-      allIngredients.insertAll(0, userIngredients.toList()); // 사용자 데이터 우선
-      return allIngredients;
+      return ingredientsSet.toList(); // 중복 제거된 리스트 반환
     } catch (e) {
       print("Error fetching ingredients: $e");
       return [];
     }
   }
+
 
   Future<void> _loadDataFromFirestore() async {
     try {

@@ -259,7 +259,6 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
           // ✅ 존재하면 해당 ID 그대로 사용
           defaultFoodsDocId = defaultFoodsSnapshot.id;
           foodData = defaultFoodsSnapshot.data();
-          print("✅ default_foods에서 찾음: $defaultFoodsDocId");
         } else {
           // 🔹 2️⃣ 존재하지 않으면 foods에서 검색
           final foodsSnapshot = await FirebaseFirestore.instance
@@ -275,6 +274,8 @@ class _FridgeItemDetailsState extends State<FridgeItemDetails> {
             if (defaultFoodsDocId != null) {
               print("✅ foods에서 찾음: defaultFoodsDocId = $defaultFoodsDocId");
             } else {
+              // 🔹 3️⃣ 기본템도 아니고, 수정한 아이템도 아니라면 → 새로 추가한 아이템
+              defaultFoodsDocId = widget.foodsId;
               print("❌ foods에서 찾았지만 defaultFoodsDocId 없음");
             }
           } else {
