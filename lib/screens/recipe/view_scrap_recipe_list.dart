@@ -224,29 +224,59 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
           .orderBy('scrapedAt', descending: true)
           .get();
 
-      for (var doc in snapshot.docs) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        String? link = data['link'];
-        String? scrapedGroupName = data['scrapedGroupName'] ?? '기본함';
+      // 1️⃣ Firestore에서 가져온 데이터 리스트
+      List<Map<String, dynamic>> rawDataList = snapshot.docs.map((doc) {
+        return {
+          'id': doc.id,
+          'recipeId': doc['recipeId'] as String? ?? '',
+          'link': doc['link'] as String? ?? '',
+          'scrapedGroupName': doc['scrapedGroupName'] ?? '기본함',
+        };
+      }).toList();
+
+      // 2️⃣ 웹 링크가 있는 레시피만 필터링하여 병렬로 가져오기
+      List<Future<RecipeModel?>> webRequests = rawDataList.map((data) async {
+        if (data['link'].isNotEmpty) {
+          return _fetchRecipeDetailsFromLink(data['link']);
+        }
+        return null;
+      }).toList();
+
+      List<RecipeModel?> webResults = await Future.wait(webRequests);
+
+      // 3️⃣ Firestore에서 레시피 ID 목록을 한 번의 `whereIn` 쿼리로 가져오기
+      List<String> recipeIds = List<String>.from(rawDataList
+          .map((data) => data['recipeId'])
+          .where((id) => id != null && id.toString().isNotEmpty));
+
+      Map<String, RecipeModel> firestoreRecipeMap = {};
+
+      if (recipeIds.isNotEmpty) {
+        final recipeSnapshot = await _db
+            .collection('recipe')
+            .where(FieldPath.documentId, whereIn: recipeIds)
+            .get();
+
+        firestoreRecipeMap = {
+          for (var doc in recipeSnapshot.docs)
+            doc.id: RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>)
+        };
+      }
+
+      // 4️⃣ 결과를 `fetchedRecipes` 리스트에 저장
+      for (int i = 0; i < rawDataList.length; i++) {
+        var data = rawDataList[i];
 
         RecipeModel? recipe;
-        if (link != null && link.isNotEmpty) {
-          recipe = await _fetchRecipeDetailsFromLink(link);
+        if (data['link'].isNotEmpty) {
+          recipe = webResults[i]; // 웹에서 가져온 레시피
         } else {
-          String recipeId = data['recipeId'] ?? '';
-          if (recipeId.isNotEmpty) {
-            final recipeSnapshot =
-                await _db.collection('recipe').doc(recipeId).get();
-            if (recipeSnapshot.exists) {
-              recipe = RecipeModel.fromFirestore(
-                  recipeSnapshot.data() as Map<String, dynamic>);
-            }
-          }
+          recipe = firestoreRecipeMap[data['recipeId']]; // Firestore에서 가져온 레시피
         }
         if (recipe != null) {
-          recipe.scrapedGroupName = scrapedGroupName;
+          recipe.scrapedGroupName = data['scrapedGroupName'];
           fetchedRecipes.add({
-            'id': doc.id, // 🔹 Firestore 문서 ID 저장
+            'id': data['id'], // 🔹 Firestore 문서 ID 저장
             'recipe': recipe,
           });
         }
@@ -255,20 +285,6 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
       print('Error fetching matching recipes: $e');
     }
     return fetchedRecipes;
-  }
-
-  Future<void> _loadFridgeItemsFromFirestore() async {
-    try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('fridge_items').get();
-
-      setState(() {
-        fridgeIngredients =
-            snapshot.docs.map((doc) => doc['items'] as String).toList();
-      });
-    } catch (e) {
-      print('Error loading fridge items: $e');
-    }
   }
 
   Future<Map<String, dynamic>> loadScrapedData(String recipeId,
@@ -633,6 +649,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
                         onItemChanged: (value) async {
                           setState(() {
                             selectedFilter = value;
+                            recipeList = []; // 🔹 UI를 빠르게 업데이트하기 위해 먼저 비움
                             isLoading = true; // 🔹 로딩 상태 시작
                           });
                           List<Map<String, dynamic>> fetchedData;

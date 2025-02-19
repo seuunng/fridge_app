@@ -15,6 +15,7 @@ class _PurchasePageState extends State<PurchasePage> {
   void initState() {
     super.initState();
     _loadProducts();
+    _iapService.restorePurchases(); // 🔹 앱 실행 시 구독 상태 확인
   }
 
   Future<void> _loadProducts() async {

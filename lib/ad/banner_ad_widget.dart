@@ -22,8 +22,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   void _loadBannerAd() {
     _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-3940256099942544/6300978111', // 🔹 테스트광고
-      // adUnitId: 'ca-app-pub-4461306523468443/8556219854', // 🔹 본인의 배너 광고 단위 ID 입력
+      // adUnitId: 'ca-app-pub-3940256099942544/6300978111', // 🔹 테스트광고
+      adUnitId: 'ca-app-pub-4461306523468443/8556219854', // 🔹 본인의 배너 광고 단위 ID 입력
       size: AdSize.banner,
       request: AdRequest(),
       listener: BannerAdListener(

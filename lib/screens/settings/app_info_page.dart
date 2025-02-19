@@ -268,14 +268,14 @@ class _AppInfoPageState extends State<AppInfoPage> {
 }
 Future<void> _launchPrivacyPolicy() async {
   final Uri url = Uri.parse(
-      'https://seuunng.github.io/food_for_later_policy/privacy-policy.html');
+      'https://food-for-later.web.app/privacy-policy.html');
   if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
     throw Exception('Could not launch $url');
   }
 }
 Future<void> _launchTermsOfService() async {
   final Uri url = Uri.parse(
-      'https://seuunng.github.io/food_for_later_policy/terms-of-service.html');
+      'https://food-for-later.web.app/terms-of-service.html');
   if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
     throw Exception('Could not launch $url');
   }

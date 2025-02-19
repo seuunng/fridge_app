@@ -12,6 +12,6 @@ final Notice thirdNotice = Notice(
 
 ---
 
-[서비스 약관 전문 보기](https://seuunng.github.io/food_for_later_policy/terms-of-service.html)
+[서비스 약관 전문 보기](https://food-for-later.web.app/terms-of-service.html)
 """,
 );

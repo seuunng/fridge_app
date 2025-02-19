@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/screens/auth/user_details_page.dart';
 import 'package:food_for_later_new/screens/settings/app_usage_settings.dart';
 import 'package:food_for_later_new/services/default_fridge_service.dart';
@@ -43,11 +44,15 @@ class _LoginPageState extends State<LoginPage> {
   final FocusNode _passwordFocusNode = FocusNode(); // 비밀번호 입력 필드의 포커스
   String errorMessage = '';
   bool _isLoading = false; // 로딩 상태 관리
+  String userRole = '';
+  bool _isPremiumUser = false;
 
+  final userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid ?? '';
   final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
 
     // 리스너 추가
     _emailFocusNode.addListener(() {
@@ -66,6 +71,24 @@ class _LoginPageState extends State<LoginPage> {
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     super.dispose();
+  }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+          // 🔹 paid_user 또는 admin이면 유료 사용자로 설정
+          _isPremiumUser = (userRole == 'paid_user' || userRole == 'admin');
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
   }
   Future<void> addUserToFirestore(firebase_auth.User user,
       {String? nickname,
@@ -497,14 +520,14 @@ class _LoginPageState extends State<LoginPage> {
   }
   Future<void> _launchPrivacyPolicy() async {
     final Uri url = Uri.parse(
-        'https://seuunng.github.io/food_for_later_policy/privacy-policy.html');
+        'https://food-for-later.web.app/privacy-policy.html');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
     }
   }
   Future<void> _launchTermsOfService() async {
     final Uri url = Uri.parse(
-        'https://seuunng.github.io/food_for_later_policy/terms-of-service.html');
+        'https://food-for-later.web.app/terms-of-service.html');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
     }
@@ -653,9 +676,21 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
+
               ],
             ),
           ),
+      ),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Column이 최소한의 크기만 차지하도록 설정
+        mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
+        children: [
+          if (userRole != 'admin' && userRole != 'paid_user')
+            SafeArea(
+              bottom: false, // 하단 여백 제거
+              child: BannerAdWidget(),
+            ),
+        ],
       ),
     );
   }

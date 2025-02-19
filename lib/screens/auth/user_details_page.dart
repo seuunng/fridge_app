@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 
 class UserDetailsPage extends StatefulWidget {
@@ -13,6 +16,8 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   String? _selectedGender;
   int? _birthYear; // 기본값 설정
+  String userRole = '';
+  bool _isPremiumUser = false;
   String _avatar = 'assets/avatar/avatar-01.png';
   bool _agreedToPrivacyPolicy = false; // 개인정보 제공 동의 체크박스 상태
   TextEditingController _nicknameController = TextEditingController();
@@ -20,6 +25,26 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   void initState() {
     super.initState();
     _loadUserDetails();
+    _loadUserRole();
+    // _setRandomNickname();
+  }
+  void _loadUserRole() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
+          // 🔹 paid_user 또는 admin이면 유료 사용자로 설정
+          _isPremiumUser = (userRole == 'paid_user' || userRole == 'admin');
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
   }
 // 사용자 정보를 Firestore에서 불러옴
   void _loadUserDetails() async {
@@ -28,19 +53,46 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
 
       if (userDoc.exists) {
         final data = userDoc.data()!;
-        final existingNickname = data['nickname'] ?? ''; // 기존 별명 불러오기
-        final existingAvatar = data['avatar'] ?? _avatar; // 저장된 아바타 불러오기
+        var existingNickname = data['nickname'] ?? ''; // 기존 별명 불러오기
+        var existingAvatar = data['avatar'] ?? _getRandomAvatar();  // 저장된 아바타 불러오기
         final existingAgreement = data['privacyAgreed'] ?? false; // 동의 여부 불러오기
+        var existingBirthYear = (data['birthYear'] is int)
+            ? data['birthYear']
+            : int.tryParse(data['birthYear']?.toString() ?? '1999') ?? 1999; // 기본값 1999
+        var existingGender = data['gender'] ?? '';
 
+        if (data['avatar'] == null) {
+          existingAvatar = _getRandomAvatar();
+          await FirebaseFirestore.instance.collection('users').doc(userId).set({
+            'avatar': existingAvatar
+          }, SetOptions(merge: true));
+        }
+        if (existingNickname.isEmpty || existingNickname == "닉네임 없음") {
+          existingNickname = _generateRandomNickname();
+          await FirebaseFirestore.instance.collection('users').doc(userId).set({
+            'nickname': existingNickname
+          }, SetOptions(merge: true));
+        }
+        if (data['birthYear'] == null || existingBirthYear == 0) {
+          existingBirthYear = 1999;
+          await FirebaseFirestore.instance.collection('users').doc(userId).set({
+            'birthYear': 1999
+          }, SetOptions(merge: true));
+        }
+        if (data['gender'] == null || existingGender == "알 수 없음") {
+          existingGender = 'F';
+          await FirebaseFirestore.instance.collection('users').doc(userId).set({
+            'gender': 'F'
+          }, SetOptions(merge: true));
+        }
         setState(() {
             _nicknameController.text = existingNickname; // 기존 별명 사용
             _avatar = existingAvatar;
             _agreedToPrivacyPolicy = existingAgreement;
-            _selectedGender = _genderFromFirestore(data['gender']);
-            _birthYear = (data['birthYear'] is int)
-                ? data['birthYear'] // Firestore에서 숫자 타입으로 저장된 경우
-                : int.tryParse(data['birthYear'].toString()); // 문자열인 경우 파싱
+            _selectedGender = _genderFromFirestore(existingGender);
+            _birthYear = existingBirthYear;
         });
+
       } else {
         // 사용자 정보가 없으면 랜덤 별명 추천
         setState(() {
@@ -51,6 +103,11 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       print('Error loading user details: $e');
     }
   }
+  String _getRandomAvatar() {
+    final random = Random();
+    int avatarNumber = random.nextInt(25) + 1; // 1~25 범위
+    return 'assets/avatar/avatar-${avatarNumber.toString().padLeft(2, '0')}.png';
+  }
   String? _genderFromFirestore(String? genderCode) {
     if (genderCode == 'M') return '남성';
     if (genderCode == 'F') return '여성';
@@ -58,18 +115,19 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   }
   // 두그룹 합쳐서 별명 만들기
   String _generateRandomNickname() {
-    final randomAdjective = (adjectives.toList()..shuffle()).first;
-    final randomNoun = (nouns.toList()..shuffle()).first;
+    final random = Random();
+    final randomAdjective = adjectives[random.nextInt(adjectives.length)];
+    final randomNoun = nouns[random.nextInt(nouns.length)];
     return '$randomAdjective$randomNoun';
   }
 
   //랜덤으로 하나골라서 추천하기
-  void _setRandomNickname() {
-    final randomNickname = _generateRandomNickname();
-    setState(() {
-      _nicknameController.text = randomNickname;
-    });
-  }
+  // void _setRandomNickname() {
+  //   final randomNickname = _generateRandomNickname();
+  //   setState(() {
+  //     _nicknameController.text = randomNickname;
+  //   });
+  // }
 
   void _saveUserDetails() async {
     if (!_agreedToPrivacyPolicy &&
@@ -349,6 +407,11 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                   ),
                 ),
               ),
+              if (userRole != 'admin' && userRole != 'paid_user')
+                SafeArea(
+                  bottom: false, // 하단 여백 제거
+                  child: BannerAdWidget(),
+                ),
             ]));
   }
   Future<void> _showAvatarChangeDialog() async {

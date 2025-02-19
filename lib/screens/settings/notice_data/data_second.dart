@@ -27,6 +27,6 @@ final Notice secondNotice = Notice(
 ---
 
 자세한 내용은 아래 링크를 통해 확인하실 수 있습니다:) 
-[개인정보처리방침 전문 보기](https://seuunng.github.io/food_for_later_policy/privacy-policy.html)
+[개인정보처리방침 전문 보기](https://food-for-later.web.app/privacy-policy.html)
 """,
 );
