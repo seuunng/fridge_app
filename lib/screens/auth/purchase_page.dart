@@ -76,7 +76,7 @@ class _PurchasePageState extends State<PurchasePage> {
                   _buildFeatureItem(
                     context,
                     icon: Icons.kitchen,
-                    title: "냉장고를 여러개 만들어요",
+                    title: "추가 공간을 만들어요",
                     description: "가족, 사무실, 또는 친구와 함께 더 많은 냉장고를 효율적으로 관리하세요.",
                   ),
                   _buildFeatureItem(
@@ -111,13 +111,13 @@ class _PurchasePageState extends State<PurchasePage> {
                             style: TextStyle(
                                 color: theme.colorScheme.onSurface
                             ),),
-                          subtitle: Text(product.price,
+                          subtitle: Text('${product.price} /연',
                             style: TextStyle(
                                 color: theme.colorScheme.onSurface
                             ),),
                           trailing: ElevatedButton(
                             onPressed: () => _iapService.buyProduct(product),
-                            child: Text('구매하기'),
+                            child: Text('구독하기'),
                           ),
                         );
                       },

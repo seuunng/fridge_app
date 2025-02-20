@@ -305,11 +305,11 @@ class _LoginPageState extends State<LoginPage> {
       }
 
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          errorMessage = 'Google 로그인 실패: ${e.toString()}';
-        });
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('구글 로그인에 실패했습니다.: $e'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -326,6 +326,11 @@ class _LoginPageState extends State<LoginPage> {
       // print('Google 로그인 성공: ${userCredential.user}');
     } catch (e) {
       print('Google 로그인 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('구글 로그인에 실패했습니다.: $e'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -448,9 +453,15 @@ class _LoginPageState extends State<LoginPage> {
         if (res.errorMessage != null) {
           print("네이버 로그인 실패 Error Message: ${res.errorMessage}");
         }
+
       }
     } catch (e) {
       print("네이버 로그인 중 오류 발생: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('네이버 로그인에 실패했습니다.: $e'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     } finally {
       setState(() {
         _isLoading = false; // 로딩 상태 해제
@@ -533,12 +544,25 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _launchHomePage() async {
+    final Uri url = Uri.parse('https://food-for-later.web.app/home.html');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text('로그인')),
+      appBar: AppBar(title: Text('로그인'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.home),
+            onPressed: _launchHomePage,
+            tooltip: '홈으로 이동',
+          ),
+        ],),
       body:  SingleChildScrollView(
         child: Padding(
             padding: const EdgeInsets.all(16.0),

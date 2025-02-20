@@ -20,6 +20,10 @@
         ]
       }
     ],
+{
+  "source": "/",
+  "destination": "/home.html"
+},
     "rewrites": [
       {
         "source": "/**",
