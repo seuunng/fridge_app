@@ -1,108 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Food For Later New</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>이따 뭐먹지</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.897589496124-vvqsrsrvub61f2dlr32ksq6ht50iqj3d</string>
+				<string>kakaocae77ccb2159f26f7234f6ccf269605e</string>
+				<string>naverpbbWXl5xZH7xRCPLmqfT</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-4461306523468443~2393870255</string>
+	<key>GIDClientID</key>
+	<string>897589496124-vvqsrsrvub61f2dlr32ksq6ht50iqj3d.apps.googleusercontent.com</string>
+	<key>KAKAO_APP_KEY</key>
+	<string>cae77ccb2159f26f7234f6ccf269605e</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>kakaocae77ccb2159f26f7234f6ccf269605e</string>
+		<string>kakaokompassauth</string>
+		<string>kakaotalk</string>
+		<string>naverpbbWXl5xZH7xRCPLmqfT</string>
+		<string>googlechrome</string>
+		<string>googlegmail</string>
+		<string>google</string>
+		<string>com.googleusercontent.apps.897589496124-vvqsrsrvub61f2dlr32ksq6ht50iqj3d</string>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>CFBundleDevelopmentRegion</key>
-		<string>$(DEVELOPMENT_LANGUAGE)</string>
-		<key>CFBundleDisplayName</key>
-		<string>Food For Later New</string>
-		<key>CFBundleExecutable</key>
-		<string>$(EXECUTABLE_NAME)</string>
-		<key>CFBundleIdentifier</key>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-		<key>CFBundleInfoDictionaryVersion</key>
-		<string>6.0</string>
-		<key>CFBundleName</key>
-		<string>food_for_later_new</string>
-		<key>CFBundlePackageType</key>
-		<string>APPL</string>
-		<key>CFBundleShortVersionString</key>
-		<string>$(FLUTTER_BUILD_NAME)</string>
-		<key>CFBundleSignature</key>
-		<string>????</string>
-		<key>CFBundleVersion</key>
-		<string>$(FLUTTER_BUILD_NUMBER)</string>
-		<key>LSRequiresIPhoneOS</key>
+		<key>NSAllowsArbitraryLoads</key>
 		<true/>
-		<key>UILaunchStoryboardName</key>
-		<string>LaunchScreen</string>
-		<key>UIMainStoryboardFile</key>
-		<string>Main</string>
-		<key>UISupportedInterfaceOrientations</key>
-		<array>
-			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
-		</array>
-		<key>UISupportedInterfaceOrientations~ipad</key>
-		<array>
-			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationPortraitUpsideDown</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
-		</array>
-		<key>CADisableMinimumFrameDurationOnPhone</key>
-		<true/>
-		<key>UIApplicationSupportsIndirectInputEvents</key>
-		<true/>
-		<key>UIStatusBarHidden</key>
-		<true/>
-		<key>UIViewControllerBasedStatusBarAppearance</key>
-		<false/>
-		<!-- ✅ 카메라 접근 권한 -->
-                <key>NSCameraUsageDescription</key>
-                <string>이 앱은 카메라에 접근하여 사진 및 동영상을 촬영할 수 있습니다.</string>
-
-                <!-- ✅ 사진 앨범 접근 권한 -->
-                <key>NSPhotoLibraryUsageDescription</key>
-                <string>이 앱은 사진을 업로드하거나 보려면 사진 라이브러리에 접근해야 합니다.</string>
-
-                <!-- ✅ 외부 저장소 접근 권한 (iOS 14 이상) -->
-                <key>NSPhotoLibraryAddUsageDescription</key>
-                <string>이 앱은 이미지를 저장하기 위해 사진 라이브러리에 접근할 수 있습니다.</string>
-
-                <!-- ✅ 인터넷 연결 권한 -->
-                <key>NSAppTransportSecurity</key>
-                <dict>
-                    <key>NSAllowsArbitraryLoads</key>
-                    <true/>
-                </dict>
-
-
-                <!-- ✅ 네트워크 상태 확인 권한 -->
-                <key>NSLocalNetworkUsageDescription</key>
-                <string>이 앱은 네트워크 상태를 확인하여 안정적인 연결을 보장합니다.</string>
-
-                <!-- ✅ 카카오톡/네이버/구글 인증 시 URL 스킴 처리 -->
-                		<key>LSApplicationQueriesSchemes</key>
-                		<array>
-                			<string>kakaocae77ccb2159f26f7234f6ccf269605e</string> <!-- 카카오 앱 키 -->
-                			<string>kakaokompassauth</string> <!-- 카카오 로그인 -->
-                			<string>kakaotalk</string> <!-- 카카오톡 실행 -->
-                			<string>naverpbbWXl5xZH7xRCPLmqfT</string> <!-- 네이버 로그인 -->
-                			<string>googlechrome</string> <!-- 구글 로그인 -->
-                			<string>googlegmail</string> <!-- 구글 계정 연동 -->
-                			<string>google</string>
-                		</array>
-        <!-- ✅ Google, Kakao, Naver 로그인 설정 -->
-        		<key>CFBundleURLTypes</key>
-        		<array>
-        			<dict>
-        				<key>CFBundleURLSchemes</key>
-        				<array>
-        					<string>com.googleusercontent.apps.897589496124-vvqsrsrvub61f2dlr32ksq6ht50iqj3d.apps.googleusercontent.com</string>
-        					<string>kakaocae77ccb2159f26f7234f6ccf269605e</string>
-        					<string>naverpbbWXl5xZH7xRCPLmqfT</string>
-        				</array>
-        			</dict>
-        		</array>
-
-        		<!-- ✅ 카카오 네이티브 앱 키 -->
-        		<key>KAKAO_APP_KEY</key>
-        		<string>cae77ccb2159f26f7234f6ccf269605e</string>
-
-        		<!-- ✅ Google Ads 설정 -->
-        		<key>GADApplicationIdentifier</key>
-        		<string>ca-app-pub-4461306523468443~2393870255</string>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>이 앱은 카메라에 접근하여 사진 및 동영상을 촬영할 수 있습니다.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>이 앱은 네트워크 상태를 확인하여 안정적인 연결을 보장합니다.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>이 앱은 이미지를 저장하기 위해 사진 라이브러리에 접근할 수 있습니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>이 앱은 사진을 업로드하거나 보려면 사진 라이브러리에 접근해야 합니다.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+</dict>
 </plist>

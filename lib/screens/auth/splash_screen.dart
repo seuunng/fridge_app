@@ -39,6 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
   Future<void> _navigateToHome() async {
     await Future.delayed(Duration(seconds: 3)); // 3초 대기
+    if (!mounted) return;  // 🔹 화면이 사라졌으면 실행하지 않음 ios 수정
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => HomeScreen()), // 홈 화면으로 전환

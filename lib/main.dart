@@ -29,6 +29,7 @@ final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 //Flutter 앱의 진입점
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   if (!kIsWeb) {
     MobileAds.instance.initialize();
   } else {

@@ -72,22 +72,36 @@ class _LoginPageState extends State<LoginPage> {
     _passwordFocusNode.dispose();
     super.dispose();
   }
+  // ios 수정
   void _loadUserRole() async {
     try {
+      if (userId == null || userId!.isEmpty) {
+        setState(() {
+          userRole = 'user';  // ✅ 기본값 설정
+          _isPremiumUser = false;
+        });
+        return;
+      }
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .get();
 
-      if (userDoc.exists) {
-        setState(() {
-          userRole = userDoc['role'] ?? 'user'; // 기본값은 'user'
-          // 🔹 paid_user 또는 admin이면 유료 사용자로 설정
-          _isPremiumUser = (userRole == 'paid_user' || userRole == 'admin');
-        });
-      }
+      setState(() {
+        // 🔹 사용자가 존재하지 않거나 role이 없으면 기본값 'user'
+        userRole = (userDoc.exists && userDoc.data() != null && userDoc['role'] != null)
+            ? userDoc['role']
+            : 'user';
+
+        // 🔹 paid_user 또는 admin이면 유료 사용자로 설정
+        _isPremiumUser = (userRole == 'paid_user' || userRole == 'admin');
+      });
     } catch (e) {
       print('Error loading user role: $e');
+      setState(() {
+        userRole = 'user';  // 예외 발생 시 기본값 설정
+        _isPremiumUser = false;
+      });
     }
   }
   Future<void> addUserToFirestore(firebase_auth.User user,

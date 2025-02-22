@@ -39,7 +39,7 @@
 
 
         <activity
-            android:label="food_for_later"
+            android:label="이따 뭐먹지"
             android:name="com.seuunng.foodforlater.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
