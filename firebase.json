@@ -20,11 +20,11 @@
         ]
       }
     ],
-{
-  "source": "/",
-  "destination": "/home.html"
-},
     "rewrites": [
+      {
+        "source": "/",
+        "destination": "/home.html"
+      },
       {
         "source": "/**",
         "destination": "/index.html"

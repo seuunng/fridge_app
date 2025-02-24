@@ -3,8 +3,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/models/notice.dart' as ModelNotice;
 import 'package:food_for_later_new/screens/settings/notice_data/all_notices.dart';
-import 'package:food_for_later_new/screens/settings/notice_page.dart' as PageNotice;
-import 'package:food_for_later_new/screens/settings/notice_data/data_first.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NoticePage extends StatelessWidget {
   @override
@@ -22,13 +22,14 @@ class NoticePage extends StatelessWidget {
         itemBuilder: (context, index) {
           final notice = sortedNotices[index];
           return ListTile(
-            title: Text(notice.title,
-              style: TextStyle(
-                  color: theme.colorScheme.onSurface
-              ),),
-            subtitle: Text(
+            title: Text(
               "${notice.date.year}-${notice.date.month.toString().padLeft(
                   2, '0')}-${notice.date.day.toString().padLeft(2, '0')}",
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface
+              ),
+            ),
+            subtitle: Text(notice.title,
               style: TextStyle(
                   color: theme.colorScheme.onSurface
               ),
@@ -59,6 +60,7 @@ class NoticeDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     print(MediaQuery.of(context).size);
+
     return Scaffold(
       appBar: AppBar(
         title: Text("공지사항"),
@@ -102,6 +104,7 @@ class NoticeDetailPage extends StatelessWidget {
     );
   }
 }
+
 // 추천/응원하기 버튼 위젯
 Widget _buildActionButtons(BuildContext context) {
   return Container(
@@ -113,9 +116,14 @@ Widget _buildActionButtons(BuildContext context) {
         // 어플 추천하기 버튼
         Expanded(
           child: NavbarButton(
-            onPressed: () {
-              // 어플 추천하기 로직
-              _showSnackbar(context, "어플을 추천했습니다!");
+            onPressed: () async{
+              // 친구 선택 페이지로 이동
+              shareToKakaoTalk( '이따 뭐먹지? 고민될 때', // 제목
+                '이 앱으로 당신의 냉장고를 계획하세요!', // 설명
+                // 'https://seuunng.github.io/food_for_later_policy/marketing_01.png?v=2',
+                'https://seuunng.github.io/food_for_later_policy/marketing_02.png?v=2', // 이미지 URL
+                'https://play.google.com/store/apps/details?id=com.seuunng.foodforlater', // 웹 URL
+              );
             },
             // icon: Icon(Icons.thumb_up),
             buttonTitle: '어플 추천하기',
@@ -125,8 +133,8 @@ Widget _buildActionButtons(BuildContext context) {
         Expanded(
           child: NavbarButton(
             onPressed: () {
-              // 어플 응원하기 로직
-              _showSnackbar(context, "어플에 응원을 보냈습니다!");
+              _launchGooglePlayReview();
+              // _showSnackbar(context, "어플에 응원을 보냈습니다!");
             },
             // icon: Icon(Icons.favorite),
             buttonTitle: "어플 응원하기",
@@ -140,12 +148,61 @@ Widget _buildActionButtons(BuildContext context) {
   );
 }
 
-// 스낵바 표시
-void _showSnackbar(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      duration: Duration(seconds: 2),
-    ),
-  );
+Future<void> _launchGooglePlayReview() async {
+  final String packageName = 'com.seuunng.foodforlater'; // 패키지 이름
+  final Uri googlePlayUri = Uri.parse("market://details?id=$packageName");
+  final Uri fallbackUri = Uri.parse(
+      "https://play.google.com/store/apps/details?id=$packageName");
+
+  try {
+    // Google Play 스토어 앱으로 열기
+    if (!await launchUrl(googlePlayUri, mode: LaunchMode.externalApplication)) {
+      // 실패 시 웹 브라우저로 열기
+      if (!await launchUrl(fallbackUri, mode: LaunchMode.externalApplication)) {
+        throw Exception('Could not launch $fallbackUri');
+      }
+    }
+  } catch (e) {
+    print("구글 플레이 스토어 열기 실패: $e");
+  }
+}
+Future<void> shareToKakaoTalk(String title, String description, String imageUrl, String webUrl) async {
+  bool isKakaoTalkSharingAvailable =
+  await ShareClient.instance.isKakaoTalkSharingAvailable();
+
+  if (isKakaoTalkSharingAvailable) {
+    try {
+      // 메시지 템플릿 작성
+      Uri uri = await ShareClient.instance.shareDefault(
+        template: FeedTemplate(
+          content: Content(
+            title: title, // 제목
+            description: description, // 설명
+            imageUrl: Uri.parse(imageUrl), // 이미지 URL
+            link: Link(
+              webUrl: Uri.parse(webUrl), // 웹 링크
+              mobileWebUrl: Uri.parse(webUrl), // 모바일 링크
+            ),
+          ),
+          buttons: [
+            Button(
+              title: '다운로드',
+              link: Link(
+                webUrl: Uri.parse(webUrl), // 웹 링크
+                mobileWebUrl: Uri.parse(webUrl), // 모바일 링크
+              ),
+            ),
+          ],
+        ),
+      );
+
+      // 카카오톡 실행
+      await ShareClient.instance.launchKakaoTalk(uri);
+      print("카카오톡 공유 성공");
+    } catch (error) {
+      print("카카오톡 공유 실패: $error");
+    }
+  } else {
+    print('카카오톡이 설치되어 있지 않습니다.');
+  }
 }

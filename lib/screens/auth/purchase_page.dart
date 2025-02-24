@@ -107,11 +107,11 @@ class _PurchasePageState extends State<PurchasePage> {
                       itemBuilder: (context, index) {
                         ProductDetails product = _products[index];
                         return ListTile(
-                          title: Text('프리미엄',
+                          title: Text('프리미엄 구독',
                             style: TextStyle(
                                 color: theme.colorScheme.onSurface
                             ),),
-                          subtitle: Text('${product.price} /연',
+                          subtitle: Text('${product.price} / 연간',
                             style: TextStyle(
                                 color: theme.colorScheme.onSurface
                             ),),

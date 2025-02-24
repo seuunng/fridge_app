@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_for_later_new/models/notice.dart';
 import 'package:food_for_later_new/screens/admin_page/admin_login.dart';
 import 'package:food_for_later_new/screens/auth/purchase_page.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
@@ -14,6 +15,7 @@ import 'package:food_for_later_new/screens/settings/account_information.dart';
 import 'package:food_for_later_new/screens/settings/app_info_page.dart';
 import 'package:food_for_later_new/screens/settings/app_usage_settings.dart';
 import 'package:food_for_later_new/screens/settings/feedback_submission.dart';
+import 'package:food_for_later_new/screens/settings/notice_data/all_notices.dart';
 import 'package:food_for_later_new/screens/settings/notice_page.dart';
 import 'package:food_for_later_new/screens/shpping_list/shopping_list_main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,12 +36,14 @@ class _HomeScreenState extends State<HomeScreen> {
       GlobalKey<ShoppingListMainPageState>();
   late List<Widget> _pages;
   String selectedRecordListType = '앨범형';
+  DateTime? lastReadNotice; // 사용자가 마지막으로 읽은 공지 날짜
 
   String? selectedCategory;
   bool isAdmin = false;
   String userRole = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool isCondimentsHidden = false;
+  bool hasUnreadNotice = false; // 🔹 읽지 않은 공지사항 여부
 
   // 각 페이지를 저장하는 리스트
   @override
@@ -55,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ViewRecordMain(selectedCategory: selectedRecordListType),
     ];
     _loadUserRole();
+    _checkUnreadNotices();
   }
   void _loadUserRole() async {
     try {
@@ -92,6 +97,49 @@ class _HomeScreenState extends State<HomeScreen> {
       if (index == 1) { // 🛒 장보기 목록 페이지 선택 시 강제 새로고침
         _shoppingListMainPageKey.currentState?.refreshShoppingList();
       }
+    }
+  }
+  Future<void> _checkUnreadNotices() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // ✅ 저장된 lastReadNotice 불러오기 (없으면 2000-01-01 기본값 설정)
+    String? lastReadNoticeString = prefs.getString('lastReadNotice');
+    lastReadNotice = lastReadNoticeString != null
+        ? DateTime.parse(lastReadNoticeString)
+        : DateTime(2000, 1, 1);
+
+    // 🔹 notices 리스트에서 최신 공지 가져오기
+    if (notices.isNotEmpty) {
+      Notice latestNotice =
+      notices.reduce((a, b) => a.date.isAfter(b.date) ? a : b);
+
+      // ✅ 사용자가 마지막으로 읽은 공지보다 최신 공지가 있으면 "N" 표시
+      if (latestNotice.date.isAfter(lastReadNotice!)) {
+        setState(() {
+          hasUnreadNotice = true;
+        });
+      } else {
+        print("✅ 사용자가 최신 공지를 이미 확인했음.");
+      }
+    }
+  }
+  void _markNoticeAsRead() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .update({'lastReadNotice': Timestamp.now()}); // 🔹 현재 시간 저장
+      print("📌 lastReadNotice 업데이트 완료");
+
+      // 🔹 UI 업데이트 (읽지 않은 공지사항 없도록 변경)
+      setState(() {
+        hasUnreadNotice = false;
+      });
+    } catch (e) {
+      print("❌ lastReadNotice 업데이트 오류: $e");
     }
   }
 
@@ -138,9 +186,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   Text('조미료 숨기기',
-    style: TextStyle(
-    color: theme.colorScheme.onSurface
-    ),),
+                    style: TextStyle(
+                    color: theme.colorScheme.onSurface
+                    ),),
                 ],
               ),
             ),
@@ -472,10 +520,25 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Icons.campaign,
                     color: Theme.of(context).colorScheme.onSurface),
-                title: Text('공지사항',
-                  style: TextStyle(
-                      color: theme.colorScheme.onSurface
-                  ),),
+                title: Row(
+                  children: [
+                    Text('공지사항',
+                      style: TextStyle(
+                          color: theme.colorScheme.onSurface
+                      ),),
+                    if (hasUnreadNotice)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: Text(
+                          'N',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 onTap: () {
                   Navigator.pop(context); // 사이드바 닫기
                   Navigator.push(
@@ -483,6 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(
                       builder: (context) => NoticePage(),), // 계정 정보 페이지로 이동
                   );
+                  _markNoticeAsRead();
                 },
               ),
               ListTile(
@@ -502,22 +566,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-              ListTile(
-                leading: Icon(Icons.apartment,
-                    color: Theme.of(context).colorScheme.onSurface),
-                title: Text('어플 소개',
-                  style: TextStyle(
-                      color: theme.colorScheme.onSurface
-                  ),),
-                onTap: () {
-                  Navigator.pop(context); // 사이드바 닫기
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => AppInfoPage()), // 계정 정보 페이지로 이동
-                  );
-                },
-              ),
+              // ListTile(
+              //   leading: Icon(Icons.apartment,
+              //       color: Theme.of(context).colorScheme.onSurface),
+              //   title: Text('어플 소개',
+              //     style: TextStyle(
+              //         color: theme.colorScheme.onSurface
+              //     ),),
+              //   onTap: () {
+              //     Navigator.pop(context); // 사이드바 닫기
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //           builder: (context) => AppInfoPage()), // 계정 정보 페이지로 이동
+              //     );
+              //   },
+              // ),
               if (isAdmin)
                 ListTile(
                   leading: Icon(Icons.verified_user,

@@ -1057,7 +1057,7 @@ class _ReadRecipeState extends State<ReadRecipe> {
               bool inFridge = fridgeIngredients.contains(ingredient);
               bool isKeyword = searchKeywords.contains(ingredient);
 
-              print('🔍 비교: ingredient="$ingredient", inFridge=$inFridge');
+              // print('🔍 비교: ingredient="$ingredient", inFridge=$inFridge');
 
               return Container(
                 padding: EdgeInsets.symmetric(vertical: 3.0, horizontal: 5.0),
@@ -1075,8 +1075,10 @@ class _ReadRecipeState extends State<ReadRecipe> {
                 ),
                 child: Text(ingredient,
                     style: TextStyle(color:
-                    inFridge
-                        ? theme.colorScheme.surface
+                    isKeyword
+                        ? Colors.white
+                        : inFridge
+                        ? Colors.white
                         : theme.colorScheme.onSurface
                     )),
               );
@@ -1132,7 +1134,9 @@ class _ReadRecipeState extends State<ReadRecipe> {
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: Text(method,
-                    style: TextStyle(color: theme.colorScheme.onSurface)),
+                    style: TextStyle(color: isKeyword
+                        ? Colors.white // 검색 키워드에 있으면 녹색
+                        : theme.colorScheme.onSurface)),
               );
             }).toList(),
           ),
@@ -1174,7 +1178,9 @@ class _ReadRecipeState extends State<ReadRecipe> {
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: Text(theme,
-                    style: TextStyle(color: themes1.colorScheme.onSurface)),
+                    style: TextStyle(color: isKeyword
+                        ? Colors.white // 검색 키워드에 있으면 녹색
+                        : themes1.colorScheme.onSurface)),
               );
             }).toList(),
           ),

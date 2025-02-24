@@ -938,7 +938,7 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
             style: TextStyle(
               fontSize: 12.0,
               color: inFridge
-                  ? theme.colorScheme.surface
+                  ? Colors.white
                   : theme.colorScheme.onSurface
             ),
           ),

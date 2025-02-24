@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "897589496124-c87ugcso6gr9k00l1o4lv9k48jaon6te.apps.googleusercontent.com",
+          "client_id": "897589496124-8qnk1f1594k0hr9296dimtck5lnq7ra0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.seuunng.foodforlater",
-            "certificate_hash": "9980104fb5263cfe5822be86bed1b7c862fb161f"
+            "certificate_hash": "3df867d0508ed557eddc2f7e2cbca1b0f252f49e"
           }
         },
         {
@@ -39,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "897589496124-0lvf9jpu1u8567657fb2bj0cm97f7d1c.apps.googleusercontent.com",
+              "client_id": "897589496124-0oh6bmrvpck4m8hdq1tosqf7cmjupl9u.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.foodForLater"
+                "bundle_id": "com.example.fridgeApp"
               }
             }
           ]
