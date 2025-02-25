@@ -13,7 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_item_details.dart';
-import 'package:lottie/lottie.dart';
+// import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FridgeMainPage extends StatefulWidget {

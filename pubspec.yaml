@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.5+13
+version: 1.1.6+14
 
 environment:
   sdk: ">=3.5.0 <=3.7.0"
@@ -60,7 +60,7 @@ dependencies:
   path_provider: ^2.0.11  # 파일을 로컬 디바이스에 저장하기 위한 경로 제공
   shared_preferences: ^2.1.1  # 로컬 저장소 (테마, 설정 등)
   provider: ^6.0.0
-  lottie: ^3.3.1
+#  lottie: ^3.3.1
   #  permission_handler: ^10.2.0  # 위치, 카메라 등의 접근 권한 관리
 
   # UI 관련 패키지
