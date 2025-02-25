@@ -65,6 +65,7 @@ android {
     }
 }
 dependencies {
+    implementation "androidx.multidex:multidex:2.0.1" // MultiDex 지원 추가
     // Firebase BoM
     implementation platform("com.google.firebase:firebase-bom:33.2.0")
     implementation 'com.google.firebase:firebase-analytics'
