@@ -102,6 +102,7 @@ class _MyAppState extends State<MyApp> {
       _iapService = InAppPurchaseService();
       _purchaseUpdates = InAppPurchase.instance.purchaseStream;
       _iapService?.listenToPurchaseUpdates(_purchaseUpdates!);
+      _iapService?.checkSubscriptionStatus();
     } else {
       _iapService = null;
       _purchaseUpdates = null;

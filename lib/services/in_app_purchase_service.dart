@@ -56,6 +56,9 @@ class InAppPurchaseService {
         print('❌ 구매 실패: ${purchase.error}');
       } else if (purchase.status == PurchaseStatus.canceled) {
         print('⚠️ 구매 취소됨');
+        await _savePremiumStatus(false);
+        await _updateUserRole(false); // 🔹 Firestore에서 role 변경 (user)
+        isPremiumUser = false;
       }
     }
   }
@@ -101,7 +104,33 @@ class InAppPurchaseService {
       print("❌ 구독 복원 중 오류 발생: $error");
     });
   }
+  Future<void> checkSubscriptionStatus() async {
+    final bool available = await _iap.isAvailable();
+    if (!available) {
+      print("❌ 인앱 결제 기능을 사용할 수 없습니다.");
+      return;
+    }
 
+    final Stream<List<PurchaseDetails>> purchaseStream = _iap.purchaseStream;
+    purchaseStream.listen((purchaseDetailsList) async {
+      bool isSubscribed = false;
+
+      for (var purchase in purchaseDetailsList) {
+        if (purchase.productID == 'premium_annual' &&
+            (purchase.status == PurchaseStatus.purchased ||
+                purchase.status == PurchaseStatus.restored)) {
+          isSubscribed = true;
+        }
+      }
+
+      await _savePremiumStatus(isSubscribed);
+      await _updateUserRole(isSubscribed);
+
+      print("✅ 구독 상태 확인 완료: isSubscribed = $isSubscribed");
+    }, onError: (error) {
+      print("❌ 구독 상태 확인 중 오류 발생: $error");
+    });
+  }
   Future<void> buySubscription(ProductDetails product) async {
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
