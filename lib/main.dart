@@ -115,11 +115,11 @@ class _MyAppState extends State<MyApp> {
       return MaterialApp(
         title: '이따뭐먹지',
         theme: themeProvider.themeData,
-        home: SplashScreen(), // 스플래시 화면 시작
+        home: AuthStateWidget(), // 스플래시 화면 시작
         onGenerateRoute: (settings) {
           final Uri uri = Uri.parse(settings.name ?? '');
           // final Uri uri = Uri.base;
-          print('Navigated URI: ${uri.toString()}');
+          // print('Navigated URI: ${uri.toString()}');
 
           if (uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'recipe') {
             final recipeId =
@@ -163,8 +163,9 @@ class AuthStateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<firebase_auth.User?>(
-      stream: firebase_auth.FirebaseAuth.instance.authStateChanges(),
+      stream: firebase_auth.FirebaseAuth.instance.idTokenChanges(),
       builder: (context, snapshot) {
+        print("StreamBuilder 실행됨");
         // URI를 가져와서 외부 링크로 접근했는지 확인
         final Uri uri = Uri.base;
         if (uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'recipe') {
@@ -176,10 +177,12 @@ class AuthStateWidget extends StatelessWidget {
 
         // 인증 상태에 따라 기본 라우팅 처리
         if (snapshot.connectionState == ConnectionState.waiting) {
+          print("Firebase 인증 확인 중...");
           return Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
-        } else if (snapshot.hasData) {
+        } else if (snapshot.hasData && snapshot.data != null) {
+          print('사용자 정보 ${snapshot.data}');
           return HomeScreen(); // 로그인된 사용자를 위한 홈 페이지
         } else {
           return LoginPage(); // 로그인 페이지로 이동

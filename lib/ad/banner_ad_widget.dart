@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -19,11 +21,21 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       _loadBannerAd();
     }
   }
-
+  String getBannerAdUnitId() {
+    if (Platform.isAndroid) {
+      return 'ca-app-pub-4461306523468443/8556219854'; // 🔹 Android 광고 ID
+    } else if (Platform.isIOS) {
+      return 'ca-app-pub-4461306523468443/2859670467'; // 🔹 iOS 광고 ID (실제 ID로 변경)
+      // return 'ca-app-pub-3940256099942544/6300978111',
+    }
+    return ''; // 웹 또는 지원하지 않는 플랫폼
+  }
   void _loadBannerAd() {
-    _bannerAd = BannerAd(
-      // adUnitId: 'ca-app-pub-3940256099942544/6300978111', // 🔹 테스트광고
-      adUnitId: 'ca-app-pub-4461306523468443/8556219854', // 🔹 본인의 배너 광고 단위 ID 입력
+    String adUnitId = getBannerAdUnitId();
+    if (adUnitId.isEmpty) return; // 광고 ID가 없으면 로드하지 않음
+
+    _bannerAd = BannerAd( // 🔹 테스트광고
+      adUnitId: adUnitId,
       size: AdSize.banner,
       request: AdRequest(),
       listener: BannerAdListener(
