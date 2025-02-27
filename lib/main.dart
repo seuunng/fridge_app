@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-// import 'package:flutter_naver_login/flutter_naver_login.dart';
+import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:food_for_later_new/providers/role_provider.dart';
 import 'package:food_for_later_new/screens/auth/purchase_page.dart';
 import 'package:food_for_later_new/services/firebase_options.dart';
@@ -46,13 +46,13 @@ Future<void> main() async {
     javaScriptAppKey: '2b8be514fc6d4ca0c50beb374b34b60c',
   );
 
-  // if (!kIsWeb) {
-  //   FlutterNaverLogin.initSdk(
-  //     clientId: dotenv.env['NAVER_CLIENT_ID'] ?? '',
-  //     clientSecret: dotenv.env['NAVER_CLIENT_SECRET'] ?? '',
-  //     clientName: dotenv.env['NAVER_CLIENT_NAME'] ?? 'food_for_later',
-  //   );
-  // }
+  if (!kIsWeb) {
+    FlutterNaverLogin.initSdk(
+      clientId: dotenv.env['NAVER_CLIENT_ID'] ?? '',
+      clientSecret: dotenv.env['NAVER_CLIENT_SECRET'] ?? '',
+      clientName: dotenv.env['NAVER_CLIENT_NAME'] ?? 'food_for_later',
+    );
+  }
 
   try {
     await Firebase.initializeApp(

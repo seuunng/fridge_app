@@ -15,7 +15,6 @@
 
     <application
         android:label="food_for_later"
-        android:name="androidx.multidex.MultiDexApplication"
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/LaunchTheme"
         android:requestLegacyExternalStorage="true"
@@ -40,8 +39,8 @@
 
 
         <activity
+            android:name=".MainActivity"
             android:label="food_for_later"
-            android:name="com.seuunng.foodforlater.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""

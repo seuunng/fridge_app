@@ -23,4 +23,5 @@ plugins {
 }
 
 include ":app"
+include ':flutter_naver_login'
 rootProject.name = "food_for_later"
