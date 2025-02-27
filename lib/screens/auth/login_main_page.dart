@@ -46,6 +46,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false; // 로딩 상태 관리
   String userRole = '';
   bool _isPremiumUser = false;
+  String passwordErrorMessage = '';
 
   final userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid ?? '';
   final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -589,8 +590,16 @@ class _LoginPageState extends State<LoginPage> {
                       style: TextStyle(
                           color: theme.colorScheme.onSurface
                       ),
-                      decoration: InputDecoration(labelText: '비밀번호',counterText: '',),
+                      decoration: InputDecoration(
+                        labelText: '비밀번호',
+                        counterText: '',
+                        errorText: passwordErrorMessage.isNotEmpty ? passwordErrorMessage : null,),
                       obscureText: true,
+                      onChanged: (value) {
+                        setState(() {
+                          passwordErrorMessage = value.length < 6 ? '비밀번호는 6자 이상으로 작성해주세요.' : '';
+                        });
+                      },
                     ),
                     SizedBox(height: 12),
                     BasicElevatedButton(
@@ -616,16 +625,16 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(color: Colors.grey, fontSize: 14),
                         ),
                       ),
-                    if (_passwordFocusNode.hasFocus)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          _passwordController.text.trim().isNotEmpty
-                              ? '비밀번호는 6자 이상으로 작성해주세요.'
-                              : '',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
-                        ),
-                      ),
+                    // if (_passwordFocusNode.hasFocus)
+                    //   Padding(
+                    //     padding: const EdgeInsets.all(8.0),
+                    //     child: Text(
+                    //       _passwordController.text.trim().isNotEmpty
+                    //           ? '비밀번호는 6자 이상으로 작성해주세요.'
+                    //           : '',
+                    //       style: TextStyle(color: Colors.grey, fontSize: 14),
+                    //     ),
+                    //   ),
                     Divider(),
                     SizedBox(height: 20),
                     LoginElevatedButton(

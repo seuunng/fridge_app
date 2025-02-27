@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "897589496124-8qnk1f1594k0hr9296dimtck5lnq7ra0.apps.googleusercontent.com",
+          "client_id": "897589496124-c8dann4sl55108048bm8o5lc4ff7bim2.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.seuunng.foodforlater",
-            "certificate_hash": "3df867d0508ed557eddc2f7e2cbca1b0f252f49e"
+            "certificate_hash": "a3a9168ec54b5303738ff0fd1c63ad614e790cee"
           }
         },
         {
