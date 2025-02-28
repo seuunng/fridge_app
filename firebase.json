@@ -8,6 +8,15 @@
     ],
     "headers": [
       {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      {
         "source": "/privacy-policy.html",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache" }

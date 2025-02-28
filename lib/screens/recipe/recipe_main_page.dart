@@ -307,8 +307,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
                       color: theme.colorScheme.onSurface,
                     fontSize: 20, // 글자 크기 (기본보다 크게 조정)
                     fontWeight: FontWeight.bold, // 글자 굵게 설정
-
-                  ),),
+                  ),
+                ),
               ),
               Spacer(),
               Transform.translate(

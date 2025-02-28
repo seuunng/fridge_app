@@ -132,7 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
           .collection('users')
           .doc(userId)
           .update({'lastReadNotice': Timestamp.now()}); // 🔹 현재 시간 저장
-      print("📌 lastReadNotice 업데이트 완료");
 
       // 🔹 UI 업데이트 (읽지 않은 공지사항 없도록 변경)
       setState(() {

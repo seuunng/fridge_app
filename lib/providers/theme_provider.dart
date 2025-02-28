@@ -64,6 +64,30 @@ class ThemeProvider extends ChangeNotifier {
           // color: Colors.black, // 적절한 색상 설정
         ),
       ),
+      tabBarTheme: TabBarTheme(
+        labelStyle: TextStyle(
+          fontFamily: _fontType, // ✅ 선택된 폰트 적용
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: _fontType, // ✅ 선택되지 않은 탭도 같은 폰트 적용
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+      chipTheme: currentTheme.chipTheme.copyWith(
+        labelStyle: TextStyle(
+          fontFamily: _fontType,
+          fontSize: 14,
+          color: currentTheme.chipTheme.labelStyle?.color ?? Colors.black, // 기존 색상 유지
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontFamily: _fontType,
+          fontSize: 14,
+          color: currentTheme.chipTheme.secondaryLabelStyle?.color ?? Colors.white, // 기존 색상 유지
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
           backgroundColor:
