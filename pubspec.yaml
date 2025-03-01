@@ -17,7 +17,6 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.1.11+20
-
 environment:
   sdk: ">=3.5.0 <=3.8.0"
 
@@ -86,8 +85,9 @@ dependencies:
   flutter_markdown: ^0.7.6+2
   font_awesome_flutter: ^10.0.0
 #  flutter_naver_login: ^2.0.0
-  flutter_naver_login:
-    path: ./plugins/flutter_naver_login
+#  flutter_naver_login:
+#    path: ./plugins/flutter_naver_login
+  sign_in_with_apple: ^4.3.0
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 
