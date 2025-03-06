@@ -14,7 +14,7 @@ class FlutterNaverLogin {
   }
 
   // ✅ Future가 아니라 NaverAccessToken을 바로 반환하는 메서드를 추가
-  static NaverAccessToken get currentAccessTokenSync {
+  static Future<NaverAccessToken> get currentAccessToken async {
     return NaverAccessToken(accessToken: 'dummy_token');
   }
 

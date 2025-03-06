@@ -85,8 +85,8 @@ dependencies:
   flutter_markdown: ^0.7.6+2
   font_awesome_flutter: ^10.0.0
 #  flutter_naver_login: ^2.0.0
-#  flutter_naver_login:
-#    path: ./plugins/flutter_naver_login
+  flutter_naver_login:
+    path: ./plugins/flutter_naver_login
   sign_in_with_apple: ^6.1.4
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
