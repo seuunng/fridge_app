@@ -250,9 +250,7 @@ class _UserStatisticsState extends State<UserStatistics> {
       String monthLabel =
           DateFormat('MMM').format(month); // 월 표시 (예: Jan, Feb 등)
 
-      return SideTitleWidget(
-        axisSide: meta.axisSide,
-        child: Text(monthLabel, style: const TextStyle(fontSize: 16)),
+      return Text(monthLabel, style: const TextStyle(fontSize: 16),
       );
     }
     return Container();

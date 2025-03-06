@@ -271,15 +271,11 @@ class _AdminDashboardUsageMetricsState
                                   if (value % 1 == 0 &&
                                       value >= 1 &&
                                       value <= 12) {
-                                    return SideTitleWidget(
-                                      axisSide: meta.axisSide,
-                                      child: Text('${value.toInt()}월',
-                                          style: TextStyle(fontSize: 12)),
+                                    return Text('${value.toInt()}월',
+                                          style: TextStyle(fontSize: 12)
                                     );
                                   }
-                                  return SideTitleWidget(
-                                    axisSide: meta.axisSide,
-                                    child: Text(''), // 잘못된 값은 빈 문자열 처리
+                                  return Text('' // 잘못된 값은 빈 문자열 처리
                                   );
                                 },
                               ),

@@ -79,10 +79,7 @@ class UserTimeState extends State<UserTime> {
                 '18~21시',
                 '21~24시'
               ];
-              return SideTitleWidget(
-                axisSide: meta.axisSide,
-                child: Text(hourLabels[value.toInt()]),
-              );
+              return Text(hourLabels[value.toInt()]);
             },
             reservedSize: 30,
           ),
