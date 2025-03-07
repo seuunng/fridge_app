@@ -23,9 +23,11 @@ import 'kakao_mobile_login.dart' if (dart.library.html) 'kakao_web_login.dart';
 import 'kakao_mobile_login.dart' as mobile;
 import 'kakao_web_login.dart' as web;
 //ios 수정
-import 'naver_login_stub.dart'
-if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart'
-if (dart.library.js) 'naver_login_stub.dart';
+import 'package:food_for_later_new/screens/auth/naver_login_stub.dart'
+if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart' as flutterNaver;
+// import 'naver_login_stub.dart'
+// if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart'
+// if (dart.library.js) 'naver_login_stub.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -431,12 +433,12 @@ class _LoginPageState extends State<LoginPage> {
     try {
 
       // await Future.delayed(Duration(milliseconds: 100));
-      final NaverLoginResult res = await FlutterNaverLogin.logIn();
-      if (res.status == NaverLoginStatus.loggedIn) {
-        NaverAccessToken token = await FlutterNaverLogin.currentAccessToken;
+      final flutterNaver.NaverLoginResult res = await flutterNaver.FlutterNaverLogin.logIn();
+      if (res.status == flutterNaver.NaverLoginStatus.loggedIn) {
+        flutterNaver.NaverAccessToken token = await flutterNaver.FlutterNaverLogin.currentAccessToken;
 
         // 사용자 정보 가져오기
-        final NaverAccountResult account = res.account;
+        final flutterNaver.NaverAccountResult account = res.account;
         // print('naver로그인: $account');
         final response = await createNaverFirebaseToken(token.accessToken);
         if (response != null) {
