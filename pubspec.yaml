@@ -87,7 +87,7 @@ dependencies:
 #  flutter_naver_login: ^2.0.0
 #  flutter_naver_login:
 #    path: ./plugins/flutter_naver_login
-  sign_in_with_apple: ^4.3.0
+  sign_in_with_apple: ^6.1.4
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 
@@ -119,6 +119,7 @@ flutter:
     - assets/favicon.png
     - assets/shopping_cart.png
     - assets/images/google_logo.png
+    - assets/images/apple_logo.png
     - assets/images/kakao_talk_logo.png
     - assets/images/naver_logo.png
     - assets/avatar/avatar-01.png

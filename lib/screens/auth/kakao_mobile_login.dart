@@ -12,6 +12,8 @@ final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
 Future<void> signInWithKakao(BuildContext context) async {
   try {
+    // ✅ 카카오 세션 초기화 (오류 방지)
+    await kakao.TokenManagerProvider.instance.manager.clear();
     // 카카오톡 설치 여부 확인 및 로그인
     bool isKakaoTalkInstalled = await kakao.isKakaoTalkInstalled();
     kakao.OAuthToken token = isKakaoTalkInstalled
@@ -83,21 +85,43 @@ Future<void> signInWithKakao(BuildContext context) async {
       // 세션 기록 시작
       await FirebaseService.recordSessionStart();
 
-      // 홈 화면으로 이동
+      // ✅ Firestore 저장 후 페이지 이동
       if (context.mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        navigateToHome(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, '/home');
+        });
+      } else {
+        print("⚠️ context.mounted == false, 네비게이션 실행 불가");
       }
+
     } else {
       throw Exception('Firebase Custom Token 생성 실패: ${response.body}');
     }
   } catch (e) {
-    print('카카오 로그인 오류: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('카카오 로그인에 실패했습니다.: $e'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    print('🚨 카카오 로그인 오류: $e');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('카카오 로그인에 실패했습니다.: $e'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+}
+void navigateToHome(BuildContext context) async {
+  int retryCount = 0;
+  while (!context.mounted && retryCount < 10) {
+    print("⏳ context.mounted == false, 100ms 후 재시도... ($retryCount)");
+    await Future.delayed(Duration(milliseconds: 100));
+    retryCount++;
   }
 
+  if (context.mounted) {
+    print("✅ context.mounted == true, 네비게이션 실행");
+    Navigator.pushReplacementNamed(context, '/home');
+  } else {
+    print("🚨 여전히 context.mounted == false, 네비게이션 실행 불가");
+  }
 }
 

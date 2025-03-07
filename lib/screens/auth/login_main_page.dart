@@ -10,6 +10,7 @@ import 'package:food_for_later_new/screens/auth/user_details_page.dart';
 import 'package:food_for_later_new/screens/settings/app_usage_settings.dart';
 import 'package:food_for_later_new/services/default_fridge_service.dart';
 import 'package:food_for_later_new/services/firebase_service.dart';
+import 'package:food_for_later_new/services/nickname_generator.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:intl/intl.dart';
@@ -226,7 +227,6 @@ class _LoginPageState extends State<LoginPage> {
         await addUserToFirestore(result.user!); // Firestore에 사용자 추가
         await DefaultFridgeService().createDefaultFridge(result.user!.uid);
 
-        print(result.user!.uid);
         assignRandomAvatarToUser(result.user!.uid);
         if (mounted) {
           Navigator.push(
@@ -304,7 +304,7 @@ class _LoginPageState extends State<LoginPage> {
           avatar: photoUrl,
         ); // Firestore에 사용자 추가
         await FirebaseService.recordSessionStart();
-        assignRandomAvatarToUser(result.user!.uid);
+        // assignRandomAvatarToUser(result.user!.uid);
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
         }
@@ -582,36 +582,81 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
   Future<void> signInWithApple() async {
-    if (Platform.isIOS) {
+    // if (Platform.isIOS) {
       try {
+        // 애플 로그인 요청
         final credential = await SignInWithApple.getAppleIDCredential(
           scopes: [
             AppleIDAuthorizationScopes.email,
             AppleIDAuthorizationScopes.fullName,
           ],
         );
-        print("Apple 로그인 성공: ${credential.email}");
-        // Apple 로그인 후 Firebase 인증 처리 추가 가능
+        // 애플 ID 기반 Firebase 인증 정보 생성
+        final firebase_auth.OAuthCredential oauthCredential =
+        firebase_auth.OAuthProvider("apple.com").credential(
+          idToken: credential.identityToken,
+          accessToken: credential.authorizationCode,
+        );
+
+        // Firebase 로그인 수행
+        final firebase_auth.UserCredential authResult =
+        await _auth.signInWithCredential(oauthCredential);
+
+        final firebase_auth.User? firebaseUser = authResult.user;
+        if (firebaseUser == null) {
+          print("Firebase 로그인 실패");
+          return;
+        }
+        // ✅ 닉네임 결정 (디스플레이 네임이 없으면 랜덤 닉네임 생성)
+        String nickname = firebaseUser.displayName ?? credential.givenName ?? generateRandomNickname();
+
+        // 애플에서 받은 사용자 정보
+        String? email = credential.email ?? firebaseUser.email;
+        String? fullName = credential.givenName != null && credential.familyName != null
+            ? "${credential.givenName} ${credential.familyName}"
+            : firebaseUser.displayName ?? nickname;
+
+
+        int randomAvatarIndex = Random().nextInt(25) + 1;
+        String defaultAvatar =
+            'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png';
+
+        // Firestore에 저장
+        await addUserToFirestore(
+          firebaseUser,
+          nickname: fullName,
+          email: email,
+          avatar: defaultAvatar,
+        );
+
+        // 홈 화면으로 이동
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+
+        print("Apple 로그인 성공: 이메일=$email, 이름=$fullName");
+
       } catch (e) {
         print("Apple 로그인 실패: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Apple 로그인에 실패했습니다.')),
         );
       }
-    }
+    // }
   }
   void assignRandomAvatarToUser(String userId) async {
     // 랜덤으로 아바타 선택
     int randomAvatarIndex = Random().nextInt(25) + 1; // 1~25 사이 랜덤 숫자
-    // String avatarPath =
-    //     'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png';
+    String avatarPath =
+        'assets/avatar/avatar-${randomAvatarIndex.toString().padLeft(2, '0')}.png';
 
     // Firestore에 저장
-    // await FirebaseFirestore.instance
-    //     .collection('users')
-    //     .doc(userId)
-    //     .set({'avatar': avatarPath}, SetOptions(merge: true));
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .set({'avatar': avatarPath}, SetOptions(merge: true));
   }
+
   Future<void> _launchPrivacyPolicy() async {
     final Uri url = Uri.parse(
         'https://food-for-later.web.app/privacy-policy.html');
@@ -736,12 +781,26 @@ class _LoginPageState extends State<LoginPage> {
                     LoginElevatedButton(
                       buttonTitle: 'Kakao Talk으로 로그인',
                       image: 'assets/images/kakao_talk_logo.png',
-                      onPressed: () {
+                      onPressed: () async {
                         if (!_isLoading) {
-                          if (kIsWeb) {
-                            web.signInWithKakao(); // 웹용 카카오 로그인
-                          } else {
-                            mobile.signInWithKakao(context); // 모바일용 카카오 로그인
+                          setState(() {
+                            _isLoading = true;
+                          });
+
+                          try {
+                            await signInWithKakao(context); // ✅ 카카오 로그인 실행
+                          } catch (e) {
+                            print('카카오 로그인 오류: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('카카오 로그인에 실패했습니다.: $e'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          } finally {
+                            setState(() {
+                              _isLoading = false;
+                            });
                           }
                         }
                       }
