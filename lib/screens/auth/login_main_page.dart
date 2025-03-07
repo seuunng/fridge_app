@@ -24,6 +24,8 @@ import 'kakao_mobile_login.dart' if (dart.library.html) 'kakao_web_login.dart';
 import 'kakao_mobile_login.dart' as mobile;
 import 'kakao_web_login.dart' as web;
 //ios 수정
+import 'package:food_for_later_new/screens/auth/naver_login_stub.dart'
+if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart' as flutterNaver;
 // import 'naver_login_stub.dart'
 // if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart'
 // if (dart.library.js) 'naver_login_stub.dart';
@@ -417,69 +419,69 @@ class _LoginPageState extends State<LoginPage> {
   //   }
   // }
 
-  // Future<void> signInWithNaver() async {
-  //   if (!Platform.isAndroid) {
-  //     print('네이버 로그인은 Android에서만 지원됩니다.');
-  //     return;
-  //   }
-  //
-  //   if (_isLoading) return;
-  //   setState(() {
-  //     _isLoading = true;
-  //   });
-  //   // print('signInWithNaver() 실행');
-  //   try {
-  //
-  //     // await Future.delayed(Duration(milliseconds: 100));
-  //     final NaverLoginResult res = await FlutterNaverLogin.logIn();
-  //     if (res.status == NaverLoginStatus.loggedIn) {
-  //       NaverAccessToken token = await FlutterNaverLogin.currentAccessToken;
-  //
-  //       // 사용자 정보 가져오기
-  //       final NaverAccountResult account = res.account;
-  //       // print('naver로그인: $account');
-  //       final response = await createNaverFirebaseToken(token.accessToken);
-  //       if (response != null) {
-  //         await Future.delayed(Duration(milliseconds: 100));
-  //         final firebaseUser = await _auth.signInWithCustomToken(response);
-  //         // print('naver로그인');
-  //         // print(res.account.profileImage);
-  //         if (firebaseUser.user != null) {
-  //           await addUserToFirestore(
-  //             firebaseUser.user!,
-  //             nickname: res.account.nickname,
-  //             email: res.account.email,
-  //             gender: res.account.gender ?? '알 수 없음',
-  //             birthYear: int.tryParse(res.account.birthyear ?? '0') ?? 0,
-  //             avatar: res.account.profileImage ?? '알 수 없음',
-  //           );
-  //           // assignRandomAvatarToUser(firebaseUser.user!.uid);
-  //           await FirebaseService.recordSessionStart();
-  //           if (mounted) {
-  //             Navigator.pushReplacementNamed(context, '/home');
-  //           }
-  //         }
-  //       }
-  //     } else {
-  //       print("네이버 로그인 실패: ${res.status}");
-  //       if (res.errorMessage != null) {
-  //         print("네이버 로그인 실패 Error Message: ${res.errorMessage}");
-  //       }
-  //
-  //     }
-  //   } catch (e) {
-  //     print("네이버 로그인 중 오류 발생: $e");
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('네이버 로그인에 실패했습니다.: $e'),
-  //         duration: Duration(seconds: 2),
-  //       ),
-  //     );
-  //   } finally {
-  //     setState(() {
-  //       _isLoading = false; // 로딩 상태 해제
-  //     });
-  //   }
-  // }
+  Future<void> signInWithNaver() async {
+    if (!Platform.isAndroid) {
+      print('네이버 로그인은 Android에서만 지원됩니다.');
+      return;
+    }
+
+    if (_isLoading) return;
+    setState(() {
+      _isLoading = true;
+    });
+    // print('signInWithNaver() 실행');
+    try {
+
+      // await Future.delayed(Duration(milliseconds: 100));
+      final flutterNaver.NaverLoginResult res = await flutterNaver.FlutterNaverLogin.logIn();
+      if (res.status == flutterNaver.NaverLoginStatus.loggedIn) {
+        flutterNaver.NaverAccessToken token = await flutterNaver.FlutterNaverLogin.currentAccessToken;
+
+        // 사용자 정보 가져오기
+        final flutterNaver.NaverAccountResult account = res.account;
+        // print('naver로그인: $account');
+        final response = await createNaverFirebaseToken(token.accessToken);
+        if (response != null) {
+          await Future.delayed(Duration(milliseconds: 100));
+          final firebaseUser = await _auth.signInWithCustomToken(response);
+          // print('naver로그인');
+          // print(res.account.profileImage);
+          if (firebaseUser.user != null) {
+            await addUserToFirestore(
+              firebaseUser.user!,
+              nickname: res.account.nickname,
+              email: res.account.email,
+              gender: res.account.gender ?? '알 수 없음',
+              birthYear: int.tryParse(res.account.birthyear ?? '0') ?? 0,
+              avatar: res.account.profileImage ?? '알 수 없음',
+            );
+            // assignRandomAvatarToUser(firebaseUser.user!.uid);
+            await FirebaseService.recordSessionStart();
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, '/home');
+            }
+          }
+        }
+      } else {
+        print("네이버 로그인 실패: ${res.status}");
+        if (res.errorMessage != null) {
+          print("네이버 로그인 실패 Error Message: ${res.errorMessage}");
+        }
+
+      }
+    } catch (e) {
+      print("네이버 로그인 중 오류 발생: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('네이버 로그인에 실패했습니다.: $e'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false; // 로딩 상태 해제
+      });
+    }
+  }
 
   // Future<void> signInWithNaver() async {
   //   if (!Platform.isAndroid) {
@@ -534,36 +536,36 @@ class _LoginPageState extends State<LoginPage> {
   //   }
   // }
 
-  // void signInWithNaverWeb() {
-  //   final clientId = dotenv.env['NAVER_CLIENT_ID'];
-  //   final redirectUri =
-  //       Uri.encodeComponent('https://food_for_later.com/auth/callback');
-  //   final state = 'random_string';
-  //
-  //   final url = 'https://nid.naver.com/oauth2.0/authorize'
-  //       '?response_type=code'
-  //       '&client_id=$clientId'
-  //       '&redirect_uri=$redirectUri'
-  //       '&state=$state';
-  //
-  //   // html.window.location.href = url;
-  // }
-  //
-  // Future<String?> createNaverFirebaseToken(String accessToken) async {
-  //   final uri = Uri.parse(
-  //       'https://us-central1-food-for-later.cloudfunctions.net/createNaverFirebaseToken');
-  //   final response = await http.post(
-  //     uri,
-  //     headers: {'Content-Type': 'application/json'},
-  //     body: json.encode({'accessToken': accessToken}),
-  //   );
-  //   if (response.statusCode == 200) {
-  //     return json.decode(response.body)['firebaseCustomToken'];
-  //   } else {
-  //     print('Firebase Function Error: ${response.body}');
-  //     return null;
-  //   }
-  // }
+  void signInWithNaverWeb() {
+    final clientId = dotenv.env['NAVER_CLIENT_ID'];
+    final redirectUri =
+        Uri.encodeComponent('https://food_for_later.com/auth/callback');
+    final state = 'random_string';
+
+    final url = 'https://nid.naver.com/oauth2.0/authorize'
+        '?response_type=code'
+        '&client_id=$clientId'
+        '&redirect_uri=$redirectUri'
+        '&state=$state';
+
+    // html.window.location.href = url;
+  }
+
+  Future<String?> createNaverFirebaseToken(String accessToken) async {
+    final uri = Uri.parse(
+        'https://us-central1-food-for-later.cloudfunctions.net/createNaverFirebaseToken');
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'accessToken': accessToken}),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['firebaseCustomToken'];
+    } else {
+      print('Firebase Function Error: ${response.body}');
+      return null;
+    }
+  }
 
   Future<String> createFirebaseToken(String kakaoAccessToken) async {
     final uri = Uri.parse(
@@ -806,20 +808,20 @@ class _LoginPageState extends State<LoginPage> {
                       }
                     ),
                     SizedBox(height: 12),
-                    // if (!Platform.isIOS)
-                    // LoginElevatedButton(
-                    //   buttonTitle: 'Naver로 로그인',
-                    //   image: 'assets/images/naver_logo.png',
-                    //   onPressed: () {
-                    //     if (!_isLoading) {
-                    //       if (kIsWeb) {
-                    //         signInWithNaverWeb(); // 웹용 네이버 로그인
-                    //       } else {
-                    //         signInWithNaver(); // 모바일용 네이버 로그인
-                    //       }
-                    //     }
-                    //   }
-                    // ),
+                    if (!Platform.isIOS)
+                    LoginElevatedButton(
+                      buttonTitle: 'Naver로 로그인',
+                      image: 'assets/images/naver_logo.png',
+                      onPressed: () {
+                        if (!_isLoading) {
+                          if (kIsWeb) {
+                            signInWithNaverWeb(); // 웹용 네이버 로그인
+                          } else {
+                            signInWithNaver(); // 모바일용 네이버 로그인
+                          }
+                        }
+                      }
+                    ),
                     if (Platform.isIOS)
                       LoginElevatedButton(
                         buttonTitle: 'Apple로 로그인',

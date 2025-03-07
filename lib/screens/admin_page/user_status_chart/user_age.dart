@@ -182,25 +182,18 @@ class UserAgeState extends State<UserAge> {
   Widget bottomTitles(double value, TitleMeta meta) {
     final titles = <String>["10대 이하", "20대", "30대", "40대", "50대", "60대", "70대 이상"];
 
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 16,
-      child: Text(
+    return Text(
         titles[value.toInt()],
         style: const TextStyle(
           color: Color(0xff7589a2),
           fontWeight: FontWeight.bold,
           fontSize: 14,
         ),
-      ),
     );
   }
 
   Widget leftTitles(double value, TitleMeta meta) {
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 0,
-      child: Text("${value.toInt()}", style: TextStyle(fontSize: 12)),
+    return Text("${value.toInt()}", style: TextStyle(fontSize: 12)
     );
   }
 }

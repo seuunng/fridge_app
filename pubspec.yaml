@@ -65,7 +65,7 @@ dependencies:
   # UI 관련 패키지
   auto_size_text: ^3.0.0 # 텍스트 자동 크기 조정 위젯
   table_calendar: ^3.0.6 # 달력 위젯 제공 (스케줄 관리 등)
-  fl_chart: ^0.66.0
+  fl_chart: ^0.70.2
   flutter_native_splash: ^2.2.19
   flutter_colorpicker: ^ 1.0.3
   #  font_awesome_flutter: ^10.5.0  # 아이콘
@@ -85,8 +85,8 @@ dependencies:
   flutter_markdown: ^0.7.6+2
   font_awesome_flutter: ^10.0.0
 #  flutter_naver_login: ^2.0.0
-#  flutter_naver_login:
-#    path: ./plugins/flutter_naver_login
+  flutter_naver_login:
+    path: ./plugins/flutter_naver_login
   sign_in_with_apple: ^6.1.4
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

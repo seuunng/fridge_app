@@ -7,17 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-//ios 수정
-// import 'package:food_for_later_new/screens/auth/naver_login_stub.dart'
-// if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart'
-// if (dart.library.js) 'naver_login_stub.dart';
-// import 'package:flutter_naver_login/flutter_naver_login.dart';
+// 네이버 로그인 조건부 import (Android에서는 flutter_naver_login 사용, iOS & Web에서는 Stub 사용)
+import 'package:food_for_later_new/screens/auth/naver_login_stub.dart'
+if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart' as flutterNaver;
+
 import 'package:food_for_later_new/providers/role_provider.dart';
 import 'package:food_for_later_new/screens/auth/purchase_page.dart';
 import 'package:food_for_later_new/services/firebase_options.dart';
 import 'package:food_for_later_new/providers/theme_provider.dart';
 import 'package:food_for_later_new/screens/auth/login_main_page.dart';
-import 'package:food_for_later_new/screens/auth/splash_screen.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_main_page.dart';
 import 'package:food_for_later_new/screens/home_screen.dart';
 import 'package:food_for_later_new/screens/recipe/read_recipe.dart';
@@ -51,13 +49,18 @@ Future<void> main() async {
     javaScriptAppKey: '2b8be514fc6d4ca0c50beb374b34b60c',
   );
 
-  // if (!kIsWeb) {
-  //   FlutterNaverLogin.initSdk(
-  //     clientId: dotenv.env['NAVER_CLIENT_ID'] ?? '',
-  //     clientSecret: dotenv.env['NAVER_CLIENT_SECRET'] ?? '',
-  //     clientName: dotenv.env['NAVER_CLIENT_NAME'] ?? 'food_for_later',
-  //   );
-  // }
+    if (kIsWeb) {
+  print("Naver login is not supported on Web.");
+  } else if (Platform.isAndroid) {
+    // ✅ Android에서만 네이버 로그인 SDK 초기화
+    flutterNaver.FlutterNaverLogin.initSdk(
+    clientId: dotenv.env['NAVER_CLIENT_ID'] ?? '',
+    clientSecret: dotenv.env['NAVER_CLIENT_SECRET'] ?? '',
+    clientName: dotenv.env['NAVER_CLIENT_NAME'] ?? 'food_for_later',
+    );
+  } else {
+    print("Naver login is not initialized on this platform.");
+  }
 
   try {
     await Firebase.initializeApp(

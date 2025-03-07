@@ -9,8 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 //ios 수정
-// import 'package:food_for_later_new/screens/auth/naver_login_stub.dart'
-// if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart'
+import 'package:food_for_later_new/screens/auth/naver_login_stub.dart'
+if (dart.library.io) 'package:flutter_naver_login/flutter_naver_login.dart' as flutterNaver;
+// import 'package:flutter_naver_login/flutter_naver_login.dart'
+// if (dart.library.io) 'package:food_for_later_new/screens/auth/naver_login_stub.dart'
 // if (dart.library.js) 'naver_login_stub.dart';
 // import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
@@ -195,6 +197,7 @@ class _AccountInformationState extends State<AccountInformation> {
       await kakaoLogout(); // 세션 종료 기록
       await appleLogout();
       // await FlutterNaverLogin.logOut(); // Firebase 로그아웃
+      await flutterNaver.FlutterNaverLogin.logOut(); // Firebase 로그아웃
       await FirebaseService.recordSessionEnd();
     } catch (error) {
       print('로그아웃 중 오류 발생: $error');
