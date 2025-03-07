@@ -81,9 +81,7 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
         // 카테고리를 categoryOptions에 반영
         setState(() {
           categoryOptions = {
-            for (var category in categories)
-              category['category']:
-                  localSelectedCategories.contains(category['category']),
+            for (var category in categories) category['category']: true,
           };
 
           categoryOptions['모두'] =

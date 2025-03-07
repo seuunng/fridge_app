@@ -19,9 +19,9 @@ class FlutterNaverLogin {
   }
 
   // ✅ 원래 비동기 메서드도 유지
-  static Future<NaverAccessToken> currentAccessToken() async {
-    return Future.value(currentAccessTokenSync);
-  }
+  // static Future<NaverAccessToken> currentAccessToken() async {
+  //   return Future.value(currentAccessTokenSync);
+  // }
 }
 
 // 🔹 네이버 API의 리턴 타입을 가짜 클래스로 정의하여 컴파일 에러 방지
