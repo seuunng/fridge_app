@@ -20,7 +20,7 @@ import 'package:food_for_later_new/components/login_elevated_button.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'kakao_mobile_login.dart' if (dart.library.html) 'kakao_web_login.dart';
+// import 'kakao_mobile_login.dart' if (dart.library.html) 'kakao_web_login.dart';
 import 'kakao_mobile_login.dart' as mobile;
 import 'kakao_web_login.dart' as web;
 //ios 수정
@@ -74,6 +74,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    print("LoginPage가 dispose되었습니다! 🚨");
     // 컨트롤러 및 포커스 노드 해제
     _emailController.dispose();
     _passwordController.dispose();
@@ -82,6 +83,14 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
   void _loadUserRole() async {
+
+    final currentUser = firebase_auth.FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      print("사용자 미로그인 상태: 사용자 역할을 불러오지 않음.");
+      return;
+    }
+
     try {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -789,21 +798,24 @@ class _LoginPageState extends State<LoginPage> {
                             _isLoading = true;
                           });
 
-                          try {
-                            await signInWithKakao(context); // ✅ 카카오 로그인 실행
-                          } catch (e) {
-                            print('카카오 로그인 오류: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('카카오 로그인에 실패했습니다.: $e'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          } finally {
-                            setState(() {
-                              _isLoading = false;
-                            });
+                          print('1로그인 시도');
+
+                          bool success = await mobile.signInWithKakao(context);
+
+                          print('2로그인 성공? $success');
+                          print('3 mounted 여부 $mounted');
+                          if (!mounted) return; // 필수!
+
+                          if (success) {
+                            print('카카오 로그인 성공 후 네비게이터 호출 🚀');
+                            Navigator.pushReplacementNamed(context, '/home');
+                          } else {
+                            print('카카오 로그인 실패 🚨');
                           }
+
+                          setState(() {
+                            _isLoading = false;  // ✅ 반드시 추가해야 할 부분!
+                          });
                         }
                       }
                     ),

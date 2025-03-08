@@ -10,26 +10,56 @@ import 'package:http/http.dart' as http;
 
 final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
-Future<void> signInWithKakao(BuildContext context) async {
+Future<bool> signInWithKakao(BuildContext context) async {
+  // print('1. 카카오로그인 시도!');
   try {
     // ✅ 카카오 세션 초기화 (오류 방지)
     await kakao.TokenManagerProvider.instance.manager.clear();
     // 카카오톡 설치 여부 확인 및 로그인
     bool isKakaoTalkInstalled = await kakao.isKakaoTalkInstalled();
-    kakao.OAuthToken token = isKakaoTalkInstalled
-        ? await kakao.UserApi.instance.loginWithKakaoTalk()
-        : await kakao.UserApi.instance.loginWithKakaoAccount();
+    // kakao.OAuthToken token = isKakaoTalkInstalled
+    //     ? await kakao.UserApi.instance.loginWithKakaoTalk()
+    //     : await kakao.UserApi.instance.loginWithKakaoAccount();
     // 추가 동의 요청
-    List<String> scopes = ['birthyear', 'gender', 'profile_image'];
-    kakao.OAuthToken scopestoken = await kakao.UserApi.instance.loginWithNewScopes(scopes);
+
+    // List<String> scopes = ['birthyear', 'gender', 'profile_image'];
+    kakao.OAuthToken token;
+    if (isKakaoTalkInstalled) {
+      token = await kakao.UserApi.instance.loginWithKakaoTalk();
+    } else {
+      token = await kakao.UserApi.instance.loginWithKakaoAccount();
+    }
+
     // 사용자 정보 가져오기
     final account = await kakao.UserApi.instance.me();
 
-    final String? kakaoEmail = account.kakaoAccount?.email;
-    final String? kakaoNickname = account.kakaoAccount?.profile?.nickname ?? '닉네임 없음';
-    final String? kakaoGender = account.kakaoAccount?.gender?.toString();
-    final String? kakaoBirthYear = account.kakaoAccount?.birthyear;
-    final String? kakaoAvatarUrl = account.kakaoAccount?.profile?.thumbnailImageUrl;
+    // 추가 동의가 필요한 항목 확인
+    List<String> requiredScopes = [];
+    if (account.kakaoAccount?.birthyearNeedsAgreement == true) {
+      requiredScopes.add('birthyear');
+    }
+    if (account.kakaoAccount?.genderNeedsAgreement == true) {
+      requiredScopes.add('gender');
+    }
+    if (account.kakaoAccount?.profileNeedsAgreement == true) {
+      requiredScopes.add('profile_image');
+    }
+
+// 추가 동의 항목이 있을 경우 추가 동의 요청
+    if (requiredScopes.isNotEmpty) {
+      await kakao.UserApi.instance.loginWithNewScopes(requiredScopes);
+    }
+
+// 동의 후 최신 계정 정보 재조회
+    final updatedAccount = await kakao.UserApi.instance.me();
+// ✅ 사용자 정보 다시 가져오기
+    final String? kakaoEmail = updatedAccount.kakaoAccount?.email;
+    final String kakaoNickname =
+        updatedAccount.kakaoAccount?.profile?.nickname ?? '닉네임 없음';
+    final kakaoGender = updatedAccount.kakaoAccount?.gender;
+    final kakaoBirthYear = updatedAccount.kakaoAccount?.birthyear;
+    final kakaoAvatarUrl =
+        updatedAccount.kakaoAccount?.profile?.thumbnailImageUrl;
 // 성별 변환 로직 (Gender.female -> F, Gender.male -> M)
     String genderCode = (kakaoGender == 'Gender.female')
         ? 'F'
@@ -85,43 +115,50 @@ Future<void> signInWithKakao(BuildContext context) async {
       // 세션 기록 시작
       await FirebaseService.recordSessionStart();
 
+      // print('카카오로그인 성공?!');
       // ✅ Firestore 저장 후 페이지 이동
-      if (context.mounted) {
-        navigateToHome(context);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushReplacementNamed(context, '/home');
-        });
-      } else {
-        print("⚠️ context.mounted == false, 네비게이션 실행 불가");
-      }
+      // if (context.mounted) {
+      //   print('네비게이터 실행');
+      //   Navigator.pushReplacementNamed(context, '/home');
+      // } else {
+      //   print('mounted 없음');
+      // }
+      return true;
 
     } else {
       throw Exception('Firebase Custom Token 생성 실패: ${response.body}');
     }
   } catch (e) {
-    print('🚨 카카오 로그인 오류: $e');
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카카오 로그인에 실패했습니다.: $e'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    if (e is kakao.KakaoAuthException && e.error == kakao.AuthErrorCause.accessDenied) {
+      print('사용자가 카카오 로그인을 취소했습니다.');
+      // 취소된 경우라면 추가 메시지 없이 조용히 처리하거나, 필요하면 SnackBar를 띄워주세요.
+    } else {
+      print('🚨 카카오 로그인 오류: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('카카오 로그인에 실패했습니다.: $e'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
+  return false;
 }
-void navigateToHome(BuildContext context) async {
-  int retryCount = 0;
-  while (!context.mounted && retryCount < 10) {
-    print("⏳ context.mounted == false, 100ms 후 재시도... ($retryCount)");
-    await Future.delayed(Duration(milliseconds: 100));
-    retryCount++;
-  }
-
-  if (context.mounted) {
-    print("✅ context.mounted == true, 네비게이션 실행");
-    Navigator.pushReplacementNamed(context, '/home');
-  } else {
-    print("🚨 여전히 context.mounted == false, 네비게이션 실행 불가");
-  }
-}
+// void navigateToHome(BuildContext context) async {
+//   int retryCount = 0;
+//   while (!context.mounted && retryCount < 10) {
+//     print("⏳ context.mounted == false, 100ms 후 재시도... ($retryCount)");
+//     await Future.delayed(Duration(milliseconds: 100));
+//     retryCount++;
+//   }
+//
+//   if (context.mounted) {
+//     print("✅ context.mounted == true, 네비게이션 실행");
+//     Navigator.pushReplacementNamed(context, '/home');
+//   } else {
+//     print("🚨 여전히 context.mounted == false, 네비게이션 실행 불가");
+//   }
+// }
 

@@ -31,6 +31,14 @@
     ],
     "rewrites": [
       {
+        "source": "/privacy-policy.html",
+        "destination": "/privacy-policy.html"
+      },
+      {
+        "source": "/terms-of-service.html",
+        "destination": "/terms-of-service.html"
+      },
+      {
         "source": "/",
         "destination": "/loginmainpage.html"
       },
