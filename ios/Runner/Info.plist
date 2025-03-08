@@ -94,6 +94,10 @@
                 					<string>naverpbbWXl5xZH7xRCPLmqfT</string>
                 				</array>
                 			</dict>
+                			<dict>
+                                 <key>SKAdNetworkIdentifier</key>
+                                 <string>bvpn9ufa9b.skadnetwork</string>
+                            </dict>
                 		</array>
 
                         <key>SignInWithApple</key>
