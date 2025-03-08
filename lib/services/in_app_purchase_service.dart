@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
@@ -75,13 +79,19 @@ class InAppPurchaseService {
       print('❌ Firestore 업데이트 오류: $e');
     }
   }
+
   Future<void> restorePurchases() async {
     final bool available = await _iap.isAvailable();
     if (!available) {
       print("❌ 인앱 결제 기능을 사용할 수 없습니다.");
       return;
     }
+    print("🔄 구독 복원 요청 중...");
 
+    if (Platform.isIOS) {
+      // ✅ iOS는 구매 내역을 직접 복구해야 함
+      await _iap.restorePurchases();
+    }
     // 🔹 현재 구매된 항목을 가져옴
     final Stream<List<PurchaseDetails>> purchaseStream = _iap.purchaseStream;
     purchaseStream.listen((purchaseDetailsList) async {
@@ -138,7 +148,16 @@ class InAppPurchaseService {
   /// 🔹 상품 구매 함수 추가 (오류 해결)
   Future<void> buyProduct(ProductDetails product) async {
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
-    await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+    if (Platform.isAndroid) {
+      // ✅ Android 구매 요청
+      await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+    } else if (Platform.isIOS) {
+      // ✅ iOS 구매 요청
+      // final InAppPurchaseStoreKitPlatformAddition iosAddition =
+      // _iap.getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
+
+      await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+    }
   }
 
   /// 🔹 구매 상태 감지 및 처리

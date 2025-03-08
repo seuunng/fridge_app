@@ -21,6 +21,7 @@ import 'package:food_for_later_new/services/firebase_service.dart';
 import 'package:food_for_later_new/screens/auth/login_main_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AccountInformation extends StatefulWidget {
   @override
@@ -157,8 +158,35 @@ class _AccountInformationState extends State<AccountInformation> {
   Future<void> kakaoLogout() async {
     try {
       await UserApi.instance.logout();
+      print("✅ 카카오 로그아웃 완료");
+      await TokenManagerProvider.instance.manager.clear();
+      print("✅ 카카오 토큰 삭제 완료");
+      // ✅ 3️⃣ 카카오 계정 연결 해제 (완전한 로그아웃 보장)
+      if (await TokenManagerProvider.instance.manager.getToken() != null) {
+        await UserApi.instance.unlink();
+        print("✅ 카카오 계정 연결 해제 완료");
+      } else {
+        print("⚠️ 카카오 토큰이 이미 삭제됨, unlink 실행 불필요");
+      }
+      // ✅ 4️⃣ Firebase 로그아웃 수행
+      await firebase_auth.FirebaseAuth.instance.signOut();
+      print("✅ Firebase 로그아웃 완료");
+      // ✅ 3️⃣ 세션 정리 후 1초 대기 (세션 충돌 방지)
+      await Future.delayed(Duration(seconds: 1));
     } catch (error) {
       print('Kakao 로그아웃 실패: $error');
+    }
+  }
+  Future<void> appleLogout() async {
+    try {
+      // 1️⃣ Firebase에서 로그아웃
+      await firebase_auth.FirebaseAuth.instance.signOut();
+
+    } catch (error) {
+      print("🚨 Apple 로그아웃 실패: $error");
+      if (error.toString().contains("error 1001")) {
+        print("⚠️ Apple 로그아웃은 지원되지 않음. 대신 Firebase 로그아웃만 수행됨.");
+      }
     }
   }
 
@@ -167,6 +195,8 @@ class _AccountInformationState extends State<AccountInformation> {
       await firebase_auth.FirebaseAuth.instance.signOut();
       await googleLogout();
       await kakaoLogout(); // 세션 종료 기록
+      await appleLogout();
+      // await FlutterNaverLogin.logOut(); // Firebase 로그아웃
       await flutterNaver.FlutterNaverLogin.logOut(); // Firebase 로그아웃
       await FirebaseService.recordSessionEnd();
     } catch (error) {

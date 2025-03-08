@@ -26,7 +26,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       return 'ca-app-pub-4461306523468443/8556219854'; // 🔹 Android 광고 ID
     } else if (Platform.isIOS) {
       return 'ca-app-pub-4461306523468443/2859670467'; // 🔹 iOS 광고 ID (실제 ID로 변경)
-      // return 'ca-app-pub-3940256099942544/6300978111',
+      // return 'ca-app-pub-3940256099942544/6300978111';
     }
     return ''; // 웹 또는 지원하지 않는 플랫폼
   }

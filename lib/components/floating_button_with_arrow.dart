@@ -47,7 +47,7 @@ class _FloatingButtonWithArrowState extends State<FloatingButtonWithArrow>
       children: [
         // 화살표 애니메이션
         Positioned(
-          right: 0,
+          right: -20,
           bottom: 80, // 플로팅 버튼 바로 위에 위치
           child: SlideTransition(
             position: _arrowAnimation,
