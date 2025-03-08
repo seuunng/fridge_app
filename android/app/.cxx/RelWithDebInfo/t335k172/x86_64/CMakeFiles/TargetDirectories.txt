@@ -1,2 +1,0 @@
-C:/seunghee/coding/food_for_later_new/android/app/.cxx/RelWithDebInfo/t335k172/x86_64/CMakeFiles/edit_cache.dir
-C:/seunghee/coding/food_for_later_new/android/app/.cxx/RelWithDebInfo/t335k172/x86_64/CMakeFiles/rebuild_cache.dir
