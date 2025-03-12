@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 android {
     namespace = "com.seuunng.foodforlater"
-    compileSdk = 34  // 명시적으로 설정
+    compileSdk = 35  // 명시적으로 설정
     ndkVersion = "23.1.7779620"  // Flutter 기본 NDK 버전으로 설정
 
     defaultConfig {
