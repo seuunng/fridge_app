@@ -162,7 +162,6 @@ class _AddItemState extends State<AddItem> with RouteAware {
         if (!modifiedFoodIds.contains(food.id)) {
           // 기본 데이터 중 사용자가 수정한 것은 제외
           defaultFoods.add(food);
-          print("🔥 User Food Loaded: ${food.foodsName}, Image: ${food.imageFileName}");
          }
       }
 

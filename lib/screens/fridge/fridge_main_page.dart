@@ -969,7 +969,6 @@ class FridgeMainPageState extends State<FridgeMainPage>
               String formattedDate =
                   DateFormat('yyyy-MM-dd').format(registrationDate);
               String? imageFileName = filteredItems[index]['imageFileName']; // 🔹 추가
-              print('imageFileName: ${imageFileName}');
 
               return AnimatedBuilder(
                 animation: _animation,
@@ -1108,7 +1107,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
                           int shelfLife = foodData['shelfLife'] ?? 0;
                           String foodsId = foodData['id'] ?? '기타';
                           String? imageFileName = foodData['imageFileName']; // 🔹 추가
-print('imageFileName: ${imageFileName}');
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
