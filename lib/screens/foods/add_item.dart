@@ -1037,7 +1037,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
             final itemName = (item as FoodsModel).foodsName;
             final isSelected = selectedItems.contains(itemName);
             var isDeleted = deletedItemNames.contains(itemName);
-
+            print("이미지 파일명: ${item.imageFileName}");
             return GestureDetector(
               onTap: widget.sourcePage != 'update_foods_category'
                   ? () {
