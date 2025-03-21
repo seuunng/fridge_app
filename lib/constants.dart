@@ -29,3 +29,18 @@ Map<String, int> categoryPriority = {
   "음료/주류": 1,
   "디저트/빵류": 1,
 };
+
+final Map<String, String> categoryImages = {
+  '유제품': 'dairy_products.svg',
+  '디저트/빵류': 'dessert.svg',
+  '과일': 'fruits.svg',
+  '즉석식품': 'instant.svg',
+  '육류': 'meat.svg',
+  '견과류': 'nuts.svg',
+  '가공식품': 'processed_foods.svg',
+  '곡류': 'rice.svg',
+  '양념': 'seasoning.svg',
+  '음료/주류': 'soft_drink.svg',
+  '채소': 'vegetable.svg',
+  '수산물': 'seafood.svg',
+};

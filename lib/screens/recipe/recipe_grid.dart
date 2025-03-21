@@ -1,10 +1,13 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:food_for_later_new/screens/recipe/view_research_list.dart';
+import 'package:food_for_later_new/constants.dart';
+
 
 class RecipeGrid extends StatefulWidget {
   final List<String> categories;
-  final Map<String, List<String>> itemsByCategory;
+  final Map<String, List<Map<String, String>>> itemsByCategory;
 
   RecipeGrid({
     required this.categories,
@@ -82,6 +85,7 @@ class _RecipeGridState extends State<RecipeGrid> {
         itemCount: widget.categories.length,
         itemBuilder: (context, index) {
           String category = widget.categories[index];
+          String? imageFileName = categoryImages[category]; // 🟢 카테고리 이미지 가져오기
           // String currentItem = selectedItems[index];
           // 카테고리 그리드 렌더링
           return GestureDetector(
@@ -100,20 +104,36 @@ class _RecipeGridState extends State<RecipeGrid> {
               ), // 카테고리 버튼 크기 설정
               // height: 60,
               // margin: EdgeInsets.symmetric(vertical: 8.0),
-              child: Center(
-                child: AutoSizeText(
-                  category,
-                  style: TextStyle(
-                    color: selectedCategory == category
-                        ? theme.chipTheme.secondaryLabelStyle!.color
-                        : theme.chipTheme.labelStyle!.color,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (imageFileName != null)
+                    SvgPicture.asset(
+                      'assets/categories/$imageFileName', // ✅ 이미지 경로 적용
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    )
+                  else
+                    Icon(
+                      Icons.image,
+                      size: 50,
+                      color: Colors.grey,
+                    ),
+                  AutoSizeText(
+                    category,
+                    style: TextStyle(
+                      color: selectedCategory == category
+                          ? theme.chipTheme.secondaryLabelStyle!.color
+                          : theme.chipTheme.labelStyle!.color,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    minFontSize: 6, // 최소 글자 크기 설정
+                    maxFontSize: 16, // 최대 글자 크기 설정
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  minFontSize: 6, // 최소 글자 크기 설정
-                  maxFontSize: 16, // 최대 글자 크기 설정
-                ),
+                ],
               ),
             ),
           );
@@ -128,7 +148,8 @@ class _RecipeGridState extends State<RecipeGrid> {
       return Container();
     }
 
-    List<String> items = widget.itemsByCategory[selectedCategory!] ?? [];
+    List<Map<String, String>> items =
+        widget.itemsByCategory[selectedCategory!] ?? [];
 
     return LayoutBuilder(builder: (context, constraints) {
       bool isWeb = constraints.maxWidth > 600; // 웹 여부 판단
@@ -147,7 +168,8 @@ class _RecipeGridState extends State<RecipeGrid> {
         ),
         itemCount: items.length,
         itemBuilder: (context, index) {
-          String currentItem = items[index];
+          String currentItem = items[index]['name'] ?? 'Unknown';
+          String? imageFileName = items[index]['imageFileName'];
           // 기존 아이템 그리드 렌더링
           return GestureDetector(
             onTap: () {
@@ -165,17 +187,28 @@ class _RecipeGridState extends State<RecipeGrid> {
                 borderRadius: BorderRadius.circular(8.0),
               ),
               height: 60,
-              child: Center(
-                child: AutoSizeText(
-                  currentItem,
-                  style: TextStyle(color: theme.chipTheme.labelStyle!.color),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  minFontSize: 6, // 최소 글자 크기 설정
-                  maxFontSize: 16, // 최대 글자 크기 설정
-                ),
-              ),
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (imageFileName != null && imageFileName!.isNotEmpty)
+                      SvgPicture.asset(
+                        // SVG 파일이면 flutter_svg로 표시
+                        'assets/foods/${imageFileName}.svg',
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
+                    AutoSizeText(
+                      currentItem,
+                      style:
+                          TextStyle(color: theme.chipTheme.labelStyle!.color),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      minFontSize: 6, // 최소 글자 크기 설정
+                      maxFontSize: 16, // 최대 글자 크기 설정
+                    ),
+                  ]),
             ),
           );
         },

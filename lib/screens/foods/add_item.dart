@@ -2,6 +2,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/ad/interstitial_ad_service.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
@@ -12,22 +13,23 @@ import 'package:food_for_later_new/models/preferred_food_model.dart';
 import 'package:food_for_later_new/screens/foods/add_item_to_category.dart';
 import 'package:food_for_later_new/screens/fridge/fridge_item_details.dart';
 import 'package:intl/intl.dart';
+import 'package:food_for_later_new/constants.dart';
 
 class AddItem extends StatefulWidget {
   final String pageTitle;
   final String addButton;
   final String sourcePage;
   final Function onItemAdded;
-  final String? selectedFridge;      // ✅ 추가된 매개변수
-  final String? selectedFridgeId;    // ✅ 추가된 매개변수
+  final String? selectedFridge; // ✅ 추가된 매개변수
+  final String? selectedFridgeId; // ✅ 추가된 매개변수
 
   AddItem({
     required this.pageTitle,
     required this.addButton,
     required this.sourcePage,
     required this.onItemAdded,
-    this.selectedFridge,      // ✅ 추가
-    this.selectedFridgeId,    // ✅ 추가
+    this.selectedFridge, // ✅ 추가
+    this.selectedFridgeId, // ✅ 추가
   });
 
   @override
@@ -77,7 +79,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
     // if (widget.sourcePage == 'preferred_foods_category') {
     //   _loadPreferredFoodsCategoriesFromFirestore();
     // } else {
-      _loadCategoriesFromFirestore();
+    _loadCategoriesFromFirestore();
     // }
     _loadDeletedItems();
     _loadUserRole();
@@ -106,6 +108,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
       selected_fridgeId = widget.selectedFridgeId ?? '';
     });
   }
+
   // void _setDefaultFridge() async {
   //   SharedPreferences prefs = await SharedPreferences.getInstance();
   //
@@ -145,18 +148,22 @@ class _AddItemState extends State<AddItem> with RouteAware {
       for (var doc in userSnapshot.docs) {
         final food = FoodsModel.fromFirestore(doc);
         userFoods.add(food);
-        if (food.defaultFoodsDocId != null && food.defaultFoodsDocId!.isNotEmpty) {
+        if (food.defaultFoodsDocId != null &&
+            food.defaultFoodsDocId!.isNotEmpty) {
           modifiedFoodIds.add(food.defaultFoodsDocId!); // 사용자가 수정한 기본 식품 ID 저장
         }
       }
-      final defaultSnapshot = await FirebaseFirestore.instance.collection('default_foods').get();
+      final defaultSnapshot =
+          await FirebaseFirestore.instance.collection('default_foods').get();
 
       // 🔹 기본 식품 목록 불러오기 (사용자가 수정하지 않은 것만 추가)
       for (var doc in defaultSnapshot.docs) {
         final food = FoodsModel.fromFirestore(doc);
-        if (!modifiedFoodIds.contains(food.id)) { // 기본 데이터 중 사용자가 수정한 것은 제외
+        if (!modifiedFoodIds.contains(food.id)) {
+          // 기본 데이터 중 사용자가 수정한 것은 제외
           defaultFoods.add(food);
-        }
+          print("🔥 User Food Loaded: ${food.foodsName}, Image: ${food.imageFileName}");
+         }
       }
 
       return [...userFoods, ...defaultFoods]; // 사용자 데이터 + 기본 데이터 결합
@@ -186,7 +193,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
   void _loadCategoriesFromFirestore() async {
     try {
       final foods = await _fetchFoods(); // 사용자 및 기본 식품 불러오기
-
+      if (mounted)
       setState(() {
         itemsByCategory = {};
 
@@ -208,7 +215,8 @@ class _AddItemState extends State<AddItem> with RouteAware {
             final indexA = predefinedCategoryFridge.indexOf(a);
             final indexB = predefinedCategoryFridge.indexOf(b);
             return (indexA == -1 ? predefinedCategoryFridge.length : indexA)
-                .compareTo(indexB == -1 ? predefinedCategoryFridge.length : indexB);
+                .compareTo(
+                    indexB == -1 ? predefinedCategoryFridge.length : indexB);
           });
 
         itemsByCategory = Map.fromEntries(
@@ -218,8 +226,10 @@ class _AddItemState extends State<AddItem> with RouteAware {
     } catch (e) {
       print('카테고리 데이터를 불러오는 데 실패했습니다: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카테고리 데이터를 불러오는 데 실패했습니다.'),
-          duration: Duration(seconds: 2),),
+        SnackBar(
+          content: Text('카테고리 데이터를 불러오는 데 실패했습니다.'),
+          duration: Duration(seconds: 2),
+        ),
       );
     }
   }
@@ -301,13 +311,15 @@ class _AddItemState extends State<AddItem> with RouteAware {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('로그인 후에 냉장고에 추가할 수 있습니다.'),
-          duration: Duration(seconds: 2),),
+        SnackBar(
+          content: Text('로그인 후에 냉장고에 추가할 수 있습니다.'),
+          duration: Duration(seconds: 2),
+        ),
       );
       return; // 🚫 게스트 사용자는 추가 불가
     }
     if (userRole != 'admin' && userRole != 'paid_user')
-    await _adManager.showInterstitialAd(context);
+      await _adManager.showInterstitialAd(context);
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final fridgeId = selected_fridgeId;
 
@@ -323,7 +335,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
         Map<String, dynamic>? foodData;
 
         if (foodsSnapshot.docs.isNotEmpty) {
-          final doc  = foodsSnapshot.docs.first;
+          final doc = foodsSnapshot.docs.first;
           foodData = doc.data();
           foodData['id'] = doc.id; // ✅ 문서 ID를 데이터에 추가
           print("🔥 foods 컬렉션에서 찾은 foodData: $foodData");
@@ -344,9 +356,9 @@ class _AddItemState extends State<AddItem> with RouteAware {
 
         if (foodData == null) {
           foodData = {
-            'foodsName': itemName,  // 입력된 이름 그대로 저장
+            'foodsName': itemName, // 입력된 이름 그대로 저장
             'defaultFridgeCategory': '냉장',
-            'shelfLife': 365,  // 기본 유통기한 1년 설정
+            'shelfLife': 365, // 기본 유통기한 1년 설정
           };
         }
 
@@ -360,14 +372,15 @@ class _AddItemState extends State<AddItem> with RouteAware {
           // 🔍 기본 카테고리에 없으면 사용자 정의 카테고리 fridge_categories에서 찾기
           final customCategorySnapshot = await FirebaseFirestore.instance
               .collection('fridge_categories')
-              .where('userId', isEqualTo: userId)  // 사용자별 맞춤 카테고리 확인
+              .where('userId', isEqualTo: userId) // 사용자별 맞춤 카테고리 확인
               .where('categoryName', isEqualTo: fridgeCategoryId)
               .get();
 
           if (customCategorySnapshot.docs.isEmpty) {
-          print("⚠️ 유효하지 않은 fridgeCategoryId: $fridgeCategoryId, 기본값 '냉장' 사용");
-          fridgeCategoryId = '냉장';
-        } else {
+            print(
+                "⚠️ 유효하지 않은 fridgeCategoryId: $fridgeCategoryId, 기본값 '냉장' 사용");
+            fridgeCategoryId = '냉장';
+          } else {
             print("✅ fridge_categories에서 $fridgeCategoryId 찾음");
           }
         } else {
@@ -390,12 +403,13 @@ class _AddItemState extends State<AddItem> with RouteAware {
             'registrationDate': Timestamp.fromDate(DateTime.now()),
             'userId': userId,
           });
-
         } else {
           // 🔴 이미 존재하는 경우 메시지 표시
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$itemName 아이템이 이미 냉장고에 있습니다.'),
-              duration: Duration(seconds: 2),),
+            SnackBar(
+              content: Text('$itemName 아이템이 이미 냉장고에 있습니다.'),
+              duration: Duration(seconds: 2),
+            ),
           );
         }
       }
@@ -413,8 +427,10 @@ class _AddItemState extends State<AddItem> with RouteAware {
     } catch (e) {
       print('아이템 추가 중 오류 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('아이템 추가 중 오류가 발생했습니다.'),
-          duration: Duration(seconds: 2),),
+        SnackBar(
+          content: Text('아이템 추가 중 오류가 발생했습니다.'),
+          duration: Duration(seconds: 2),
+        ),
       );
     }
   }
@@ -428,7 +444,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
       return; // 🚫 게스트 사용자는 추가 불가
     }
     if (userRole != 'admin' && userRole != 'paid_user')
-    await _adManager.showInterstitialAd(context);
+      await _adManager.showInterstitialAd(context);
     try {
       for (String itemName in selectedItems) {
         final existingItemSnapshot = await FirebaseFirestore.instance
@@ -579,12 +595,12 @@ class _AddItemState extends State<AddItem> with RouteAware {
       //     }
       //   });
       // } else {
-        itemsByCategory.forEach((category, items) {
-          tempFilteredItems.addAll(
-            items.where(
-                (item) => item.foodsName.toLowerCase().contains(searchKeyword)),
-          );
-        });
+      itemsByCategory.forEach((category, items) {
+        tempFilteredItems.addAll(
+          items.where(
+              (item) => item.foodsName.toLowerCase().contains(searchKeyword)),
+        );
+      });
       // }
       filteredItems = tempFilteredItems;
     });
@@ -613,83 +629,79 @@ class _AddItemState extends State<AddItem> with RouteAware {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
         resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: Text(widget.pageTitle),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      keyboardType: TextInputType.text,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        hintText: '검색어 입력',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 8.0, horizontal: 10.0),
-                      ),
-                      style:
-                          TextStyle(color: theme.colorScheme.onSurface),
-                      onChanged: (value) {
-                        _searchItems(value); // 검색어 입력 시 아이템 필터링
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSearchActive) ...[
+        appBar: AppBar(
+          title: Text(widget.pageTitle),
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: _buildFilteredCategoryGrid(),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        keyboardType: TextInputType.text,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          hintText: '검색어 입력',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 10.0),
+                        ),
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        onChanged: (value) {
+                          _searchItems(value); // 검색어 입력 시 아이템 필터링
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ] else ...[
-              // if (widget.sourcePage == 'preferred_foods_category')
-              //   Padding(
-              //     padding: const EdgeInsets.all(8.0),
-              //     child: _buildPreferredCategoryGrid(),
-              //   )
-              // else
+              if (isSearchActive) ...[
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: _buildFilteredCategoryGrid(),
+                ),
+              ] else ...[
+                // if (widget.sourcePage == 'preferred_foods_category')
+                //   Padding(
+                //     padding: const EdgeInsets.all(8.0),
+                //     child: _buildPreferredCategoryGrid(),
+                //   )
+                // else
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: _buildCategoryGrid(),
                 ),
-              if (selectedCategory != null) ...[
-                Divider(
-                  thickness: 1,
-                  color: Colors.grey, // 색상 설정
-                  indent: 20, // 왼쪽 여백
-                  endIndent: 20, // 오른쪽 여백),),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: _buildItemsGrid(),
-                ),
+                if (selectedCategory != null) ...[
+                  Divider(
+                    thickness: 1,
+                    color: Colors.grey, // 색상 설정
+                    indent: 20, // 왼쪽 여백
+                    endIndent: 20, // 오른쪽 여백),),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: _buildItemsGrid(),
+                  ),
+                ],
               ],
             ],
-          ],
+          ),
         ),
-      ),
-      bottomNavigationBar:
-          (selectedItems.isNotEmpty &&
-                  (widget.sourcePage == 'shoppingList' ||
-                      widget.sourcePage == 'fridge')) ?
-              Padding(
+        bottomNavigationBar: (selectedItems.isNotEmpty &&
+                (widget.sourcePage == 'shoppingList' ||
+                    widget.sourcePage == 'fridge'))
+            ? Padding(
                 padding: EdgeInsets.only(
-                  bottom:
-                  MediaQuery.of(context).viewInsets.bottom + 5, // 키보드 높이만큼 올리기
+                  bottom: MediaQuery.of(context).viewInsets.bottom +
+                      5, // 키보드 높이만큼 올리기
                   left: 8,
                   right: 8,
                 ),
@@ -698,30 +710,30 @@ class _AddItemState extends State<AddItem> with RouteAware {
                   mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
                   children: [
                     Container(
-                        color: Colors.transparent,
-                        // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: NavbarButton(
-                            buttonTitle: widget.addButton,
-                            onPressed: () {
-                              if (widget.sourcePage == 'shoppingList') {
-                                _addItemsToShoppingList(); // 장바구니에 아이템 추가
-                              } else if (widget.sourcePage == 'fridge') {
-                                _addItemsToFridge(); // 냉장고에 아이템 추가
-                              }
-                            },
-                          ),
+                      color: Colors.transparent,
+                      // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: NavbarButton(
+                          buttonTitle: widget.addButton,
+                          onPressed: () {
+                            if (widget.sourcePage == 'shoppingList') {
+                              _addItemsToShoppingList(); // 장바구니에 아이템 추가
+                            } else if (widget.sourcePage == 'fridge') {
+                              _addItemsToFridge(); // 냉장고에 아이템 추가
+                            }
+                          },
                         ),
                       ),
+                    ),
                     if (userRole != 'admin' && userRole != 'paid_user')
-                    BannerAdWidget(),
+                      BannerAdWidget(),
                   ],
                 ),
-              ):
-          (userRole != 'admin' && userRole != 'paid_user')?
-            BannerAdWidget():null
-    );
+              )
+            : (userRole != 'admin' && userRole != 'paid_user')
+                ? BannerAdWidget()
+                : null);
   }
 
   Widget _buildFilteredCategoryGrid() {
@@ -764,9 +776,10 @@ class _AddItemState extends State<AddItem> with RouteAware {
                 child: Center(
                   child: Text(
                     '$searchKeyword',
-                    style: TextStyle(color: selectedItems.contains(searchKeyword)
-                        ? theme.chipTheme.secondaryLabelStyle!.color
-                        : Colors.white),
+                    style: TextStyle(
+                        color: selectedItems.contains(searchKeyword)
+                            ? theme.chipTheme.secondaryLabelStyle!.color
+                            : Colors.white),
                   ),
                 ),
               ),
@@ -790,7 +803,6 @@ class _AddItemState extends State<AddItem> with RouteAware {
                   color: selectedItems.contains(itemName)
                       ? theme.chipTheme.selectedColor
                       : theme.chipTheme.backgroundColor,
-
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: Center(
@@ -823,6 +835,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
       bool isWeb = constraints.maxWidth > 600; // 웹인지 판별
       double maxCrossAxisExtent =
           isWeb ? webGridMaxExtent : mobileGridMaxExtent;
+
       return GridView.builder(
           shrinkWrap: true,
           // GridView의 크기를 콘텐츠에 맞게 줄임
@@ -837,6 +850,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
           itemCount: itemsByCategory.keys.length,
           itemBuilder: (context, index) {
             String category = itemsByCategory.keys.elementAt(index);
+            String? imageFileName = categoryImages[category]; // 🟢 카테고리 이미지 가져오기
             // 아이템 그리드 마지막에 +아이콘 그리드 렌더링
             return GestureDetector(
               onTap: () {
@@ -856,8 +870,23 @@ class _AddItemState extends State<AddItem> with RouteAware {
                       : theme.chipTheme.backgroundColor,
                   borderRadius: BorderRadius.circular(8.0),
                 ), // 카테고리 버튼 크기 설정
-                child: Center(
-                  child: AutoSizeText(
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                    if (imageFileName != null)
+                SvgPicture.asset(
+                'assets/categories/$imageFileName', // ✅ 이미지 경로 적용
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+              )
+              else
+              Icon(
+              Icons.image,
+              size: 50,
+              color: Colors.grey,
+            ),
+            AutoSizeText(
                     category,
                     style: TextStyle(
                       color: selectedCategory == category
@@ -871,7 +900,9 @@ class _AddItemState extends State<AddItem> with RouteAware {
                     // 최소 글자 크기 설정
                     maxFontSize: 16, // 최대 글자 크기 설정
                   ),
+            ]
                 ),
+
               ),
             );
           });
@@ -962,10 +993,10 @@ class _AddItemState extends State<AddItem> with RouteAware {
     //     preferredItems = itemsByPreferredCategory[selectedCategory!]!;
     //   }
     // } else {
-      if (selectedCategory != null &&
-          itemsByCategory.containsKey(selectedCategory!)) {
-        regularItems = itemsByCategory[selectedCategory!]!;
-      }
+    if (selectedCategory != null &&
+        itemsByCategory.containsKey(selectedCategory!)) {
+      regularItems = itemsByCategory[selectedCategory!]!;
+    }
     // }
 
     final itemCount = regularItems.length;
@@ -1132,24 +1163,39 @@ class _AddItemState extends State<AddItem> with RouteAware {
                           : theme.chipTheme.backgroundColor,
                   borderRadius: BorderRadius.circular(8.0),
                 ),
-                child: Center(
-                  child: AutoSizeText(
-                    itemName,
-                    style: TextStyle(
-                      color: isDeleted
-                          ? Colors.grey[800]
-                          : isSelected
-                              ? theme.chipTheme.secondaryLabelStyle!.color
-                              : theme.chipTheme.labelStyle!.color,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    minFontSize: 6,
-                    // 최소 글자 크기 설정
-                    maxFontSize: 16, // 최대 글자 크기 설정
-                  ),
-                ),
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (item.imageFileName != null && item.imageFileName!.isNotEmpty)
+                        SvgPicture.asset(  // SVG 파일이면 flutter_svg로 표시
+                          'assets/foods/${item.imageFileName}.svg',
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        )
+                      else
+                        Icon(
+                          Icons.image,  // 기본 이미지 없을 경우 사진 아이콘 표시
+                          size: 50,  // 아이콘 크기 조절
+                          color: Colors.grey,  // 색상 지정 가능
+                        ),
+                      AutoSizeText(
+                        itemName,
+                        style: TextStyle(
+                          color: isDeleted
+                              ? Colors.grey[800]
+                              : isSelected
+                                  ? theme.chipTheme.secondaryLabelStyle!.color
+                                  : theme.chipTheme.labelStyle!.color,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        minFontSize: 6,
+                        // 최소 글자 크기 설정
+                        maxFontSize: 16, // 최대 글자 크기 설정
+                      ),
+                    ]),
               ),
             );
           }

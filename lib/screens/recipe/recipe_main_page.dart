@@ -31,10 +31,10 @@ class _RecipeMainPageState extends State<RecipeMainPage>
   late TabController _tabController;
 
   String searchKeyword = '';
-  Map<String, List<String>> itemsByCategory = {};
+  Map<String, List<Map<String, String>>> itemsByCategory = {};
   List<RecipeThemaModel> themaCategories = [];
   List<String> categories = []; // 카테고리를 저장할 필드 추가
-  Map<String, List<String>> methodCategories = {};
+  Map<String, List<Map<String, String>>> methodCategories = {};
   List<String> filteredItems = [];
   List<String> fridgeIngredients = [];
   String userRole = '';
@@ -78,8 +78,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
     }
   }
 
-  Future<Map<String, List<String>>> _fetchFoods() async {
-    Map<String, List<String>> categoryMap = {};
+  Future<Map<String, List<Map<String, String>>>> _fetchFoods() async {
+    Map<String, List<Map<String, String>>> categoryMap = {};
     Set<String> userFoodIds = {}; // 사용자가 수정한 default_foods의 ID 목록
     Set<String> userFoodNames = {}; // 사용자가 수정한 식품명을 저장
 
@@ -94,6 +94,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
         final data = doc.data();
         final category = data['defaultCategory'] as String?;
         final foodName = data['foodsName'] as String?;
+        final imageFileName = data['imageFileName'] as String?; // 이미지 추가
         final defaultFoodsDocId = data['defaultFoodsDocId'] as String?;
 
         if (category != null && foodName != null) {
@@ -101,11 +102,13 @@ class _RecipeMainPageState extends State<RecipeMainPage>
           if (defaultFoodsDocId != null) {
             userFoodIds.add(defaultFoodsDocId); // 수정된 기본 식품 ID 저장
           }
-
+          final foodItem = {
+            'name': foodName,
+          };
           if (categoryMap.containsKey(category)) {
-            categoryMap[category]!.add(foodName);
+            categoryMap[category]!.add(foodItem);
           } else {
-            categoryMap[category] = [foodName];
+            categoryMap[category] = [foodItem];
           }
         }
       }
@@ -119,14 +122,21 @@ class _RecipeMainPageState extends State<RecipeMainPage>
         final category = data['defaultCategory'] as String?;
         final foodName = data['foodsName'] as String?;
         final foodId = doc.id; // default_foods의 문서 ID
+        final imageFileName = data['imageFileName'] as String?; // 이미지 추가
 
         if (category != null && foodName != null) {
           // ✅ 사용자가 수정한 데이터에 없는 경우만 추가
           if (!userFoodIds.contains(foodId) && !userFoodNames.contains(foodName)) {
+
+            final foodItem = {
+              'name': foodName,
+              'imageFileName': imageFileName ?? '',
+            };
+
             if (categoryMap.containsKey(category)) {
-              categoryMap[category]!.add(foodName);
+              categoryMap[category]!.add(foodItem);
             } else {
-              categoryMap[category] = [foodName];
+              categoryMap[category] = [foodItem];
             }
           }
         }
@@ -201,7 +211,8 @@ class _RecipeMainPageState extends State<RecipeMainPage>
 
       setState(() {
         methodCategories = {
-          for (var category in categories) category.categories: category.method,
+          for (var category in categories)
+            category.categories: category.method.map((method) => {'name': method}).toList(),
         };
       });
     } catch (e) {
@@ -263,7 +274,7 @@ class _RecipeMainPageState extends State<RecipeMainPage>
   }
 
   List<String> _getTopIngredientsByCategoryPriority(
-      Map<String, List<String>> itemsByCategory,
+      Map<String, List<Map<String, String>>> itemsByCategory,
       List<String> fridgeIngredients) {
     // fridgeIngredients를 우선순위에 따라 정렬
     List<MapEntry<String, String>> prioritizedIngredients = [];

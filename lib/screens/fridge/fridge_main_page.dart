@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:food_for_later_new/ad/banner_ad_widget.dart';
 import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/floating_button_with_arrow.dart';
@@ -231,6 +232,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
             (itemData['registrationDate'] as Timestamp).toDate();
         String defaultCategory = itemData['defaultCategory'] ?? '';
         String documentId = itemData['documentId'] ?? '';
+        String? imageFileName = itemData['imageFileName'];
 
         try {
           Map<String, dynamic>? foodsData;
@@ -266,7 +268,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
           if (foodsData != null) {
             defaultCategory = foodsData['defaultCategory'] ?? '기타';
           }
-
+          String imageFileName = foodsData?['imageFileName'];
           int index = storageSections.indexWhere(
               (section) => section.categoryName == fridgeCategoryId);
           if (index >= 0) {
@@ -275,7 +277,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
               'shelfLife': shelfLife,
               'registrationDate': registrationDate,
               'defaultCategory': defaultCategory,
-              'documentId': documentId
+              'documentId': documentId,
+              'imageFileName': imageFileName
             });
           }
           // } else {
@@ -393,7 +396,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
   void _startAutoScroll(double dragPosition) {
     const double scrollThreshold = 100.0; // 상하단에서 100px 이내에 있을 때 스크롤 시작
     const double scrollSpeed = 10.0; // 스크롤 속도 조절
-    print('!_scrollController.hasClients ${!_scrollController.hasClients}');
+
     if (!_scrollController.hasClients) return; // ✅ 스크롤 컨트롤러가 없으면 실행 안 함
 
     if (_scrollController.hasClients) {
@@ -965,6 +968,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
               bool isSelected = selectedItems.contains(currentItem);
               String formattedDate =
                   DateFormat('yyyy-MM-dd').format(registrationDate);
+              String? imageFileName = filteredItems[index]['imageFileName']; // 🔹 추가
+              print('imageFileName: ${imageFileName}');
 
               return AnimatedBuilder(
                 animation: _animation,
@@ -1102,7 +1107,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
                               foodData['shoppingListCategory'] ?? '기타';
                           int shelfLife = foodData['shelfLife'] ?? 0;
                           String foodsId = foodData['id'] ?? '기타';
-
+                          String? imageFileName = foodData['imageFileName']; // 🔹 추가
+print('imageFileName: ${imageFileName}');
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -1136,8 +1142,23 @@ class FridgeMainPageState extends State<FridgeMainPage>
                             : _getBackgroundColor(shelfLife, registrationDate),
                         borderRadius: BorderRadius.circular(8.0),
                       ),
-                      child: Center(
-                        child: AutoSizeText(
+                      child:  Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (imageFileName != null && imageFileName!.isNotEmpty)
+                            SvgPicture.asset(  // SVG 파일이면 flutter_svg로 표시
+                              'assets/foods/${imageFileName}.svg',
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            )
+                          else
+                            Icon(
+                              Icons.image,  // 기본 이미지 없을 경우 사진 아이콘 표시
+                              size: 40,  // 아이콘 크기 조절
+                              color: Colors.grey,  // 색상 지정 가능
+                            ),
+                        AutoSizeText(
                           currentItem,
                           style: TextStyle(color: Colors.white),
                           maxLines: 1,
@@ -1146,6 +1167,7 @@ class FridgeMainPageState extends State<FridgeMainPage>
                           minFontSize: 6,
                           maxFontSize: 16,
                         ),
+                      ]
                       ),
                     ),
                   ),
