@@ -25,8 +25,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdkVersion 29  // 최소 SDK 버전
         targetSdkVersion 35
-        versionCode 23
-        versionName "1.2.0"
+        versionCode 24
+        versionName "1.2.1"
         multiDexEnabled true // 추가
         missingDimensionStrategy 'file_picker', 'android'
 
