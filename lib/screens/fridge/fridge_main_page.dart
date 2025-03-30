@@ -861,7 +861,8 @@ class FridgeMainPageState extends State<FridgeMainPage>
                 Row(
                   children: [
                     if (!hasCustomSection)
-                      Expanded(
+                      Container(
+                        width: MediaQuery.of(context).size.width,
                         child: _buildDragTargetForAddSection(),
                       ),
                     // Expanded(
@@ -1494,31 +1495,29 @@ class FridgeMainPageState extends State<FridgeMainPage>
         });
       },
       builder: (context, candidateData, rejectedData) {
-        return Expanded(
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: isDragOver
+                ? Colors.blue.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.2),
+            border: Border.all(
               color: isDragOver
-                  ? Colors.blue.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.2),
-              border: Border.all(
-                color: isDragOver
-                    ? Colors.blue
-                    : Colors.grey, // 드래그 상태에 따라 테두리 색 변경
-                width: isDragOver ? 3.0 : 1.0, // 두께도 변경 가능
-              ),
-              borderRadius: BorderRadius.circular(8),
+                  ? Colors.blue
+                  : Colors.grey, // 드래그 상태에 따라 테두리 색 변경
+              width: isDragOver ? 3.0 : 1.0, // 두께도 변경 가능
             ),
-            child: Center(
-              child: Text(
-                '섹션 추가',
-                style: TextStyle(
-                  color: isDragOver ? Colors.blue : Colors.grey, // 글자색 변경
-                  fontWeight: isDragOver
-                      ? FontWeight.bold
-                      : FontWeight.normal, // 폰트 굵기 변경
-                ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              '섹션 추가',
+              style: TextStyle(
+                color: isDragOver ? Colors.blue : Colors.grey, // 글자색 변경
+                fontWeight: isDragOver
+                    ? FontWeight.bold
+                    : FontWeight.normal, // 폰트 굵기 변경
               ),
             ),
           ),

@@ -875,8 +875,8 @@ class _AddItemState extends State<AddItem> with RouteAware {
                     if (imageFileName != null)
                 SvgPicture.asset(
                 'assets/categories/$imageFileName', // ✅ 이미지 경로 적용
-                width: 50,
-                height: 50,
+                width: 40,
+                height: 40,
                 fit: BoxFit.cover,
               )
               else
@@ -1037,7 +1037,7 @@ class _AddItemState extends State<AddItem> with RouteAware {
             final itemName = (item as FoodsModel).foodsName;
             final isSelected = selectedItems.contains(itemName);
             var isDeleted = deletedItemNames.contains(itemName);
-            print("이미지 파일명: ${item.imageFileName}");
+            // print("이미지 파일명: ${item.imageFileName}");
             return GestureDetector(
               onTap: widget.sourcePage != 'update_foods_category'
                   ? () {
@@ -1168,8 +1168,8 @@ class _AddItemState extends State<AddItem> with RouteAware {
                       if (item.imageFileName != null && item.imageFileName!.isNotEmpty)
                         SvgPicture.asset(  // SVG 파일이면 flutter_svg로 표시
                           'assets/foods/${item.imageFileName}.svg',
-                          width: 50,
-                          height: 50,
+                          width: 40,
+                          height: 40,
                           fit: BoxFit.cover,
                         )
                       else
