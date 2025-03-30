@@ -110,8 +110,8 @@ class _RecipeGridState extends State<RecipeGrid> {
                   if (imageFileName != null)
                     SvgPicture.asset(
                       'assets/categories/$imageFileName', // ✅ 이미지 경로 적용
-                      width: 50,
-                      height: 50,
+                      width: 40,
+                      height: 40,
                       fit: BoxFit.cover,
                     )
                   else
@@ -194,8 +194,8 @@ class _RecipeGridState extends State<RecipeGrid> {
                       SvgPicture.asset(
                         // SVG 파일이면 flutter_svg로 표시
                         'assets/foods/${imageFileName}.svg',
-                        width: 50,
-                        height: 50,
+                        width: 40,
+                        height: 40,
                         fit: BoxFit.cover,
                       ),
                     AutoSizeText(
