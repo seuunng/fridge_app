@@ -939,21 +939,21 @@ class _AddRecipeState extends State<AddRecipe> {
                   color: theme.colorScheme.onSurface),
             ),
             Spacer(),
-            SizedBox(
-              width: 200,
-              child: TextField(
-                controller: searchController,
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                decoration: InputDecoration(
-                  labelText: '$title 검색',
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-                ),
-                onChanged: (value) {
-                  _filterItems(value, items, type); // 검색어 입력 시 항목 필터링
-                },
-              ),
-            ),
+            // SizedBox(
+            //   width: 200,
+            //   child: TextField(
+            //     controller: searchController,
+            //     style: TextStyle(color: theme.colorScheme.onSurface),
+            //     decoration: InputDecoration(
+            //       labelText: '$title 검색',
+            //       contentPadding:
+            //           EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            //     ),
+            //     onChanged: (value) {
+            //       _filterItems(value, items, type); // 검색어 입력 시 항목 필터링
+            //     },
+            //   ),
+            // ),
           ],
         ),
         SizedBox(height: 8),

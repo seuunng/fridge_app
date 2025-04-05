@@ -38,6 +38,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: "897589496124-c8dann4sl55108048bm8o5lc4ff7bim2.apps.googleusercontent.com",
     scopes: [
       'email',
       'profile',
@@ -46,6 +47,7 @@ class _LoginPageState extends State<LoginPage> {
       'https://www.googleapis.com/auth/user.gender.read',
     ],
   );
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _emailFocusNode = FocusNode(); // 이메일 입력 필드의 포커스 노드
@@ -820,7 +822,7 @@ class _LoginPageState extends State<LoginPage> {
                       }
                     ),
                     SizedBox(height: 12),
-                    if (!Platform.isIOS)
+                    if (!kIsWeb && !Platform.isIOS)
                     LoginElevatedButton(
                       buttonTitle: 'Naver로 로그인',
                       image: 'assets/images/naver_logo.png',
@@ -834,7 +836,7 @@ class _LoginPageState extends State<LoginPage> {
                         }
                       }
                     ),
-                    if (Platform.isIOS)
+                    if (!kIsWeb && Platform.isIOS)
                       LoginElevatedButton(
                         buttonTitle: 'Apple로 로그인',
                         image: 'assets/images/apple_logo.png',

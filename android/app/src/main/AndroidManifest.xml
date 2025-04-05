@@ -16,7 +16,7 @@
 
 
     <application
-        android:label="이따 뭐먹지"
+        android:label="이따뭐먹지"
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/LaunchTheme"
         android:requestLegacyExternalStorage="true"
@@ -42,7 +42,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:label="food_for_later"
+            android:label="이따뭐먹지"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""

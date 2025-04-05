@@ -43,6 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+android/app/.cxx/
 
 keystore.properties
 .jks
+p l u g i n s / f l u t t e r _ n a v e r _ l o g i n . z i p 
+ 
+ 
