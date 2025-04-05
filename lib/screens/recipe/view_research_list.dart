@@ -161,7 +161,6 @@ class _ViewResearchListState extends State<ViewResearchList> {
       mangaeQuery = queryKeywords.join(" ");
       // print('Updated query: $query');
     });
-    print('만개의 레시피 쿼리: $mangaeQuery');
   }
 
   //선택된 냉장고의 Id불러오기

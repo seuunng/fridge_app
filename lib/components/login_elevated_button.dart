@@ -33,8 +33,8 @@ class LoginElevatedButton extends StatelessWidget {
           children: [
             Image.asset(
               image,
-              height: 20, // 이미지 높이 조절
-              width: 20, // 이미지 너비 조절
+              height: (image.contains('apple_logo')) ? 26 : 20,
+              width: (image.contains('apple_logo')) ? 26 : 20, // 이미지 너비 조절
             ),
             SizedBox(width: 8),
             Flexible(

@@ -256,6 +256,8 @@ class _CreateRecordState extends State<CreateRecord> {
 
       // 새로 추가될 이미지 경로만 계산
       final newImagePaths = pickedFiles.map((file) => file.path).toList();
+      print('📌 새로 추가된 이미지: $newImagePaths');
+
       final totalImages = _tempImageFiles!.length + newImagePaths.length;
       // 한 기록에 최대 4개의 사진만 추가할 수 있도록 제한
       if (totalImages > 4) {
@@ -283,10 +285,10 @@ class _CreateRecordState extends State<CreateRecord> {
       //     SnackBar(content: Text('이미지를 선택하지 않았습니다.')),
       //   );
       // }
-    print('_tempImageFiles 업데이트: $_tempImageFiles');
     setState(() {
       _imageFiles = List.from(_tempImageFiles!);  // 이미지 파일 설정
     });
+    print('📌 최종 _tempImageFiles 상태: $_tempImageFiles');
   }
 
   void _saveWithConfirmation() {
@@ -352,6 +354,10 @@ class _CreateRecordState extends State<CreateRecord> {
       );
       return;
     }
+    // 🔹 수정된 이미지를 recordsWithImages에 반영
+    if (selectedRecordIndex != null) {
+      recordsWithImages[selectedRecordIndex!]['images'] = List<String>.from(_tempImageFiles!);
+    }
     List<String> imageUrls = await _uploadImages();
     print('imageUrls $imageUrls');
     if (imageUrls.isEmpty && _imageFiles!.isNotEmpty) {
@@ -389,6 +395,7 @@ class _CreateRecordState extends State<CreateRecord> {
       );
       return;
     }
+
     final record = RecordModel(
       id: widget.recordId ?? Uuid().v4(),
       // 고유 ID 생성, 수정 모드일 때 기존 ID 사용
@@ -426,6 +433,10 @@ class _CreateRecordState extends State<CreateRecord> {
     }
 
     for (var imagePath in _imageFiles!) {
+      if (imagePath.startsWith('http')) {
+        print('🚨 Firebase URL 발견 (업로드 생략): $imagePath');
+        continue; // 🔹 Firebase URL은 업로드 대상에서 제외
+      }
       File file = File(imagePath);
       File compressedFile = await _compressImage(file);
 
@@ -808,8 +819,16 @@ class _CreateRecordState extends State<CreateRecord> {
                           child: GestureDetector(
                             onTap: () {
                               setState(() {
-                                _tempImageFiles!.remove(imagePath);
+                                print('📌 삭제 전 _tempImageFiles: $_tempImageFiles');
+                                final imageToRemove = imagePath;
+                                _tempImageFiles!.remove(imageToRemove);
+                                print('📌 삭제 후 _tempImageFiles: $_tempImageFiles');
                               });
+                              // ✅ 삭제 후 `recordsWithImages`에도 반영
+                              if (selectedRecordIndex != null) {
+                                recordsWithImages[selectedRecordIndex!]['images'] = List<String>.from(_tempImageFiles!);
+                                print('📌 recordsWithImages[${selectedRecordIndex!}][images] 업데이트됨: ${recordsWithImages[selectedRecordIndex!]['images']}');
+                              }
                             },
                             child: Container(
                               color: Colors.black54,

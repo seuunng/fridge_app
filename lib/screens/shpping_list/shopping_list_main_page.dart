@@ -6,7 +6,6 @@ import 'package:food_for_later_new/components/floating_add_button.dart';
 import 'package:food_for_later_new/components/floating_button_with_arrow.dart';
 import 'package:food_for_later_new/components/navbar_button.dart';
 import 'package:food_for_later_new/main.dart';
-import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
 import 'package:food_for_later_new/screens/foods/add_item.dart';
 import 'package:food_for_later_new/screens/home_screen.dart';
