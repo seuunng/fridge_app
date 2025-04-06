@@ -10,6 +10,8 @@ class PurchasePage extends StatefulWidget {
 class _PurchasePageState extends State<PurchasePage> {
   final InAppPurchaseService _iapService = InAppPurchaseService();
   List<ProductDetails> _products = [];
+  bool _isLoading = true;
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -21,17 +23,36 @@ class _PurchasePageState extends State<PurchasePage> {
   Future<void> _loadProducts() async {
     try {
       print('📦 상품 로드 중...');
+      final ProductDetailsResponse response = await InAppPurchase.instance.queryProductDetails({'premium_upgrade_yearly'}.toSet());
+
+      if (response.notFoundIDs.isNotEmpty) {
+        print('❌ [IAP] 찾을 수 없는 상품 ID: ${response.notFoundIDs}');
+      }
+      if (response.productDetails.isEmpty) {
+        print('❌ [IAP] 불러온 상품 없음 (조회는 됐지만 없음)');
+      }
       List<ProductDetails> products = await _iapService.getProducts();
       if (products.isEmpty) {
         print('❌ 상품 로드 실패: 상품이 비어 있음');
+        setState(() {
+          _loadFailed = true;
+          _isLoading = false;
+        });
       } else {
-        print('✅ 상품 로드 성공: $products');
+        setState(() {
+          _products = products;
+          _isLoading = false;
+        });
       }
       setState(() {
         _products = products;
       });
     } catch (e) {
       print('❌ 상품 로드 중 오류 발생: $e');
+      setState(() {
+        _loadFailed = true;
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('상품 로드에 실패했습니다. 잠시 후 다시 시도하세요.')),
       );
@@ -97,8 +118,28 @@ class _PurchasePageState extends State<PurchasePage> {
             SizedBox(height: 24),
 
             // 🔹 CTA 버튼
-            _products.isEmpty
+            _isLoading
                 ? Center(child: CircularProgressIndicator()) // 로딩 인디케이터
+                : (_loadFailed || _products.isEmpty)
+                ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: Colors.red, size: 48),
+                SizedBox(height: 12),
+                Text("상품 정보를 불러오지 못했습니다.", style: TextStyle(color: Colors.red)),
+                SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _isLoading = true;
+                      _loadFailed = false;
+                    });
+                    _loadProducts(); // 🔁 재시도
+                  },
+                  child: Text("다시 시도하기"),
+                ),
+              ],
+            )
                 : Flexible(
                     child: ListView.builder(
                       shrinkWrap: true, // 내부 콘텐츠에 맞게 크기 축소
