@@ -1148,14 +1148,14 @@ class FridgeMainPageState extends State<FridgeMainPage>
                           if (imageFileName != null && imageFileName!.isNotEmpty)
                             SvgPicture.asset(  // SVG 파일이면 flutter_svg로 표시
                               'assets/foods/${imageFileName}.svg',
-                              width: 40,
-                              height: 40,
+                              width: 35,
+                              height: 35,
                               fit: BoxFit.cover,
                             )
                           else
                             Icon(
                               Icons.image,  // 기본 이미지 없을 경우 사진 아이콘 표시
-                              size: 40,  // 아이콘 크기 조절
+                              size: 35,  // 아이콘 크기 조절
                               color: Colors.grey,  // 색상 지정 가능
                             ),
                         AutoSizeText(
