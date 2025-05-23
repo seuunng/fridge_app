@@ -116,15 +116,41 @@ class _RecordSearchSettingsState extends State<RecordSearchSettings> {
       selectedCategories = localSelectedCategories;
       selectedPeriod = prefs.getString('selectedPeriod') ?? '1년';
 
-      final startDateString = prefs.getString('startDate');
-      startDate = startDateString != null && startDateString.isNotEmpty
-          ? DateTime.parse(startDateString)
-          : DateTime(DateTime.now().year - 1, DateTime.now().month,
-              DateTime.now().day);
-      final endDateString = prefs.getString('endDate');
-      endDate = endDateString != null && endDateString.isNotEmpty
-          ? DateTime.parse(endDateString)
-          : DateTime.now();
+      DateTime now = DateTime.now();
+
+      switch (selectedPeriod) {
+        case '1주':
+          startDate = now.subtract(Duration(days: 7));
+          endDate = now;
+          break;
+        case '1달':
+          startDate = DateTime(now.year, now.month - 1, now.day);
+          endDate = now;
+          break;
+        case '3달':
+          startDate = DateTime(now.year, now.month - 3, now.day);
+          endDate = now;
+          break;
+        case '1년':
+          startDate = DateTime(now.year - 1, now.month, now.day);
+          endDate = now;
+          break;
+        case '사용자 지정':
+        // 사용자가 직접 지정한 날짜를 가져옴
+          final startDateString = prefs.getString('startDate');
+          startDate = startDateString != null && startDateString.isNotEmpty
+              ? DateTime.parse(startDateString)
+              : now;
+
+          final endDateString = prefs.getString('endDate');
+          endDate = endDateString != null && endDateString.isNotEmpty
+              ? DateTime.parse(endDateString)
+              : now;
+          break;
+        default:
+          startDate = now;
+          endDate = now;
+      }
     });
   }
 

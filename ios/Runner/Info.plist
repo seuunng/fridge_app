@@ -68,46 +68,50 @@
 		<key>NSLocalNetworkUsageDescription</key>
 		<string>이 앱은 네트워크 상태를 확인하여 안정적인 연결을 보장합니다.</string>
 		<key>NSFaceIDUsageDescription</key>
-        <string>이 앱은 Apple 로그인을 위해 Face ID를 사용할 수 있습니다.</string>
+		<string>이 앱은 Apple 로그인을 위해 Face ID를 사용할 수 있습니다.</string>
 		<!-- ✅ 카카오톡/네이버/구글 인증 시 URL 스킴 처리 -->
-                        		<key>LSApplicationQueriesSchemes</key>
-                        		<array>
-                        			<string>kakaocae77ccb2159f26f7234f6ccf269605e</string> <!-- 카카오 앱 키 -->
-                        			<string>kakaokompassauth</string> <!-- 카카오 로그인 -->
-                        			<string>kakaotalk</string> <!-- 카카오톡 실행 -->
-                        			<string>naverpbbWXl5xZH7xRCPLmqfT</string> <!-- 네이버 로그인 -->
-                        			<string>googlechrome</string> <!-- 구글 로그인 -->
-                        			<string>googlegmail</string> <!-- 구글 계정 연동 -->
-                        			<string>google</string>
-                        		</array>
-                <!-- ✅ Google, Kakao, Naver 로그인 설정 -->
-                		<key>CFBundleURLTypes</key>
-                		<array>
-                			<dict>
-                                <key>CFBundleTypeRole</key>
-                                <string>Editor</string>
-                				<key>CFBundleURLSchemes</key>
-                				<array>
-                                    <string>com.seuunng.foodforlater</string>
-                					<string>com.googleusercontent.apps.897589496124-vvqsrsrvub61f2dlr32ksq6ht50iqj3d</string>
-                					<string>kakaocae77ccb2159f26f7234f6ccf269605e</string>
-                					<string>naverpbbWXl5xZH7xRCPLmqfT</string>
-                				</array>
-                			</dict>
-                			<dict>
-                                 <key>SKAdNetworkIdentifier</key>
-                                 <string>bvpn9ufa9b.skadnetwork</string>
-                            </dict>
-                		</array>
-
-                        <key>SignInWithApple</key>
-                        <true/>
-                		<!-- ✅ 카카오 네이티브 앱 키 -->
-                		<key>KAKAO_APP_KEY</key>
-                		<string>cae77ccb2159f26f7234f6ccf269605e</string>
-
-                		<!-- ✅ Google Ads 설정 -->
-                		<key>GADApplicationIdentifier</key>
-                		<string>ca-app-pub-4461306523468443~2393870255</string>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>kakaocae77ccb2159f26f7234f6ccf269605e</string>
+			<!-- 카카오 앱 키 -->
+			<string>kakaokompassauth</string>
+			<!-- 카카오 로그인 -->
+			<string>kakaotalk</string>
+			<!-- 카카오톡 실행 -->
+			<string>naverpbbWXl5xZH7xRCPLmqfT</string>
+			<!-- 네이버 로그인 -->
+			<string>googlechrome</string>
+			<!-- 구글 로그인 -->
+			<string>googlegmail</string>
+			<!-- 구글 계정 연동 -->
+			<string>google</string>
+		</array>
+		<!-- ✅ Google, Kakao, Naver 로그인 설정 -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.seuunng.foodforlater</string>
+					<string>com.googleusercontent.apps.897589496124-vvqsrsrvub61f2dlr32ksq6ht50iqj3d</string>
+					<string>kakaocae77ccb2159f26f7234f6ccf269605e</string>
+					<string>naverpbbWXl5xZH7xRCPLmqfT</string>
+				</array>
+			</dict>
+			<dict>
+				<key>SKAdNetworkIdentifier</key>
+				<string>bvpn9ufa9b.skadnetwork</string>
+			</dict>
+		</array>
+		<key>SignInWithApple</key>
+		<true/>
+		<!-- ✅ 카카오 네이티브 앱 키 -->
+		<key>KAKAO_APP_KEY</key>
+		<string>cae77ccb2159f26f7234f6ccf269605e</string>
+		<!-- ✅ Google Ads 설정 -->
+		<key>GADApplicationIdentifier</key>
+		<string>ca-app-pub-4461306523468443~2393870255</string>
 	</dict>
 </plist>

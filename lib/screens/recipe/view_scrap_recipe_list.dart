@@ -235,15 +235,27 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
       }).toList();
 
       // 2️⃣ 웹 링크가 있는 레시피만 필터링하여 병렬로 가져오기
-      List<Future<RecipeModel?>> webRequests = rawDataList.map((data) async {
-        if (data['link'].isNotEmpty) {
-          return _fetchRecipeDetailsFromLink(data['link']);
-        }
-        return null;
-      }).toList();
+      // List<Future<RecipeModel?>> webRequests = rawDataList.map((data) async {
+      //   if (data['link'].isNotEmpty) {
+      //     return _fetchRecipeDetailsFromLink(data['link']);
+      //   }
+      //   return null;
+      // }).toList();
+      //
+      // List<RecipeModel?> webResults = await Future.wait(webRequests);
+      const int batchSize = 5;  // 동시 요청 제한 (서버 부하 방지)
+      List<RecipeModel?> webResults = [];
 
-      List<RecipeModel?> webResults = await Future.wait(webRequests);
+      for (int i = 0; i < rawDataList.length; i += batchSize) {
+        List<Future<RecipeModel?>> batchRequests = rawDataList
+            .skip(i)
+            .take(batchSize)
+            .map((data) => data['link'].isNotEmpty ? _fetchRecipeDetailsFromLink(data['link']) : Future.value(null))
+            .toList();
 
+        List<RecipeModel?> batchResults = await Future.wait(batchRequests);
+        webResults.addAll(batchResults);
+      }
       // 3️⃣ Firestore에서 레시피 ID 목록을 한 번의 `whereIn` 쿼리로 가져오기
       List<String> recipeIds = List<String>.from(rawDataList
           .map((data) => data['recipeId'])
@@ -252,15 +264,32 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
       Map<String, RecipeModel> firestoreRecipeMap = {};
 
       if (recipeIds.isNotEmpty) {
-        final recipeSnapshot = await _db
-            .collection('recipe')
-            .where(FieldPath.documentId, whereIn: recipeIds)
-            .get();
+        // final recipeSnapshot = await _db
+        //     .collection('recipe')
+        //     .where(FieldPath.documentId, whereIn: recipeIds)
+        //     .get();
+        if (recipeIds.isNotEmpty) {
+          final batchedQueries = <Future<QuerySnapshot>>[];
+          const int batchSize = 10; // Firestore `whereIn` 제한이 있으므로 나눠서 처리
 
-        firestoreRecipeMap = {
-          for (var doc in recipeSnapshot.docs)
-            doc.id: RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>)
-        };
+          for (int i = 0; i < recipeIds.length; i += batchSize) {
+            final batch = recipeIds.sublist(i, i + batchSize > recipeIds.length ? recipeIds.length : i + batchSize);
+            batchedQueries.add(_db.collection('recipe').where(FieldPath.documentId, whereIn: batch).get());
+          }
+
+          final batchedResults = await Future.wait(batchedQueries);
+
+          for (var querySnapshot in batchedResults) {
+            for (var doc in querySnapshot.docs) {
+              firestoreRecipeMap[doc.id] = RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>);
+            }
+          }
+        }
+
+        // firestoreRecipeMap = {
+        //   for (var doc in recipeSnapshot.docs)
+        //     doc.id: RecipeModel.fromFirestore(doc.data() as Map<String, dynamic>)
+        // };
       }
 
       // 4️⃣ 결과를 `fetchedRecipes` 리스트에 저장
@@ -652,6 +681,29 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
                             recipeList = []; // 🔹 UI를 빠르게 업데이트하기 위해 먼저 비움
                             isLoading = true; // 🔹 로딩 상태 시작
                           });
+
+                          // Future<void> _changeSelectedFilter(String value) async {
+                          //   setState(() {
+                          //     selectedFilter = value;
+                          //     isLoading = true;
+                          //   });
+                          //
+                          //   List<Map<String, dynamic>> fetchedData;
+                          //   if (selectedFilter == '내가 작성한 레시피') {
+                          //     fetchedData = await _fetchMyRecipes();
+                          //   } else {
+                          //     fetchedData = await fetchRecipesByScrap();
+                          //     fetchedData = getFilteredRecipes(fetchedData);
+                          //   }
+                          //
+                          //   if (mounted) {
+                          //     setState(() {
+                          //       recipeList = fetchedData;
+                          //       isLoading = false;
+                          //     });
+                          //   }
+                          // }
+
                           List<Map<String, dynamic>> fetchedData;
 
                           if (selectedFilter == '내가 작성한 레시피') {
@@ -756,13 +808,17 @@ class _ViewScrapRecipeListState extends State<ViewScrapRecipeList> with RouteAwa
         String recipeName = recipe.recipeName;
         double recipeRating = recipe.rating;
         bool hasMainImage = recipe.mainImages.isNotEmpty;
+
+        Map<String, dynamic> _scrapedDataCache = {}; // ✅ Firestore 캐싱
+
+
         // 카테고리 그리드 렌더링
         return FutureBuilder<Map<String, dynamic>>(
             future: loadScrapedData(recipe.id,
                 link: recipe.link), // 각 레시피별로 스크랩 상태를 확인
             builder: (context, snapshot) {
               bool isScraped = (snapshot.data?['isScraped'] as bool?) ?? false;
-              // scrapedStatus[recipe.id] = isScraped;
+              scrapedStatus[recipe.id] = isScraped;
               return Row(
                 children: [
                   Visibility(

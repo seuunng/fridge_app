@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb; // ✅ 플랫폼 확인
+import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:universal_html/html.dart' as html; // ✅ 웹 전용 다운로드 처리
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_later_new/components/basic_elevated_button.dart';
-import 'package:food_for_later_new/models/foods_model.dart';
 import 'package:food_for_later_new/models/shopping_category_model.dart';
 import 'package:food_for_later_new/screens/admin_page/app_setting_categories_table/CSV_uploader.dart';
 import 'package:path_provider/path_provider.dart';

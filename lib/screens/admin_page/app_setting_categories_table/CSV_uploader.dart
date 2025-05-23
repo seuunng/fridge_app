@@ -41,16 +41,18 @@ class _CSVUploaderState extends State<CSVUploader> {
       for (int i = 1; i < rowsAsListOfValues.length; i++) {
         List<dynamic> row = rowsAsListOfValues[i];
 
-        if (row.length < 5 || row.any((element) => element.toString().trim().isEmpty)) {
+        if (row.length < 6 || row.any((element) => element.toString().trim().isEmpty)) {
           continue;
         }
 
         await FirebaseFirestore.instance.collection('default_foods').add({
           'defaultCategory': row[0].toString(),
           'foodsName': row[1].toString(),
-          'defaultFridgeCategory': row[2].toString(),
-          'shoppingListCategory': row[3].toString(),
-          'shelfLife': int.tryParse(row[4].toString()) ?? 0,
+          'imageFileName': row[2].toString(),
+          'defaultFridgeCategory': row[3].toString(),
+          'shoppingListCategory': row[4].toString(),
+          'shelfLife': int.tryParse(row[5].toString()) ?? 0,
+
         });
       }
 

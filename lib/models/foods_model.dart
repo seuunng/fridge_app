@@ -8,6 +8,7 @@ class FoodsModel {
   final String shoppingListCategory;
   final int shelfLife;
   final String? defaultFoodsDocId;
+  final String? imageFileName; // 추가된 image 필드
 
   FoodsModel({
     required this.id,
@@ -17,6 +18,7 @@ class FoodsModel {
     required this.shoppingListCategory,
     required this.shelfLife,
     this.defaultFoodsDocId,
+    this.imageFileName, // 이미지 경로
   });
 
   // Firestore에서 데이터를 가져오는 생성자
@@ -31,6 +33,7 @@ class FoodsModel {
       shoppingListCategory: data['shoppingListCategory'] ?? '',
       shelfLife: data['shelfLife'] != null ? int.tryParse(data['shelfLife'].toString()) ?? 0 : 0, // 숫자 변환
       defaultFoodsDocId: data['defaultFoodsDocId'],
+      imageFileName: data['imageFileName'] ?? 'assets/foods/default.svg', // 기본 이미지 설정 가능
     );
   }
 
@@ -42,6 +45,7 @@ class FoodsModel {
       'DefaultFridgeCategory': defaultFridgeCategory,
       'ShoppingListCategory': shoppingListCategory,
       'ShelfLife': shelfLife,
+      'image': imageFileName, // Firestore에 저장
     };
   }
 }
