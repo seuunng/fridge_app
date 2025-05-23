@@ -820,7 +820,8 @@ class _LoginPageState extends State<LoginPage> {
                       }
                     ),
                     SizedBox(height: 12),
-                    if (!Platform.isIOS)
+                    // if (!Platform.isIOS)
+                    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
                     LoginElevatedButton(
                       buttonTitle: 'Naver로 로그인',
                       image: 'assets/images/naver_logo.png',
@@ -834,7 +835,8 @@ class _LoginPageState extends State<LoginPage> {
                         }
                       }
                     ),
-                    if (Platform.isIOS)
+                    // if (Platform.isIOS)
+                    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS)
                       LoginElevatedButton(
                         buttonTitle: 'Apple로 로그인',
                         image: 'assets/images/apple_logo.png',
