@@ -94,12 +94,12 @@ class _PurchasePageState extends State<PurchasePage> {
             Expanded(
               child: ListView(
                 children: [
-                  // _buildFeatureItem(
-                  //   context,
-                  //   icon: Icons.kitchen,
-                  //   title: "추가 공간을 만들어요",
-                  //   description: "가족, 사무실, 또는 친구와 함께 더 많은 냉장고를 효율적으로 관리하세요.",
-                  // ),
+                  _buildFeatureItem(
+                    context,
+                    icon: Icons.kitchen,
+                    title: "추가 공간을 만들어요",
+                    description: "냉장, 냉동, 상온 단 3개의 분류로는 냉장고 관리가 어려우신가요? 냉장고를 효율적으로 관리하세요.",
+                  ),
                   _buildFeatureItem(
                     context,
                     icon: Icons.food_bank,
@@ -118,52 +118,52 @@ class _PurchasePageState extends State<PurchasePage> {
             SizedBox(height: 24),
 
             // 🔹 CTA 버튼
-            _isLoading
-                ? Center(child: CircularProgressIndicator()) // 로딩 인디케이터
-                : (_loadFailed || _products.isEmpty)
-                ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, color: Colors.red, size: 48),
-                SizedBox(height: 12),
-                Text("상품 정보를 불러오지 못했습니다.", style: TextStyle(color: Colors.red)),
-                SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _isLoading = true;
-                      _loadFailed = false;
-                    });
-                    _loadProducts(); // 🔁 재시도
-                  },
-                  child: Text("다시 시도하기"),
-                ),
-              ],
-            )
-                : Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true, // 내부 콘텐츠에 맞게 크기 축소
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: _products.length,
-                      itemBuilder: (context, index) {
-                        ProductDetails product = _products[index];
-                        return ListTile(
-                          title: Text('프리미엄 구독',
-                            style: TextStyle(
-                                color: theme.colorScheme.onSurface
-                            ),),
-                          subtitle: Text('${product.price} / 연간',
-                            style: TextStyle(
-                                color: theme.colorScheme.onSurface
-                            ),),
-                          trailing: ElevatedButton(
-                            onPressed: () => _iapService.buyProduct(product),
-                            child: Text('구독하기'),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+            // _isLoading
+            //     ? Center(child: CircularProgressIndicator()) // 로딩 인디케이터
+            //     : (_loadFailed || _products.isEmpty)
+            //     ? Column(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     Icon(Icons.error_outline, color: Colors.red, size: 48),
+            //     SizedBox(height: 12),
+            //     Text("상품 정보를 불러오지 못했습니다.", style: TextStyle(color: Colors.red)),
+            //     SizedBox(height: 8),
+            //     ElevatedButton(
+            //       onPressed: () {
+            //         setState(() {
+            //           _isLoading = true;
+            //           _loadFailed = false;
+            //         });
+            //         _loadProducts(); // 🔁 재시도
+            //       },
+            //       child: Text("다시 시도하기"),
+            //     ),
+            //   ],
+            // )
+            //     : Flexible(
+            //         child: ListView.builder(
+            //           shrinkWrap: true, // 내부 콘텐츠에 맞게 크기 축소
+            //           physics: NeverScrollableScrollPhysics(),
+            //           itemCount: _products.length,
+            //           itemBuilder: (context, index) {
+            //             ProductDetails product = _products[index];
+            //             return ListTile(
+            //               title: Text('프리미엄 구독',
+            //                 style: TextStyle(
+            //                     color: theme.colorScheme.onSurface
+            //                 ),),
+            //               subtitle: Text('${product.price} / 연간',
+            //                 style: TextStyle(
+            //                     color: theme.colorScheme.onSurface
+            //                 ),),
+            //               trailing: ElevatedButton(
+            //                 onPressed: () => _iapService.buyProduct(product),
+            //                 child: Text('구독하기'),
+            //               ),
+            //             );
+            //           },
+            //         ),
+            //       ),
             // ElevatedButton(
             //   onPressed: () => _iapService.buyProduct(product),
             //   style: ElevatedButton.styleFrom(

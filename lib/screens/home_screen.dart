@@ -307,6 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
           return; // 🚨 페이지 이동 차단!
         }
+
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => EditRecordCategories()));
         break;
@@ -548,6 +549,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   _markNoticeAsRead();
                 },
               ),
+
+              //프리미엄 전환
+
               ListTile(
                 leading: Icon(Icons.workspace_premium_outlined,
                     color: Theme.of(context).colorScheme.onSurface),
