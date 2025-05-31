@@ -10,6 +10,8 @@ class PurchasePage extends StatefulWidget {
 class _PurchasePageState extends State<PurchasePage> {
   final InAppPurchaseService _iapService = InAppPurchaseService();
   List<ProductDetails> _products = [];
+  bool _isLoading = true;
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -21,17 +23,36 @@ class _PurchasePageState extends State<PurchasePage> {
   Future<void> _loadProducts() async {
     try {
       print('📦 상품 로드 중...');
+      final ProductDetailsResponse response = await InAppPurchase.instance.queryProductDetails({'premium_upgrade_yearly'}.toSet());
+
+      if (response.notFoundIDs.isNotEmpty) {
+        print('❌ [IAP] 찾을 수 없는 상품 ID: ${response.notFoundIDs}');
+      }
+      if (response.productDetails.isEmpty) {
+        print('❌ [IAP] 불러온 상품 없음 (조회는 됐지만 없음)');
+      }
       List<ProductDetails> products = await _iapService.getProducts();
       if (products.isEmpty) {
         print('❌ 상품 로드 실패: 상품이 비어 있음');
+        setState(() {
+          _loadFailed = true;
+          _isLoading = false;
+        });
       } else {
-        print('✅ 상품 로드 성공: $products');
+        setState(() {
+          _products = products;
+          _isLoading = false;
+        });
       }
       setState(() {
         _products = products;
       });
     } catch (e) {
       print('❌ 상품 로드 중 오류 발생: $e');
+      setState(() {
+        _loadFailed = true;
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('상품 로드에 실패했습니다. 잠시 후 다시 시도하세요.')),
       );
@@ -73,12 +94,12 @@ class _PurchasePageState extends State<PurchasePage> {
             Expanded(
               child: ListView(
                 children: [
-                  // _buildFeatureItem(
-                  //   context,
-                  //   icon: Icons.kitchen,
-                  //   title: "추가 공간을 만들어요",
-                  //   description: "가족, 사무실, 또는 친구와 함께 더 많은 냉장고를 효율적으로 관리하세요.",
-                  // ),
+                  _buildFeatureItem(
+                    context,
+                    icon: Icons.kitchen,
+                    title: "추가 공간을 만들어요",
+                    description: "냉장, 냉동, 상온 단 3개의 분류로는 냉장고 관리가 어려우신가요? 냉장고를 효율적으로 관리하세요.",
+                  ),
                   _buildFeatureItem(
                     context,
                     icon: Icons.food_bank,
@@ -97,32 +118,52 @@ class _PurchasePageState extends State<PurchasePage> {
             SizedBox(height: 24),
 
             // 🔹 CTA 버튼
-            _products.isEmpty
-                ? Center(child: CircularProgressIndicator()) // 로딩 인디케이터
-                : Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true, // 내부 콘텐츠에 맞게 크기 축소
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: _products.length,
-                      itemBuilder: (context, index) {
-                        ProductDetails product = _products[index];
-                        return ListTile(
-                          title: Text('프리미엄 구독',
-                            style: TextStyle(
-                                color: theme.colorScheme.onSurface
-                            ),),
-                          subtitle: Text('${product.price} / 연간',
-                            style: TextStyle(
-                                color: theme.colorScheme.onSurface
-                            ),),
-                          trailing: ElevatedButton(
-                            onPressed: () => _iapService.buyProduct(product),
-                            child: Text('구독하기'),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+            // _isLoading
+            //     ? Center(child: CircularProgressIndicator()) // 로딩 인디케이터
+            //     : (_loadFailed || _products.isEmpty)
+            //     ? Column(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     Icon(Icons.error_outline, color: Colors.red, size: 48),
+            //     SizedBox(height: 12),
+            //     Text("상품 정보를 불러오지 못했습니다.", style: TextStyle(color: Colors.red)),
+            //     SizedBox(height: 8),
+            //     ElevatedButton(
+            //       onPressed: () {
+            //         setState(() {
+            //           _isLoading = true;
+            //           _loadFailed = false;
+            //         });
+            //         _loadProducts(); // 🔁 재시도
+            //       },
+            //       child: Text("다시 시도하기"),
+            //     ),
+            //   ],
+            // )
+            //     : Flexible(
+            //         child: ListView.builder(
+            //           shrinkWrap: true, // 내부 콘텐츠에 맞게 크기 축소
+            //           physics: NeverScrollableScrollPhysics(),
+            //           itemCount: _products.length,
+            //           itemBuilder: (context, index) {
+            //             ProductDetails product = _products[index];
+            //             return ListTile(
+            //               title: Text('프리미엄 구독',
+            //                 style: TextStyle(
+            //                     color: theme.colorScheme.onSurface
+            //                 ),),
+            //               subtitle: Text('${product.price} / 연간',
+            //                 style: TextStyle(
+            //                     color: theme.colorScheme.onSurface
+            //                 ),),
+            //               trailing: ElevatedButton(
+            //                 onPressed: () => _iapService.buyProduct(product),
+            //                 child: Text('구독하기'),
+            //               ),
+            //             );
+            //           },
+            //         ),
+            //       ),
             // ElevatedButton(
             //   onPressed: () => _iapService.buyProduct(product),
             //   style: ElevatedButton.styleFrom(

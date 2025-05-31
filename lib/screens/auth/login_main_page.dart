@@ -38,7 +38,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: "897589496124-c8dann4sl55108048bm8o5lc4ff7bim2.apps.googleusercontent.com",
+    clientId: "897589496124-vvqsrsrvub61f2dlr32ksq6ht50iqj3d.apps.googleusercontent.com",
     scopes: [
       'email',
       'profile',
