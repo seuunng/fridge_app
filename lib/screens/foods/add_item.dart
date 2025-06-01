@@ -69,12 +69,13 @@ class _AddItemState extends State<AddItem> with RouteAware {
   double webGridMaxExtent = 200; // 웹에서 최대 크기
   double gridSpacing = 8.0;
   String userRole = '';
-  final InterstitialAdService _adManager = InterstitialAdService();
+  // 전면광고
+  // final InterstitialAdService _adManager = InterstitialAdService();
 
   @override
   void initState() {
     super.initState();
-    _adManager.loadInterstitialAd();
+    // _adManager.loadInterstitialAd();
     _loadSelectedFridge();
     // if (widget.sourcePage == 'preferred_foods_category') {
     //   _loadPreferredFoodsCategoriesFromFirestore();
@@ -317,8 +318,8 @@ class _AddItemState extends State<AddItem> with RouteAware {
       );
       return; // 🚫 게스트 사용자는 추가 불가
     }
-    if (userRole != 'admin' && userRole != 'paid_user')
-      await _adManager.showInterstitialAd(context);
+    // if (userRole != 'admin' && userRole != 'paid_user')
+    //   await _adManager.showInterstitialAd(context);
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final fridgeId = selected_fridgeId;
 
@@ -442,8 +443,8 @@ class _AddItemState extends State<AddItem> with RouteAware {
       );
       return; // 🚫 게스트 사용자는 추가 불가
     }
-    if (userRole != 'admin' && userRole != 'paid_user')
-      await _adManager.showInterstitialAd(context);
+    // if (userRole != 'admin' && userRole != 'paid_user')
+    //   await _adManager.showInterstitialAd(context);
     try {
       for (String itemName in selectedItems) {
         final existingItemSnapshot = await FirebaseFirestore.instance

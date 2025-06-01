@@ -33,12 +33,13 @@ class _ReadRecordState extends State<ReadRecord> {
   String userRole = '';
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool isScraped = false;
-  final InterstitialAdService _adManager = InterstitialAdService();
+  // 전면광고
+  // final InterstitialAdService _adManager = InterstitialAdService();
 
   @override
   void initState() {
     super.initState();
-    _adManager.loadInterstitialAd();
+    // _adManager.loadInterstitialAd();
     _fetchRecordCategories(); // 초기화 시 record_categories 불러오기
     _loadUserRole();
   }
@@ -273,8 +274,8 @@ class _ReadRecordState extends State<ReadRecord> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back), // 뒤로가기 아이콘
           onPressed: () async {
-            if (userRole != 'admin' && userRole != 'paid_user')
-              await _adManager.showInterstitialAd(context); // 전면 광고 호출
+            // if (userRole != 'admin' && userRole != 'paid_user')
+            //   await _adManager.showInterstitialAd(context); // 전면 광고 호출
             Navigator.pop(context); // 이전 화면으로 이동
           },
         ),

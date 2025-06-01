@@ -22,9 +22,10 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     }
   }
   String getBannerAdUnitId() {
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       return 'ca-app-pub-4461306523468443/8556219854'; // 🔹 Android 광고 ID
-    } else if (Platform.isIOS) {
+    // } else if (Platform.isIOS) {
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return 'ca-app-pub-4461306523468443/2859670467'; // 🔹 iOS 광고 ID (실제 ID로 변경)
       // return 'ca-app-pub-3940256099942544/6300978111';
     }

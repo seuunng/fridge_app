@@ -50,12 +50,13 @@ class _CreateRecordState extends State<CreateRecord> {
   // 이미지 선택을 위한 ImagePicker 인스턴스
   List<AssetEntity> images = [];
   List<String>? _imageFiles = [];
-  final InterstitialAdService _adManager = InterstitialAdService();
+  // 전면광고
+  // final InterstitialAdService _adManager = InterstitialAdService();
 
   @override
   void initState() {
     super.initState();
-    _adManager.loadInterstitialAd();
+    // _adManager.loadInterstitialAd();
 
     categoryController = TextEditingController();
     fieldController = TextEditingController();
@@ -345,8 +346,8 @@ class _CreateRecordState extends State<CreateRecord> {
 
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-    if (userRole != 'admin' && userRole != 'paid_user')
-      await _adManager.showInterstitialAd(context);
+    // if (userRole != 'admin' && userRole != 'paid_user')
+    //   await _adManager.showInterstitialAd(context);
 
     if (_imageFiles != null && _imageFiles!.length > 4) {
       ScaffoldMessenger.of(context).showSnackBar(

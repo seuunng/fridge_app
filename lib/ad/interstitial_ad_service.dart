@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class InterstitialAdService {
   InterstitialAd? _interstitialAd;
@@ -10,9 +13,10 @@ class InterstitialAdService {
   static const int _adThreshold = 7; // 세 번 중 한 번 광고 표시
 
   String getBannerAdUnitId() {
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       return 'ca-app-pub-4461306523468443/7243138184'; // 🔹 Android 광고 ID
-    } else if (Platform.isIOS) {
+      // } else if (Platform.isIOS) {
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return 'ca-app-pub-4461306523468443/1882734364'; // 🔹 iOS 광고 ID (실제 ID로 변경)
     }
     return ''; // 웹 또는 지원하지 않는 플랫폼

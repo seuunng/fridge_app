@@ -57,12 +57,12 @@ class _ReadRecipeState extends State<ReadRecipe> {
   late String recipeUrl;
 
   String userRole = '';
-  final InterstitialAdService _adManager = InterstitialAdService();
+  // final InterstitialAdService _adManager = InterstitialAdService();
 
   @override
   void initState() {
     super.initState();
-    _adManager.loadInterstitialAd();
+    // _adManager.loadInterstitialAd();
     // 유저 정보 초기화
     userId = currentUser?.uid ?? '';
     fromEmail = currentUser?.email ?? '이메일 없음';
@@ -675,8 +675,8 @@ class _ReadRecipeState extends State<ReadRecipe> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back), // 뒤로가기 아이콘
           onPressed: () async {
-            if (userRole != 'admin' && userRole != 'paid_user')
-              await _adManager.showInterstitialAd(context); // 전면 광고 호출
+            // if (userRole != 'admin' && userRole != 'paid_user')
+            //   await _adManager.showInterstitialAd(context); // 전면 광고 호출
             Navigator.pop(context); // 이전 화면으로 이동
           },
         ),
